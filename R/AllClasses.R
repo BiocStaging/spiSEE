@@ -34,7 +34,12 @@ setMethod("initialize", "SpatialPanelBase", function(.Object, ...) {
 #' @rdname SpatialMapPanel
 #' @export
 setClass("SpatialMapPanel", contains = "Panel",
-  slots = c(PendingIDs = "character", PendingRemoveIDs = "character"))
+  # CommittedIDs mirrors what was last sent to the panels (i.e. the browser's
+  # `committed` set) -- without it, Validate only ever knew about this round's
+  # PendingIDs/PendingRemoveIDs and silently dropped everything committed in
+  # earlier rounds (see panel_map.R's Validate observer).
+  slots = c(PendingIDs = "character", PendingRemoveIDs = "character",
+            CommittedIDs = "character"))
 
 #' @rdname SpatialPlotPanel
 #' @export

@@ -24,6 +24,7 @@ setMethod("initialize", "SpatialMapPanel", function(.Object, ...) {
   .Object <- callNextMethod(.Object, ...)
   if (length(.Object@PendingIDs)       == 0) .Object@PendingIDs       <- ""
   if (length(.Object@PendingRemoveIDs) == 0) .Object@PendingRemoveIDs <- ""
+  if (length(.Object@CommittedIDs)     == 0) .Object@CommittedIDs     <- ""
   .Object
 })
 
@@ -269,20 +270,30 @@ setMethod(".createObservers", "SpatialMapPanel", function(x, se, input, session,
     pObjects$memory[[enc]]@PendingRemoveIDs <- paste(input[[paste0(enc, "_pendingRemoveSync")]], collapse = ",")
   }, ignoreNULL = FALSE, ignoreInit = TRUE)
 
+  # `ids` must be the FULL new committed set, not just this round's pending
+  # clicks -- it becomes both the panels' Selection and the browser's
+  # `committed` set, so anything left out here is dropped everywhere.
   .apply <- function(ids) {
     sel <- paste(ids, collapse = ",")
     for (target in .findSelectablePanels(pObjects)) {
       pObjects$memory[[target]]@Selection <- sel
       .requestUpdate(target, rObjects)
     }
+    pObjects$memory[[enc]]@CommittedIDs <- sel
     pObjects$memory[[enc]]@PendingIDs <- ""
     pObjects$memory[[enc]]@PendingRemoveIDs <- ""
     session$sendCustomMessage(paste0(enc, "_markCommitted"), as.list(ids))
   }
 
   shiny::observeEvent(input[[paste0(enc, "_Validate")]], {
-    .apply(setdiff(.splitIDs(pObjects$memory[[enc]]@PendingIDs),
-                   .splitIDs(pObjects$memory[[enc]]@PendingRemoveIDs)))
+    # Previously committed tiles aren't re-sent by the browser on every click
+    # (only the deltas are, via PendingIDs/PendingRemoveIDs), so the new
+    # committed set must be folded in from the panel's own CommittedIDs --
+    # otherwise a second Validate round wipes out everything from the first.
+    committed <- .splitIDs(pObjects$memory[[enc]]@CommittedIDs)
+    pending   <- .splitIDs(pObjects$memory[[enc]]@PendingIDs)
+    removed   <- .splitIDs(pObjects$memory[[enc]]@PendingRemoveIDs)
+    .apply(setdiff(union(committed, pending), removed))
   }, ignoreInit = TRUE)
 
   shiny::observeEvent(input[[paste0(enc, "_ClearPending")]], .apply(character(0)), ignoreInit = TRUE)

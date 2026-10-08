@@ -25,6 +25,16 @@ args   <- commandArgs(trailingOnly = TRUE)
 out    <- if (length(args) >= 1) args[1] else "visiumhd_isee_ready.RDS"
 k      <- if (length(args) >= 2) as.integer(args[2]) else 20L   # neighbourhood size; adapt to the structures
 figdir <- if (length(args) >= 3) args[3] else "osta_visiumhd_figures"
+# OSTA.data_load() (called twice below) has a real upstream bug: it setwd()s
+# into its own download tempdir and never restores the caller's original
+# working directory before returning (same bug hit and worked around in
+# data-raw/XENIUM_DATASET.R). Two calls in this script means two chances to
+# silently corrupt every later relative path (figdir, out). Resolve both to
+# absolute paths up front, before any chapter code runs, so they're immune
+# to it regardless of cwd state.
+out    <- normalizePath(out, mustWork = FALSE)
+figdir <- normalizePath(figdir, mustWork = FALSE)
+repo_wd <- getwd()  # restored after each OSTA.data_load() call, see below
 dir.create(figdir, showWarnings = FALSE, recursive = TRUE)
 fig <- function(p, name, w = 10, h = 6) {
   ggsave(file.path(figdir, paste0(name, ".png")), p, width = w, height = h, dpi = 150)
@@ -56,6 +66,7 @@ set.seed(777)
 # retrieve data from OSF repo
 id <- "VisiumHD_HumanColon_Oliveira"
 pa <- OSTA.data_load(id)
+setwd(repo_wd)  # undo OSTA.data_load()'s setwd() -- see note near the top
 dir.create(td <- tempfile())
 unzip(pa, exdir = td)
 
@@ -205,6 +216,7 @@ sfe <- sfe[, !sfe$ex]
 # retrieve single-cell reference from OSF repo
 id <- "Chromium_HumanColon_Oliveira"
 pa <- OSTA.data_load(id)
+setwd(repo_wd)  # undo OSTA.data_load()'s setwd() -- see note near the top
 dir.create(td <- tempfile())
 unzip(pa, exdir = td)
 
