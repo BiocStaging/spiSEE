@@ -1,0 +1,10 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^data-raw$
+^dev$
+^\.claude$
+^CLAUDE\.md$
+^README\.Rmd$
+^run_app\.R$
+^run_.*\.command$
+^\.github$

@@ -1,0 +1,111 @@
+---
+title: "iseeSpatial: interactive exploration of cell-resolution spatial transcriptomics"
+author: "Emile Danvin"
+date: "`r Sys.Date()`"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{iseeSpatial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+# Introduction
+
+`iseeSpatial` adds spatial panels to `r BiocStyle::Biocpkg("iSEE")` for data at
+cellular resolution: imaging-based (CosMx, Xenium) and sequencing-based
+(Visium HD, cell-segmented). A region selected on an overview map is applied
+to every panel, and analyses (spatial statistics, spatially variable genes,
+niches, domains) run on that region.
+
+```{r, eval = FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+BiocManager::install("iseeSpatial")
+```
+
+# A small example
+
+We simulate a tissue with two zones so the vignette runs without downloads.
+
+```{r simulate}
+library(iseeSpatial)
+set.seed(1)
+n <- 2000
+xy <- cbind(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
+zone <- ifelse(xy[, "x"] < 500, "left", "right")
+type <- ifelse(zone == "left",
+               sample(c("Tumor", "T.cells"), n, TRUE, c(0.8, 0.2)),
+               sample(c("Fibroblast", "T.cells"), n, TRUE, c(0.7, 0.3)))
+counts <- matrix(rpois(30 * n, 2), 30, n,
+                 dimnames = list(paste0("GENE", 1:30), paste0("cell", 1:n)))
+counts["GENE1", zone == "left"] <- counts["GENE1", zone == "left"] + 5
+spe <- SpatialExperiment(assays = list(counts = counts, logcounts = log1p(counts)),
+                         colData = S4Vectors::DataFrame(Level1 = factor(type),
+                                                        sum = colSums(counts)),
+                         spatialCoords = xy)
+spe <- setPlatform(spe, "visiumhd")
+getPlatform(spe)
+```
+
+# Niches and spatial domains
+
+The spatial neighbour graph is built once (k nearest cells) and stored on
+the object. **k is a choice**, not a constant: small k describes direct
+contacts, large k a wider region; pick it from the structures studied and
+report it.
+
+```{r niches}
+spe <- buildSpatialGraph(spe, k = 15)
+spe <- computeNiches(spe, label_col = "Level1", k = 15, n_niches = 3)
+table(spe$niche)
+summary(spe$niche_entropy)
+```
+
+Each cell's neighbourhood composition is kept, so one can ask, for example,
+what surrounds tumour cells:
+
+```{r composition}
+comp <- reducedDim(spe, "NicheComposition")
+round(colMeans(comp[spe$Level1 == "Tumor", ], na.rm = TRUE), 2)
+```
+
+Spatial domains cluster expression combined with the neighbourhood average
+(`lambda` = weight of the neighbourhood; `lambda = 0` gives plain expression
+clusters, returned as `expr_cluster` for comparison):
+
+```{r domains}
+reducedDim(spe, "PCA") <- prcomp(t(logcounts(spe)), rank. = 10)$x
+spe <- computeSpatialDomains(spe, k_spatial = 15, lambda = 0.5, resolution = 0.5)
+table(spe$spatial_domain, zone)
+```
+
+# Launching the app
+
+```{r app}
+app <- iseeSpatial(spe, mode = "analysis")
+if (interactive()) shiny::runApp(app)
+```
+
+`mode = "qc"` gives a QC-oriented layout. Panels can also be combined with
+any standard iSEE panel through `initial =`.
+
+# Loading real data
+
+```{r loaders, eval = FALSE}
+spe <- load_cosmx("cos_isee_ready.RDS")               # prepared CosMx object
+spe <- load_xenium("path/to/xenium_output")           # 10x Xenium bundle
+spe <- load_visiumhd("path/to/segmented_outputs")     # 10x Visium HD, cell-segmented
+```
+
+The full Visium HD workflow of the OSTA book (QC, SingleR annotation), plus
+niches and domains, is in
+`system.file("scripts", "visiumhd_osta_workflow.R", package = "iseeSpatial")`.
+
+# Session information
+
+```{r}
+sessionInfo()
+```

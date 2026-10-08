@@ -1,0 +1,64 @@
+Package: iseeSpatial
+Title: Interactive Exploration of Cell-Resolution Spatial Transcriptomics with iSEE
+Version: 0.99.0
+Authors@R:
+    person("Emile", "Danvin", email = "emile.danvin@gmail.com",
+           role = c("aut", "cre"))
+Description: Extends the iSEE interface with panels for spatial
+    transcriptomics at cellular resolution, from imaging-based (CosMx,
+    Xenium) and sequencing-based (Visium HD, cell-segmented) platforms. A
+    region selected on an overview map (fields of view or individual cells)
+    is applied to every panel: spatial plots, quality-control histograms,
+    spatial statistics (Moran's I, join-count, L-functions), spatially
+    variable genes, cellular niches and spatial domains. Heavy computations
+    run on demand on the selected region, and niches and domains can be
+    precomputed offline on the whole dataset.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.5.0),
+    iSEE,
+    SpatialExperiment
+Imports:
+    methods,
+    stats,
+    utils,
+    grDevices,
+    grid,
+    tools,
+    S4Vectors,
+    SummarizedExperiment,
+    SingleCellExperiment,
+    SpatialFeatureExperiment,
+    SpaceTrooper,
+    Voyager,
+    spatialFDA,
+    spdep,
+    BiocNeighbors,
+    Matrix,
+    igraph,
+    scater,
+    ggplot2,
+    pheatmap,
+    pals,
+    plotly,
+    htmlwidgets,
+    base64enc,
+    png,
+    digest,
+    DT,
+    shiny
+Suggests:
+    SpatialExperimentIO,
+    VisiumIO,
+    BiocIO,
+    BiocStyle,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+biocViews: Software, Spatial, Transcriptomics, SingleCell, Visualization,
+    GUI, ShinyApps, Clustering, QualityControl
+Config/testthat/edition: 3
