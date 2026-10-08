@@ -22,8 +22,8 @@
 #' @name SpatialPanelBase-class
 #' @aliases SpatialPanelBase-class
 #' @export
-setClass("SpatialPanelBase", contains = "Panel",
-  representation("VIRTUAL"), slots = c(Selection = "character"))
+setClass("SpatialPanelBase", contains = c("Panel", "VIRTUAL"),
+  slots = c(Selection = "character"))
 
 setMethod("initialize", "SpatialPanelBase", function(.Object, ...) {
   .Object <- callNextMethod(.Object, ...)
