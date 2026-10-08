@@ -62,6 +62,19 @@ fig <- function(p, name, w = 10, h = 6) {
     if (length(dev.list()) > ndev) grDevices::dev.off()
   })
 }
+# normalizeRnaCounts.se() (the chapter's SummarizedExperiment convenience
+# wrapper, log-library-size normalization in one call) doesn't exist in
+# scrapper 1.4.0 either -- same book-vs-installed-version mismatch as
+# quickRnaQc.se() below. scrapper's normalizeCounts() is the current
+# building block, but unlike the book's wrapper it takes explicit
+# size.factors rather than computing them: reproduced here as the standard
+# library-size factors (colSums, centered to mean 1 via centerSizeFactors(),
+# sanitized against zero/negative/infinite/NaN counts).
+.normalizeRnaCounts <- function(se) {
+  sf <- sanitizeSizeFactors(centerSizeFactors(Matrix::colSums(counts(se))))
+  logcounts(se) <- normalizeCounts(counts(se), size.factors = sf, log = TRUE)
+  se
+}
 t_start <- Sys.time()
 
 # ---- 17.1.2 Dependencies ------------------------------------------------
@@ -148,11 +161,35 @@ fig(p, "17.2.1_roi", w = 7, h = 7)
 # convert from SPE to SFE
 sfe <- toSpatialFeatureExperiment(spe)
 # add cell segmentation boundaries
+#
+# On this sample, metadata(spe)$cellseg ends up unusable after the
+# cell_id match/reindex below (either the segmentation geometry itself is
+# empty, same root cause as spe$map near 17.3.2, or the cell_id format
+# doesn't match colnames(spe) -- not disentangled further here). Whichever
+# it is, every later step that touches this geometry (localOutliers(),
+# plotCoords(), even sfe[, j] subsetting) then crashes with "[crop]
+# cannot get a SpatExtent from y", regardless of whether that step names
+# "cellseg" explicitly, because it becomes the object's only/default
+# colGeometry. toSpatialFeatureExperiment()
+# already attaches a working centroid-based default geometry from
+# spatialCoords(spe) on its own -- only overwrite it with cellseg when
+# cellseg actually has usable (non-empty, non-all-NA) geometry; otherwise
+# leave the default in place and report the fallback. The
+# colGeometryName = "cellseg" plot calls further down are all inside
+# .safe_fig() already, so they degrade to a clear skip message instead of
+# a crash when this branch is taken.
 seg <- metadata(spe)$cellseg
 i <- colnames(spe)
 j <- match(i, seg$cell_id)
 seg <- seg[j, ]; rownames(seg) <- i
-colGeometries(sfe) <- list(cellseg = seg)
+seg_usable <- length(seg) > 0 && nrow(seg) > 0 &&
+  !all(sf::st_is_empty(sf::st_geometry(seg)) | is.na(sf::st_geometry(seg)))
+if (seg_usable) {
+  colGeometries(sfe) <- list(cellseg = seg)
+} else {
+  message("SKIPPED (book's cell segmentation boundaries empty on this sample): ",
+          "keeping the default centroid geometry instead of 'cellseg'")
+}
 
 # ---- 17.3.1 Cell masks --------------------------------------------------
 # specify bounding box
@@ -198,7 +235,21 @@ print(sapply(ncs, summary))
 
 # ---- 17.4.1 Quality control: non-spatial --------------------------------
 mt <- grepl("^MT-", rownames(sfe))
-sfe <- quickRnaQc.se(sfe, subsets = list(mt = mt))
+# quickRnaQc.se() (a SummarizedExperiment convenience wrapper the chapter
+# calls here) doesn't exist in scrapper 1.4.0, the version actually
+# installed -- confirmed: not exported by any installed package. A
+# book-example-vs-installed-package-version mismatch, not a chapter bug.
+# This is NOT the outlier-flagging/filtering step (that's localOutliers()
+# below, in 17.4.2, which reads these same three columns but is otherwise
+# independent) -- only the metric computation needs reproducing. Built
+# from scrapper's own current, documented building block instead of
+# guessing: computeRnaQcMetrics() returns a nested list ($sum, $detected,
+# $subsets$mt); flattened into the exact flat colData column names
+# (sum, detected, subset.proportion.mt) the rest of the chapter expects.
+qc <- computeRnaQcMetrics(counts(sfe), subsets = list(mt = mt))
+sfe$sum <- qc$sum
+sfe$detected <- qc$detected
+sfe$subset.proportion.mt <- qc$subsets$mt
 sfe$log_sum <- log1p(sfe$sum)
 print(head(colData(sfe)[c(
   "um2", "nuc_um2", "nuc",
@@ -221,30 +272,41 @@ print(head(colData(sfe)[c(
 
 # ---- 17.4.2 Quality control: spatially-aware ----------------------------
 # determine spatial outliers for different metrics
-sfe <- localOutliers(sfe,
-  workers = 4, metric = "sum",
-  log = TRUE, direction = "lower")
-sfe <- localOutliers(sfe,
-  workers = 4, metric = "detected",
-  log = TRUE, direction = "lower")
-sfe <- localOutliers(sfe,
-  workers = 4, metric = "subset.proportion.mt",
-  log = FALSE, direction = "higher")
-# get cells x flags matrix
-cd <- colData(sfe)
-ol <- grep("outliers$", names(cd))
-ol <- as.matrix(cd[ol])
-# percentage of cells excluded for each
-print(round(100*colMeans(ol), 2))
-# number of cells kept/removed overall
-print(table(sfe$ex <- rowAnys(ol)))
+#
+# localOutliers() needs a real spatial neighbour graph/geometry per cell.
+# This OSF copy of "VisiumHD_HumanColon_Oliveira" segmented_outputs only
+# has 6 files (cell_segmentations.geojson, nucleus_segmentations.geojson,
+# filtered_feature_cell_matrix.h5, spatial/*) -- no bin-to-cell mapping
+# file, which is also why spe$map/sfe$map came back empty above. That
+# geometry gap breaks localOutliers() too ("[crop] cannot get a
+# SpatExtent from y"). A genuine data-completeness gap in this teaching
+# copy, not a chapter bug -- the official Space Ranger segmented-outputs
+# bundle the book was written against evidently has more in it. Falls
+# back to flagging nothing as a spatial outlier (sfe$ex all FALSE) rather
+# than fabricating flags, and reports the fallback instead of hiding it.
+sfe$ex <- tryCatch({
+  sfe <- localOutliers(sfe, workers = 4, metric = "sum", log = TRUE, direction = "lower")
+  sfe <- localOutliers(sfe, workers = 4, metric = "detected", log = TRUE, direction = "lower")
+  sfe <- localOutliers(sfe, workers = 4, metric = "subset.proportion.mt", log = FALSE, direction = "higher")
+  cd <- colData(sfe)
+  ol <- as.matrix(cd[grep("outliers$", names(cd))])
+  print(round(100*colMeans(ol), 2))  # percentage of cells excluded for each
+  rowAnys(ol)
+}, error = function(e) {
+  message("SKIPPED (no usable spatial geometry on this sample -- see comment above): ",
+          conditionMessage(e))
+  rep(FALSE, ncol(sfe))
+})
+print(table(sfe$ex))  # number of cells kept/removed overall
 
-p <- plotCoords(sfe[, order(sfe$ex)],
-  annotate = "ex", point_size = 0.2) +
-  theme(legend.key.size = ggplot2::unit(0, "pt")) +
-  scale_color_manual(values = c("grey90", "red")) +
-  guides(col = guide_legend(override.aes = list(size = 2)))
-fig(p, "17.4.2_outliers", w = 7, h = 7)
+.safe_fig({
+  p <- plotCoords(sfe[, order(sfe$ex)],
+    annotate = "ex", point_size = 0.2) +
+    theme(legend.key.size = ggplot2::unit(0, "pt")) +
+    scale_color_manual(values = c("grey90", "red")) +
+    guides(col = guide_legend(override.aes = list(size = 2)))
+  fig(p, "17.4.2_outliers", w = 7, h = 7)
+})
 
 # iseeSpatial: keep the unfiltered object for the QC app (flags visible there).
 sfe_unfiltered <- sfe
@@ -285,8 +347,8 @@ idx <- lapply(idx, \(.) sample(., min(length(.), 1e3)))
 print(ncol(.sce <- sce[, unlist(idx)]))
 
 # log-library size normalization
-sfe <- normalizeRnaCounts.se(sfe)
-.sce <- normalizeRnaCounts.se(.sce)
+sfe <- .normalizeRnaCounts(sfe)
+.sce <- .normalizeRnaCounts(.sce)
 # perform label transfer at the Visium HD cell-level,
 # using pseudo-bulk Chromium profiles as reference
 res <- SingleR(test = sfe, ref = .sce, labels = .sce$Level1, aggr.ref = TRUE)
@@ -350,8 +412,7 @@ message("OSTA chapter reproduced in ", format(Sys.time() - t_start))
 # ---- Part 2: iseeSpatial additions (not in the chapter) -----------------
 suppressPackageStartupMessages(devtools::load_all(".", quiet = TRUE))
 
-# TODO(verify): assay name written by normalizeRnaCounts.se(); the app needs "logcounts".
-if (!"logcounts" %in% assayNames(sfe)) stop("No 'logcounts' assay: check normalizeRnaCounts.se() output name")
+if (!"logcounts" %in% assayNames(sfe)) stop("No 'logcounts' assay: check .normalizeRnaCounts() output name")
 logcounts(sfe_unfiltered) <- log1p(counts(sfe_unfiltered))
 
 # gene menus ordered by mean expression
