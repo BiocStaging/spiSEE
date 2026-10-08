@@ -40,6 +40,28 @@ fig <- function(p, name, w = 10, h = 6) {
   ggsave(file.path(figdir, paste0(name, ".png")), p, width = w, height = h, dpi = 150)
   message("figure: ", name)
 }
+# A few of the chapter's illustrative sub-region figures (17.3.1, 17.4.1,
+# 17.5_annotation_roi) use the book's own hardcoded bounding box / ROI
+# coordinates, tuned to the exact sample shown on the book page -- on a
+# fresh download of "VisiumHD_HumanColon_Oliveira" from OSF those boxes can
+# fall outside this sample's actual coordinate range (0 cells left after
+# cropping), which crashes plotting. That's a book-example-vs-real-data
+# mismatch to report, not a bug in the chapter's analysis -- none of the
+# real pipeline (filtering, normalisation, SingleR annotation) depends on
+# these ROI figures, only the illustrative crops/plots do. Wrapped so one
+# missing illustrative figure doesn't halt the whole run; still prints the
+# chapter's own warning/error so the mismatch is visible in the log.
+.safe_fig <- function(expr) {
+  ndev <- length(dev.list())  # in case expr opened a graphics device (png())
+  tryCatch(expr, error = function(e) {
+    message("SKIPPED (book's hardcoded ROI/box doesn't overlap this sample): ",
+            conditionMessage(e))
+    # on.exit() does not reliably fire for a bare expression forced inside
+    # tryCatch like this (verified empirically) -- close explicitly instead,
+    # or every fig() call after this one lands on the dangling device.
+    if (length(dev.list()) > ndev) grDevices::dev.off()
+  })
+}
 t_start <- Sys.time()
 
 # ---- 17.1.2 Dependencies ------------------------------------------------
@@ -138,18 +160,34 @@ box <- c(
   xmin = 56e3, xmax = 58e3,
   ymin = 15e3, ymax = 16e3)
 # plot exemplary cell masks
-geo <- colGeometry(crop(sfe, box))
-png(file.path(figdir, "17.3.1_cell_masks.png"), width = 1500, height = 800, res = 150)
-plot(st_geometry(geo), col = rep(colors(), 2))
-dev.off(); message("figure: 17.3.1_cell_masks")
+.safe_fig({
+  png(file.path(figdir, "17.3.1_cell_masks.png"), width = 1500, height = 800, res = 150)
+  geo <- colGeometry(crop(sfe, box))
+  plot(st_geometry(geo), col = rep(colors(), 2))
+  dev.off(); message("figure: 17.3.1_cell_masks")
+})
 
 # ---- 17.3.2 Bin mapping -------------------------------------------------
-# get cell areas = 4x number of 2 µm bins
-sfe$um2 <- 4*sapply(sfe$map, nrow)
-# get fraction of 2 µm bins that are nuclear
-sfe$nuc <- sapply(sfe$map, \(.) mean(.$in_nucleus))
-# get nucleus areas = cell area x nuclear fraction
-sfe$nuc_um2 <- sfe$um2*sfe$nuc
+# `spe$map`/`sfe$map` (per-cell 2um-bin-to-cell assignment, from
+# TENxVisiumHD()/import()) came back empty on this real OSF download --
+# confirmed with VisiumIO 1.6.3: TENxVisiumHD() has no argument controlling
+# it, and it's empty immediately after import(), before any of this
+# script's own code runs. A book-example-vs-real-data mismatch to report,
+# not a chapter bug: the actual QC/filtering below uses sum/detected/mt%
+# only, never um2/nuc/nuc_um2, so this doesn't block the real pipeline --
+# only these three illustrative area columns end up NA instead of real
+# numbers.
+if (length(sfe$map) == 0 || all(lengths(sfe$map) == 0)) {
+  message("SKIPPED (book's bin-to-cell map empty on this sample): um2/nuc/nuc_um2 set to NA")
+  sfe$um2 <- sfe$nuc <- sfe$nuc_um2 <- NA_real_
+} else {
+  # get cell areas = 4x number of 2 µm bins
+  sfe$um2 <- 4*sapply(sfe$map, nrow)
+  # get fraction of 2 µm bins that are nuclear
+  sfe$nuc <- sapply(sfe$map, \(.) mean(.$in_nucleus))
+  # get nucleus areas = cell area x nuclear fraction
+  sfe$nuc_um2 <- sfe$um2*sfe$nuc
+}
 
 names(bin) <- bin <- c("square_008um", "square_016um")
 ncs <- lapply(bin, \(um) {
@@ -166,18 +204,20 @@ print(head(colData(sfe)[c(
   "um2", "nuc_um2", "nuc",
   "sum", "subset.proportion.mt")]))
 
-p <- plotSpatialFeature(sfe[, sfe$roi],
-  colGeometryName = "cellseg",
-  features = "log_sum") +
-  ggtitle("log-library size") +
-  plotSpatialFeature(sfe[, sfe$roi],
+.safe_fig({
+  p <- plotSpatialFeature(sfe[, sfe$roi],
     colGeometryName = "cellseg",
-    features = "subset.proportion.mt") +
-  ggtitle("mitochondrial proportion") +
-  plot_layout(nrow = 1) &
-  theme(plot.title = element_text(hjust = 0.5)) &
-  scale_fill_gradientn(NULL, colors = pals::jet())
-fig(p, "17.4.1_qc_roi", w = 12, h = 6)
+    features = "log_sum") +
+    ggtitle("log-library size") +
+    plotSpatialFeature(sfe[, sfe$roi],
+      colGeometryName = "cellseg",
+      features = "subset.proportion.mt") +
+    ggtitle("mitochondrial proportion") +
+    plot_layout(nrow = 1) &
+    theme(plot.title = element_text(hjust = 0.5)) &
+    scale_fill_gradientn(NULL, colors = pals::jet())
+  fig(p, "17.4.1_qc_roi", w = 12, h = 6)
+})
 
 # ---- 17.4.2 Quality control: spatially-aware ----------------------------
 # determine spatial outliers for different metrics
@@ -264,15 +304,17 @@ print(table(sfe$Level0 <- factor(lab[idx])))
 
 pal_lv1 <- unname(pals::trubetskoy())
 pal_lv0 <- c("gold", "turquoise", "deeppink", "navy")
-p <- plotSpatialFeature(sfe[, sfe$roi],
-  features = "Level1", colGeometryName = "cellseg") +
-  scale_fill_manual(values = pal_lv1) +
-  plotSpatialFeature(sfe[, sfe$roi],
-    features = "Level0", colGeometryName = "cellseg") +
-  scale_fill_manual(values = pal_lv0) +
-  plot_layout(nrow = 1) &
-  theme(legend.key.size = ggplot2::unit(.5, "lines"))
-fig(p, "17.5_annotation_roi", w = 12, h = 6)
+.safe_fig({
+  p <- plotSpatialFeature(sfe[, sfe$roi],
+    features = "Level1", colGeometryName = "cellseg") +
+    scale_fill_manual(values = pal_lv1) +
+    plotSpatialFeature(sfe[, sfe$roi],
+      features = "Level0", colGeometryName = "cellseg") +
+    scale_fill_manual(values = pal_lv0) +
+    plot_layout(nrow = 1) &
+    theme(legend.key.size = ggplot2::unit(.5, "lines"))
+  fig(p, "17.5_annotation_roi", w = 12, h = 6)
+})
 
 p <- plotCoords(sfe,
   annotate = "Level1", point_size = 0.1) +

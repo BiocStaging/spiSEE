@@ -3,6 +3,7 @@
 \docType{class}
 \name{FOVZoomPanel-class}
 \alias{FOVZoomPanel-class}
+\alias{.fullName,FOVZoomPanel-method}
 \alias{.panelColor,FOVZoomPanel-method}
 \alias{.defineOutput,FOVZoomPanel-method}
 \alias{.defineInterface,FOVZoomPanel-method}
@@ -12,6 +13,8 @@
 \alias{FOVZoomPanel}
 \title{Zoom on selected FOVs (CosMx)}
 \usage{
+\S4method{.fullName}{FOVZoomPanel}(x)
+
 \S4method{.panelColor}{FOVZoomPanel}(x)
 
 \S4method{.defineOutput}{FOVZoomPanel}(x)
@@ -27,7 +30,24 @@
 FOVZoomPanel(ColorBy = "", ...)
 }
 \arguments{
+\item{x}{A panel instance (the class this page documents).}
+
+\item{se}{The \code{SpatialExperiment} being explored.}
+
+\item{select_info}{A list of selection information, passed by iSEE.}
+
 \item{...}{Other slots, e.g. \code{Selection}.}
+
+\item{all_memory, all_contents}{iSEE's full panel-state list and the
+current selection contents of every panel, passed to
+\code{.generateOutput()} for export/snapshot but unused by this package's
+own panels (selection is handled client-side, see \code{SpatialMapPanel}).}
+
+\item{output, pObjects, rObjects}{The app's Shiny output list and the
+persistent/reactive state environments iSEE passes to every panel
+method.}
+
+\item{input, session}{The current Shiny \code{input} and \code{session} objects.}
 
 \item{ColorBy}{QC metric used to colour cell polygons.}
 }

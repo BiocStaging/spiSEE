@@ -12,6 +12,7 @@ setMethod("initialize", "SpatialPlotPanel", function(.Object, ...) {
   .Object
 })
 
+#' @rdname SpatialPlotPanel
 #' @export
 setMethod(".fullName",   "SpatialPlotPanel", function(x) "Spatial Plot")
 #' @rdname SpatialPlotPanel
@@ -126,6 +127,7 @@ setMethod("initialize", "FOVZoomPanel", function(.Object, ...) {
   .Object
 })
 
+#' @rdname FOVZoomPanel
 #' @export
 setMethod(".fullName",   "FOVZoomPanel", function(x) "FOV Zoom")
 #' @rdname FOVZoomPanel

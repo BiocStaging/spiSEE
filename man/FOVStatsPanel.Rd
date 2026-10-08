@@ -3,6 +3,7 @@
 \docType{class}
 \name{FOVStatsPanel-class}
 \alias{FOVStatsPanel-class}
+\alias{.fullName,FOVStatsPanel-method}
 \alias{.panelColor,FOVStatsPanel-method}
 \alias{.defineOutput,FOVStatsPanel-method}
 \alias{.defineInterface,FOVStatsPanel-method}
@@ -12,6 +13,8 @@
 \alias{FOVStatsPanel}
 \title{Per-FOV QC summary (CosMx)}
 \usage{
+\S4method{.fullName}{FOVStatsPanel}(x)
+
 \S4method{.panelColor}{FOVStatsPanel}(x)
 
 \S4method{.defineOutput}{FOVStatsPanel}(x)
@@ -27,7 +30,24 @@
 FOVStatsPanel(...)
 }
 \arguments{
+\item{x}{A panel instance (the class this page documents).}
+
+\item{se}{The \code{SpatialExperiment} being explored.}
+
+\item{select_info}{A list of selection information, passed by iSEE.}
+
 \item{...}{Slots, e.g. \code{Selection}.}
+
+\item{all_memory, all_contents}{iSEE's full panel-state list and the
+current selection contents of every panel, passed to
+\code{.generateOutput()} for export/snapshot but unused by this package's
+own panels (selection is handled client-side, see \code{SpatialMapPanel}).}
+
+\item{output, pObjects, rObjects}{The app's Shiny output list and the
+persistent/reactive state environments iSEE passes to every panel
+method.}
+
+\item{input, session}{The current Shiny \code{input} and \code{session} objects.}
 }
 \value{
 A \code{FOVStatsPanel} object.

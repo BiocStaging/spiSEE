@@ -3,6 +3,7 @@
 \docType{class}
 \name{SpatialMapPanel-class}
 \alias{SpatialMapPanel-class}
+\alias{.fullName,SpatialMapPanel-method}
 \alias{.panelColor,SpatialMapPanel-method}
 \alias{.defineOutput,SpatialMapPanel-method}
 \alias{.defineInterface,SpatialMapPanel-method}
@@ -12,6 +13,8 @@
 \alias{SpatialMapPanel}
 \title{Overview map for building a region selection}
 \usage{
+\S4method{.fullName}{SpatialMapPanel}(x)
+
 \S4method{.panelColor}{SpatialMapPanel}(x)
 
 \S4method{.defineOutput}{SpatialMapPanel}(x)
@@ -27,7 +30,24 @@
 SpatialMapPanel(...)
 }
 \arguments{
+\item{x}{A panel instance (the class this page documents).}
+
+\item{se}{The \code{SpatialExperiment} being explored.}
+
+\item{select_info}{A list of selection information, passed by iSEE.}
+
 \item{...}{Slots passed to \code{new()}, e.g. \code{PanelWidth}.}
+
+\item{all_memory, all_contents}{iSEE's full panel-state list and the
+current selection contents of every panel, passed to
+\code{.generateOutput()} for export/snapshot but unused by this package's
+own panels (selection is handled client-side, see \code{SpatialMapPanel}).}
+
+\item{output, pObjects, rObjects}{The app's Shiny output list and the
+persistent/reactive state environments iSEE passes to every panel
+method.}
+
+\item{input, session}{The current Shiny \code{input} and \code{session} objects.}
 }
 \value{
 A \code{SpatialMapPanel} object.

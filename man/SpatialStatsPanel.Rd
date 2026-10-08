@@ -3,6 +3,7 @@
 \docType{class}
 \name{SpatialStatsPanel-class}
 \alias{SpatialStatsPanel-class}
+\alias{.fullName,SpatialStatsPanel-method}
 \alias{.panelColor,SpatialStatsPanel-method}
 \alias{.defineOutput,SpatialStatsPanel-method}
 \alias{.defineInterface,SpatialStatsPanel-method}
@@ -12,6 +13,8 @@
 \alias{SpatialStatsPanel}
 \title{Spatial statistics on the selected region}
 \usage{
+\S4method{.fullName}{SpatialStatsPanel}(x)
+
 \S4method{.panelColor}{SpatialStatsPanel}(x)
 
 \S4method{.defineOutput}{SpatialStatsPanel}(x)
@@ -33,7 +36,24 @@ SpatialStatsPanel(
 )
 }
 \arguments{
+\item{x}{A panel instance (the class this page documents).}
+
+\item{se}{The \code{SpatialExperiment} being explored.}
+
+\item{select_info}{A list of selection information, passed by iSEE.}
+
 \item{...}{Other slots, e.g. \code{Selection}.}
+
+\item{all_memory, all_contents}{iSEE's full panel-state list and the
+current selection contents of every panel, passed to
+\code{.generateOutput()} for export/snapshot but unused by this package's
+own panels (selection is handled client-side, see \code{SpatialMapPanel}).}
+
+\item{output, pObjects, rObjects}{The app's Shiny output list and the
+persistent/reactive state environments iSEE passes to every panel
+method.}
+
+\item{input, session}{The current Shiny \code{input} and \code{session} objects.}
 
 \item{PlotType}{One of \code{"graph_plot"}, \code{"localmoran_plot"},
 \code{"moran_plot"}, \code{"locclust_plot"}, \code{"joincount_plot"},

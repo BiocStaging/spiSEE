@@ -31,6 +31,17 @@ setMethod("initialize", "SpatialPanelBase", function(.Object, ...) {
   .Object
 })
 
+#' @param x A panel instance (the class this page documents).
+#' @param se The `SpatialExperiment` being explored.
+#' @param select_info A list of selection information, passed by iSEE.
+#' @param output,pObjects,rObjects The app's Shiny output list and the
+#'   persistent/reactive state environments iSEE passes to every panel
+#'   method.
+#' @param input,session The current Shiny `input` and `session` objects.
+#' @param all_memory,all_contents iSEE's full panel-state list and the
+#'   current selection contents of every panel, passed to
+#'   `.generateOutput()` for export/snapshot but unused by this package's
+#'   own panels (selection is handled client-side, see `SpatialMapPanel`).
 #' @rdname SpatialMapPanel
 #' @export
 setClass("SpatialMapPanel", contains = "Panel",
@@ -41,37 +52,44 @@ setClass("SpatialMapPanel", contains = "Panel",
   slots = c(PendingIDs = "character", PendingRemoveIDs = "character",
             CommittedIDs = "character"))
 
+#' @inheritParams SpatialMapPanel
 #' @rdname SpatialPlotPanel
 #' @export
 setClass("SpatialPlotPanel", contains = "SpatialPanelBase",
   slots = c(ColorBy = "character", UsePolygons = "logical", PointSize = "numeric"))
 
+#' @inheritParams SpatialMapPanel
 #' @rdname FOVZoomPanel
 #' @export
 setClass("FOVZoomPanel", contains = "SpatialPanelBase",
   slots = c(ColorBy = "character"))
 
+#' @inheritParams SpatialMapPanel
 #' @rdname SpatialQCPanel
 #' @export
 setClass("SpatialQCPanel", contains = "SpatialPanelBase",
   slots = c(Metric = "character", UseFences = "logical"))
 
+#' @inheritParams SpatialMapPanel
 #' @rdname FOVStatsPanel
 #' @export
 setClass("FOVStatsPanel", contains = "SpatialPanelBase")
 
+#' @inheritParams SpatialMapPanel
 #' @rdname SpatialStatsPanel
 #' @export
 setClass("SpatialStatsPanel", contains = "SpatialPanelBase",
   slots = c(PlotType = "character", Genes = "character", LabelCol = "character",
             K = "integer", ComputeTrigger = "character"))
 
+#' @inheritParams SpatialMapPanel
 #' @rdname SVGPanel
 #' @export
 setClass("SVGPanel", contains = "SpatialPanelBase",
   slots = c(TopN = "integer", K = "integer", LinkedPanel = "character",
             ComputeTrigger = "character"))
 
+#' @inheritParams SpatialMapPanel
 #' @rdname SpatialNichePanel
 #' @export
 setClass("SpatialNichePanel", contains = "SpatialPanelBase",

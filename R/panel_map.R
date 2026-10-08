@@ -28,6 +28,7 @@ setMethod("initialize", "SpatialMapPanel", function(.Object, ...) {
   .Object
 })
 
+#' @rdname SpatialMapPanel
 #' @export
 setMethod(".fullName",   "SpatialMapPanel", function(x) "Spatial Overview Map")
 #' @rdname SpatialMapPanel

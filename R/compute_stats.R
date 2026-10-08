@@ -94,9 +94,13 @@ NULL
     locclust_plot = {
       sfe <- Voyager::runUnivariate(sfe, features = genes[1], type = "localmoran", zero.policy = TRUE,
                                     colGraphName = "knn", colGeometryName = 1)
-      lm <- Voyager::localResults(sfe)[["localmoran"]][[1]]
+      # localResults()/localResults<-() are SpatialFeatureExperiment's own
+      # generic (Voyager imports but does not re-export it -- Voyager::
+      # localResults looks fine at a glance since it resolves via
+      # inheritance, but errors at call time: "not an exported object").
+      lm <- SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]]
       lm$locClust <- with(lm, ifelse(`-log10p_adj` > -log10(0.05), as.character(mean), "non-significant"))
-      Voyager::localResults(sfe)[["localmoran"]][[1]] <- lm
+      SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]] <- lm
       Voyager::plotLocalResult(sfe, features = genes[1], name = "localmoran",
                                attribute = "locClust", colGeometryName = 1)
     },

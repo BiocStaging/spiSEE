@@ -68,6 +68,7 @@ setMethod("initialize", "SpatialNichePanel", function(.Object, ...) {
   .Object
 })
 
+#' @rdname SpatialNichePanel
 #' @export
 setMethod(".fullName",   "SpatialNichePanel", function(x) "Spatial Niches & Domains")
 #' @rdname SpatialNichePanel

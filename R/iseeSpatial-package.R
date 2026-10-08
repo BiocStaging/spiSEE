@@ -14,6 +14,7 @@
 #' @importFrom SummarizedExperiment colData colData<- assay
 #' @importFrom S4Vectors metadata metadata<-
 #' @importFrom ggplot2 .data
+#' @importFrom DT dataTableOutput renderDataTable datatable formatRound
 #' @keywords internal
 "_PACKAGE"
 

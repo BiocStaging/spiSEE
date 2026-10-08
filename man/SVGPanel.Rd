@@ -3,6 +3,7 @@
 \docType{class}
 \name{SVGPanel-class}
 \alias{SVGPanel-class}
+\alias{.fullName,SVGPanel-method}
 \alias{.panelColor,SVGPanel-method}
 \alias{.defineOutput,SVGPanel-method}
 \alias{.defineInterface,SVGPanel-method}
@@ -12,6 +13,8 @@
 \alias{SVGPanel}
 \title{Ranking of spatially variable genes (Moran's I)}
 \usage{
+\S4method{.fullName}{SVGPanel}(x)
+
 \S4method{.panelColor}{SVGPanel}(x)
 
 \S4method{.defineOutput}{SVGPanel}(x)
@@ -27,7 +30,24 @@
 SVGPanel(TopN = 200L, K = 6L, LinkedPanel = "", ...)
 }
 \arguments{
+\item{x}{A panel instance (the class this page documents).}
+
+\item{se}{The \code{SpatialExperiment} being explored.}
+
+\item{select_info}{A list of selection information, passed by iSEE.}
+
 \item{...}{Other slots, e.g. \code{Selection}.}
+
+\item{all_memory, all_contents}{iSEE's full panel-state list and the
+current selection contents of every panel, passed to
+\code{.generateOutput()} for export/snapshot but unused by this package's
+own panels (selection is handled client-side, see \code{SpatialMapPanel}).}
+
+\item{output, pObjects, rObjects}{The app's Shiny output list and the
+persistent/reactive state environments iSEE passes to every panel
+method.}
+
+\item{input, session}{The current Shiny \code{input} and \code{session} objects.}
 
 \item{TopN}{Number of most expressed genes to scan (or the first \code{TopN}
 of \code{metadata(se)$gene_ranks}).}

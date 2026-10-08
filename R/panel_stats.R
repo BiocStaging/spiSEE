@@ -12,6 +12,7 @@ setMethod("initialize", "SpatialStatsPanel", function(.Object, ...) {
   .Object
 })
 
+#' @rdname SpatialStatsPanel
 #' @export
 setMethod(".fullName",   "SpatialStatsPanel", function(x) "Spatial Statistics")
 #' @rdname SpatialStatsPanel
@@ -112,6 +113,7 @@ setMethod("initialize", "SVGPanel", function(.Object, ...) {
 # recomputing. Session-scoped by panel name.
 .svgTableCache <- new.env(parent = emptyenv())
 
+#' @rdname SVGPanel
 #' @export
 setMethod(".fullName",   "SVGPanel", function(x) "Spatially Variable Genes")
 #' @rdname SVGPanel

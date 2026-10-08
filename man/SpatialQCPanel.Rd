@@ -3,6 +3,7 @@
 \docType{class}
 \name{SpatialQCPanel-class}
 \alias{SpatialQCPanel-class}
+\alias{.fullName,SpatialQCPanel-method}
 \alias{.panelColor,SpatialQCPanel-method}
 \alias{.defineOutput,SpatialQCPanel-method}
 \alias{.defineInterface,SpatialQCPanel-method}
@@ -12,6 +13,8 @@
 \alias{SpatialQCPanel}
 \title{QC metric histogram for the selected region}
 \usage{
+\S4method{.fullName}{SpatialQCPanel}(x)
+
 \S4method{.panelColor}{SpatialQCPanel}(x)
 
 \S4method{.defineOutput}{SpatialQCPanel}(x)
@@ -27,7 +30,24 @@
 SpatialQCPanel(Metric = "", UseFences = TRUE, ...)
 }
 \arguments{
+\item{x}{A panel instance (the class this page documents).}
+
+\item{se}{The \code{SpatialExperiment} being explored.}
+
+\item{select_info}{A list of selection information, passed by iSEE.}
+
 \item{...}{Other slots, e.g. \code{Selection}.}
+
+\item{all_memory, all_contents}{iSEE's full panel-state list and the
+current selection contents of every panel, passed to
+\code{.generateOutput()} for export/snapshot but unused by this package's
+own panels (selection is handled client-side, see \code{SpatialMapPanel}).}
+
+\item{output, pObjects, rObjects}{The app's Shiny output list and the
+persistent/reactive state environments iSEE passes to every panel
+method.}
+
+\item{input, session}{The current Shiny \code{input} and \code{session} objects.}
 
 \item{Metric}{A numeric \code{colData} column. Empty = first known QC metric
 of the platform.}

@@ -11,6 +11,7 @@ setMethod("initialize", "SpatialQCPanel", function(.Object, ...) {
   .Object
 })
 
+#' @rdname SpatialQCPanel
 #' @export
 setMethod(".fullName",   "SpatialQCPanel", function(x) "QC Histogram")
 #' @rdname SpatialQCPanel
@@ -79,6 +80,7 @@ SpatialQCPanel <- function(Metric = "", UseFences = TRUE, ...)
 
 # ── FOVStatsPanel ───────────────────────────────────────────────────────
 
+#' @rdname FOVStatsPanel
 #' @export
 setMethod(".fullName",   "FOVStatsPanel", function(x) "Per-FOV QC Summary")
 #' @rdname FOVStatsPanel
