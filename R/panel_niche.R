@@ -38,8 +38,10 @@ utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
     # hand-rolled here rather than via SpaceTrooper::plotPolygons() since
     # this panel's "on tissue" plots are already a shared ggplot helper
     # used by several PlotTypes, not just one colourBy column.
-    df <- data.frame(value = values, polygons = colData(se)[["polygons"]])
-    p <- ggplot2::ggplot(df, ggplot2::aes(geometry = polygons, fill = value)) +
+    # colData(se)$polygons is an sf data frame; data.frame() would split it
+    # into polygons.* columns, so build an sf object from its geometry.
+    df <- sf::st_sf(value = values, geometry = sf::st_geometry(colData(se)[["polygons"]]))
+    p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
       ggplot2::geom_sf(colour = NA) +
       ggplot2::theme_void() + ggplot2::labs(title = title, fill = NULL)
     if (discrete) {

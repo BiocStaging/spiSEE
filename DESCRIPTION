@@ -49,6 +49,7 @@ Imports:
     png,
     digest,
     DT,
+    sf,
     shiny
 Suggests:
     SpatialExperimentIO,
