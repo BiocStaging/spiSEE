@@ -97,7 +97,7 @@ setMethod("initialize", "SpatialNichePanel", function(.Object, ...) {
 setMethod(".refineParameters", "SpatialNichePanel", function(x, se) {
   x <- callNextMethod()
   if (!is.null(x) && isTRUE(is.na(x@UsePolygons)))
-    x@UsePolygons <- "polygons" %in% colnames(colData(se))
+    x@UsePolygons <- "polygons" %in% colnames(colData(se)) && ncol(se) <= .POLYGON_AUTO_MAX
   x
 })
 

@@ -4,6 +4,27 @@
 # XeniumSpatialPanel (one class, any platform).
 # ============================================================
 
+# Cells with 'polygons' above this count are drawn as centroids unless the
+# user ticks "Draw cell polygons" by hand.
+.POLYGON_AUTO_MAX <- 20000L
+
+# SpaceTrooper::plotPolygons() runs data.frame(colData(se)), which splits the
+# sf 'polygons' column into polygons.* columns and then fails to find
+# 'polygons'. Draw the geometry directly instead.
+.polygonPlot <- function(se, colorby, palette = NULL) {
+  value <- colData(se)[[colorby]]
+  df <- sf::st_sf(value = value, geometry = sf::st_geometry(colData(se)[["polygons"]]))
+  p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
+    ggplot2::geom_sf(colour = NA) +
+    ggplot2::theme_minimal() + ggplot2::labs(fill = colorby)
+  if (is.numeric(value))
+    return(p + ggplot2::scale_fill_viridis_c(option = "D", na.value = "grey85"))
+  lv <- levels(factor(value))
+  pal <- if (!is.null(palette) && all(lv %in% names(palette))) palette[lv]
+         else stats::setNames(.discretePalette(length(lv)), lv)
+  p + ggplot2::scale_fill_manual(values = pal, na.value = "grey85")
+}
+
 setMethod("initialize", "SpatialPlotPanel", function(.Object, ...) {
   .Object <- callNextMethod(.Object, ...)
   if (length(.Object@ColorBy)     == 0) .Object@ColorBy     <- ""
@@ -22,8 +43,10 @@ setMethod("initialize", "SpatialPlotPanel", function(.Object, ...) {
 #' @export
 setMethod(".refineParameters", "SpatialPlotPanel", function(x, se) {
   x <- callNextMethod()
+  # Default on only when polygons exist and the dataset is small enough to
+  # draw them: thousands of polygons per panel freeze the browser.
   if (!is.null(x) && isTRUE(is.na(x@UsePolygons)))
-    x@UsePolygons <- "polygons" %in% colnames(colData(se))
+    x@UsePolygons <- "polygons" %in% colnames(colData(se)) && ncol(se) <= .POLYGON_AUTO_MAX
   x
 })
 
@@ -101,7 +124,7 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
     # avoids relying on that inconsistency resolving itself upstream.
     if (!"polygons" %in% colnames(colData(se)))
       return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
-    do.call(SpaceTrooper::plotPolygons, c(args, polyColumn = "polygons"))
+    .polygonPlot(se, colorby, args$palette)
   } else {
     do.call(SpaceTrooper::plotCentroids, c(args, size = x@PointSize))
   }
