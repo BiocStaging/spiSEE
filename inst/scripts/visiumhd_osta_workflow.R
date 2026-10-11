@@ -160,32 +160,61 @@ fig(p, "17.2.1_roi", w = 7, h = 7)
 # ---- 17.2.2 ...to SFE ---------------------------------------------------
 # convert from SPE to SFE
 sfe <- toSpatialFeatureExperiment(spe)
+
+# TENxVisiumHD()/import() leaves 'counts' as a DelayedArray/HDF5Array seed
+# pointing at the HDF5 file inside this script's own tempfile() download
+# dir. That seed doesn't survive past this R session: both the finished
+# apps crashed at startup with "invalid class 'DelayedSubset' object: the
+# supplied seed must support extract_array()" the moment iSEE subsetted
+# the reloaded object, because the backing tempdir from the run that wrote
+# the RDS is long gone by the time a fresh Shiny process reads it back.
+# Realize into an ordinary in-memory sparse matrix once, here, so every
+# downstream object (sfe, sfe_unfiltered, every later subset/crop) carries
+# real data rather than a dangling file handle.
+counts(sfe) <- as(counts(sfe), "CsparseMatrix")
+
+# TENxVisiumHD()/import() attaches the lowres tissue image as a
+# PackedRasterImage (a lightweight/lazy class specific to VisiumIO).
+# SpatialFeatureExperiment::cropImg() has methods for BioFormatsImage,
+# ExtImage and SpatRasterImage, but not PackedRasterImage -- so every
+# selection the app makes crashes at render time with "unable to find an
+# inherited method for function 'cropImg' for signature x =
+# 'PackedRasterImage'", since every se[, ids] subset crops attached images
+# along with the data. A real upstream gap (SpatialFeatureExperiment vs.
+# VisiumIO's own image class), not a chapter-reproduction issue, and no
+# panel in this package ever displays the image anyway (checked
+# panel_plot.R/panel_niche.R -- neither references imgRaster()/imgData()
+# at all) -- so drop it here, once, rather than hitting this on every
+# click in the running app.
+imgData(sfe) <- NULL
 # add cell segmentation boundaries
 #
-# On this sample, metadata(spe)$cellseg ends up unusable after the
-# cell_id match/reindex below (either the segmentation geometry itself is
-# empty, same root cause as spe$map near 17.3.2, or the cell_id format
-# doesn't match colnames(spe) -- not disentangled further here). Whichever
-# it is, every later step that touches this geometry (localOutliers(),
-# plotCoords(), even sfe[, j] subsetting) then crashes with "[crop]
-# cannot get a SpatExtent from y", regardless of whether that step names
-# "cellseg" explicitly, because it becomes the object's only/default
-# colGeometry. toSpatialFeatureExperiment()
-# already attaches a working centroid-based default geometry from
-# spatialCoords(spe) on its own -- only overwrite it with cellseg when
-# cellseg actually has usable (non-empty, non-all-NA) geometry; otherwise
-# leave the default in place and report the fallback. The
-# colGeometryName = "cellseg" plot calls further down are all inside
-# .safe_fig() already, so they degrade to a clear skip message instead of
-# a crash when this branch is taken.
+# metadata(spe)$cellseg's real polygons were being discarded here: the
+# GeoJSON's cell_id is a bare integer (3, 4, 5, ...) while colnames(spe)
+# is "cellid_000000003-1" -- a pure ID-format mismatch, not missing data.
+# Confirmed directly against the GeoJSON: 220,704 real, non-empty POLYGON
+# geometries for the full tissue section, and once the numeric id is
+# extracted from colnames(spe) instead of matched as a literal string,
+# every single cell in this (cropped) sample matches one
+# (63005/63005, 0 empty/NA). Extracting the digits rather than assuming a
+# fixed zero-pad width keeps this robust to samples with different id
+# ranges/widths.
 seg <- metadata(spe)$cellseg
 i <- colnames(spe)
-j <- match(i, seg$cell_id)
+i_num <- as.integer(sub("^cellid_0*(\\d+)-1$", "\\1", i))
+j <- match(i_num, seg$cell_id)
 seg <- seg[j, ]; rownames(seg) <- i
 seg_usable <- length(seg) > 0 && nrow(seg) > 0 &&
   !all(sf::st_is_empty(sf::st_geometry(seg)) | is.na(sf::st_geometry(seg)))
 if (seg_usable) {
   colGeometries(sfe) <- list(cellseg = seg)
+  # SpatialPlotPanel's "Draw cell polygons" option reads an sfc geometry
+  # column named colData(se)$polygons (SpaceTrooper::plotPolygons(),
+  # called with polyColumn="polygons") -- a completely separate mechanism
+  # from the colGeometries() above, which only backs the SFE/Voyager
+  # spatial-stats machinery. Verified end-to-end on a 2000-cell subset of
+  # this real sample before wiring it in here.
+  colData(sfe)[["polygons"]] <- sf::st_geometry(seg)
 } else {
   message("SKIPPED (book's cell segmentation boundaries empty on this sample): ",
           "keeping the default centroid geometry instead of 'cellseg'")

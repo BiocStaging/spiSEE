@@ -1,6 +1,5 @@
 #' @import iSEE
-#' @importFrom shiny plotOutput selectInput numericInput sliderInput
-#'   actionButton helpText observeEvent
+#' @importFrom shiny plotOutput selectInput numericInput sliderInput actionButton helpText observeEvent checkboxInput
 NULL
 
 utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
@@ -29,7 +28,27 @@ utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
   "Domains vs expression clusters"         = "domain_vs_cluster"
 )
 
-.tissuePlot <- function(se, values, title, discrete = TRUE) {
+.tissuePlot <- function(se, values, title, discrete = TRUE, use_polygons = FALSE) {
+  has_poly <- "polygons" %in% colnames(colData(se))
+  if (use_polygons && !has_poly)
+    return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
+  if (use_polygons) {
+    # Real cell-shape polygons instead of a centroid scatter; same geom_sf
+    # mechanism as SpatialPlotPanel's UsePolygons (see panel_plot.R), but
+    # hand-rolled here rather than via SpaceTrooper::plotPolygons() since
+    # this panel's "on tissue" plots are already a shared ggplot helper
+    # used by several PlotTypes, not just one colourBy column.
+    df <- data.frame(value = values, polygons = colData(se)[["polygons"]])
+    p <- ggplot2::ggplot(df, ggplot2::aes(geometry = polygons, fill = value)) +
+      ggplot2::geom_sf(colour = NA) +
+      ggplot2::theme_void() + ggplot2::labs(title = title, fill = NULL)
+    if (discrete) {
+      lv <- levels(factor(values))
+      return(p + ggplot2::scale_fill_manual(values = stats::setNames(.discretePalette(length(lv)), lv),
+                                            na.value = "grey85"))
+    }
+    return(p + ggplot2::scale_fill_viridis_c(na.value = "grey85"))
+  }
   xy <- as.data.frame(SpatialExperiment::spatialCoords(se))
   colnames(xy) <- c("x", "y")
   xy$value <- values
@@ -65,7 +84,19 @@ setMethod("initialize", "SpatialNichePanel", function(.Object, ...) {
   if (length(.Object@NNiches)        == 0) .Object@NNiches        <- 6L
   if (length(.Object@Lambda)         == 0) .Object@Lambda         <- 0.2
   if (length(.Object@ComputeTrigger) == 0) .Object@ComputeTrigger <- ""
+  # NA = resolved by .refineParameters() against the dataset, same
+  # pattern as SpatialPlotPanel's UsePolygons (see panel_plot.R).
+  if (length(.Object@UsePolygons)    == 0) .Object@UsePolygons    <- NA
   .Object
+})
+
+#' @rdname SpatialNichePanel
+#' @export
+setMethod(".refineParameters", "SpatialNichePanel", function(x, se) {
+  x <- callNextMethod()
+  if (!is.null(x) && isTRUE(is.na(x@UsePolygons)))
+    x@UsePolygons <- "polygons" %in% colnames(colData(se))
+  x
 })
 
 #' @rdname SpatialNichePanel
@@ -96,6 +127,9 @@ setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) 
                        selected = x@PlotType),
     shiny::selectInput(paste0(enc, "_LabelCol"), "Cell-type column:",
                        choices = labs, selected = sel_lab),
+    shiny::checkboxInput(paste0(enc, "_UsePolygons"),
+                         "Draw cell polygons on tissue plots (slow on large regions)",
+                         value = isTRUE(x@UsePolygons)),
     shiny::numericInput(paste0(enc, "_K"), "Neighbours per cell (k):",
                         value = x@K, min = 2, max = 200, step = 1),
     shiny::numericInput(paste0(enc, "_NNiches"), "Number of niches:",
@@ -145,9 +179,10 @@ setMethod(".generateOutput", "SpatialNichePanel", function(x, se, ...) {
   d <- tryCatch(.nicheData(x, se), error = function(e) e)
   if (inherits(d, "error")) return(.notAvailablePlot(conditionMessage(d)))
   s <- d$se; cd <- colData(s)
+  up <- isTRUE(x@UsePolygons)
   switch(x@PlotType,
-    niche_map     = .tissuePlot(s, cd$niche, sprintf("Niches (k = %d, by %s)", x@K, d$lab)),
-    entropy_map   = .tissuePlot(s, cd$niche_entropy, "Neighbourhood entropy (bits)", discrete = FALSE),
+    niche_map     = .tissuePlot(s, cd$niche, sprintf("Niches (k = %d, by %s)", x@K, d$lab), use_polygons = up),
+    entropy_map   = .tissuePlot(s, cd$niche_entropy, "Neighbourhood entropy (bits)", discrete = FALSE, use_polygons = up),
     niche_heatmap = .enrichmentHeatmap(cd$niche, cd[[d$lab]], "Cell types per niche (log2 obs/exp)"),
     niche_bar     = {
       comp <- SingleCellExperiment::reducedDim(s, "NicheComposition")
@@ -162,8 +197,8 @@ setMethod(".generateOutput", "SpatialNichePanel", function(x, se, ...) {
                       title = "Average neighbourhood per niche") +
         ggplot2::theme_minimal()
     },
-    domain_map    = .tissuePlot(s, cd$spatial_domain, sprintf("Spatial domains (lambda = %.2f)", x@Lambda)),
-    cluster_map   = .tissuePlot(s, cd$expr_cluster, "Expression-only clusters (lambda = 0)"),
+    domain_map    = .tissuePlot(s, cd$spatial_domain, sprintf("Spatial domains (lambda = %.2f)", x@Lambda), use_polygons = up),
+    cluster_map   = .tissuePlot(s, cd$expr_cluster, "Expression-only clusters (lambda = 0)", use_polygons = up),
     domain_vs_cluster = .enrichmentHeatmap(cd$spatial_domain, cd$expr_cluster,
                                            "Domains vs expression clusters (log2 obs/exp)"),
     .notAvailablePlot(paste("Unknown plot type:", x@PlotType)))
@@ -187,7 +222,7 @@ setMethod(".renderOutput", "SpatialNichePanel", function(x, se, output, pObjects
     force(rObjects$modified[[plot_name]])
     pn <- pObjects$memory[[plot_name]]
     list(plot_name, pn@Selection, pn@PlotType, pn@LabelCol,
-         pn@K, pn@NNiches, pn@Lambda, pn@ComputeTrigger)
+         pn@K, pn@NNiches, pn@Lambda, pn@ComputeTrigger, pn@UsePolygons)
   })
 })
 
@@ -202,6 +237,7 @@ setMethod(".createObservers", "SpatialNichePanel", function(x, se, input, sessio
     if (!identical(v, pObjects$memory[[enc]]@PlotType)) {
       pObjects$memory[[enc]]@PlotType <- v; .requestUpdate(enc, rObjects) }
   }, ignoreInit = TRUE)
+  .slotObserver(enc, "UsePolygons", input, pObjects, rObjects, cast = as.logical)
   setters <- list(LabelCol = as.character, K = as.integer, NNiches = as.integer, Lambda = as.numeric)
   for (nm in names(setters)) local({
     field <- nm; cast <- setters[[nm]]
@@ -230,12 +266,17 @@ setMethod(".createObservers", "SpatialNichePanel", function(x, se, input, sessio
 #'   `NA`).
 #' @param K,NNiches,Lambda Neighbours per cell, number of niches, spatial
 #'   weight for domains.
+#' @param UsePolygons Draw real cell-shape polygons instead of a centroid
+#'   scatter on the "on tissue" plot types (needs a `polygons` column, as
+#'   created by SpaceTrooper). `NA` (the default) follows the dataset: on
+#'   at load time if a `polygons` column exists, off otherwise.
 #' @param ... Other slots, e.g. `Selection`.
 #' @return A `SpatialNichePanel` object.
 #' @examples
 #' SpatialNichePanel(K = 30, NNiches = 8)
 #' @export
 SpatialNichePanel <- function(PlotType = "niche_map", LabelCol = NA_character_,
-                              K = 20L, NNiches = 6L, Lambda = 0.2, ...)
+                              K = 20L, NNiches = 6L, Lambda = 0.2, UsePolygons = NA, ...)
   new("SpatialNichePanel", PlotType = PlotType, LabelCol = LabelCol,
-      K = as.integer(K), NNiches = as.integer(NNiches), Lambda = Lambda, ...)
+      K = as.integer(K), NNiches = as.integer(NNiches), Lambda = Lambda,
+      UsePolygons = UsePolygons, ...)

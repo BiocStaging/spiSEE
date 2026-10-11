@@ -95,4 +95,4 @@ setClass("SVGPanel", contains = "SpatialPanelBase",
 setClass("SpatialNichePanel", contains = "SpatialPanelBase",
   slots = c(PlotType = "character", LabelCol = "character",
             K = "integer", NNiches = "integer", Lambda = "numeric",
-            ComputeTrigger = "character"))
+            ComputeTrigger = "character", UsePolygons = "logical"))

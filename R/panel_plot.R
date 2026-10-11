@@ -7,9 +7,24 @@
 setMethod("initialize", "SpatialPlotPanel", function(.Object, ...) {
   .Object <- callNextMethod(.Object, ...)
   if (length(.Object@ColorBy)     == 0) .Object@ColorBy     <- ""
-  if (length(.Object@UsePolygons) == 0) .Object@UsePolygons <- FALSE
+  # NA = not yet resolved against a dataset; .refineParameters() below
+  # turns this into TRUE/FALSE once the data (and whether it has a
+  # 'polygons' column) is known, so polygons default on wherever that
+  # data exists instead of needing to be switched on by hand every time.
+  # A user's own explicit tick/untick is never NA, so it's never touched
+  # again once set.
+  if (length(.Object@UsePolygons) == 0) .Object@UsePolygons <- NA
   if (length(.Object@PointSize)   == 0) .Object@PointSize   <- 0.5
   .Object
+})
+
+#' @rdname SpatialPlotPanel
+#' @export
+setMethod(".refineParameters", "SpatialPlotPanel", function(x, se) {
+  x <- callNextMethod()
+  if (!is.null(x) && isTRUE(is.na(x@UsePolygons)))
+    x@UsePolygons <- "polygons" %in% colnames(colData(se))
+  x
 })
 
 #' @rdname SpatialPlotPanel
@@ -77,9 +92,16 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
   if (x@UsePolygons) {
     # plotPolygons() stops without a "polygons" column, and that error used
     # to hang the panel silently instead of surfacing: check first.
+    #
+    # polyColumn="polygons" is explicit here because plotPolygons()'s own
+    # default ("polygons.global") doesn't match its own hardcoded
+    # stopifnot("polygons" %in% names(colData(spe))) -- those two names
+    # disagree inside SpaceTrooper itself. Matching our own check's name
+    # (colData(se)$polygons, set per-platform by the data-prep scripts)
+    # avoids relying on that inconsistency resolving itself upstream.
     if (!"polygons" %in% colnames(colData(se)))
       return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
-    do.call(SpaceTrooper::plotPolygons, args)
+    do.call(SpaceTrooper::plotPolygons, c(args, polyColumn = "polygons"))
   } else {
     do.call(SpaceTrooper::plotCentroids, c(args, size = x@PointSize))
   }
@@ -106,15 +128,17 @@ setMethod(".createObservers", "SpatialPlotPanel", function(x, se, input, session
 #'
 #' @param ColorBy A `colData` column or a gene name. Empty string = first
 #'   cell-type column, else first QC metric.
-#' @param UsePolygons Draw segmentation polygons instead of centroids
-#'   (needs a `polygons` column, as created by SpaceTrooper).
+#' @param UsePolygons Draw segmentation polygons instead of centroids (needs
+#'   a `polygons` column, as created by SpaceTrooper). `NA` (the default)
+#'   follows the dataset: on at load time if a `polygons` column exists,
+#'   off otherwise.
 #' @param PointSize Centroid size.
 #' @param ... Other slots, e.g. `Selection`.
 #' @return A `SpatialPlotPanel` object.
 #' @examples
 #' SpatialPlotPanel(ColorBy = "total")
 #' @export
-SpatialPlotPanel <- function(ColorBy = "", UsePolygons = FALSE, PointSize = 0.5, ...)
+SpatialPlotPanel <- function(ColorBy = "", UsePolygons = NA, PointSize = 0.5, ...)
   new("SpatialPlotPanel", ColorBy = ColorBy, UsePolygons = UsePolygons, PointSize = PointSize, ...)
 
 # ============================================================
