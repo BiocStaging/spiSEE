@@ -99,3 +99,9 @@ test_that("SVG tables are kept per session, not shared", {
   expect_identical(get("p", envir = .svgTables(a))$gene, "A")
   expect_identical(get("p", envir = .svgTables(b))$gene, "B")
 })
+
+test_that("the launcher offers the spatial panels in 'Organize panels'", {
+  expect_s3_class(iseeSpatial(.makeTestVisiumHDSPE(), mode = "qc"), "shiny.appobj")
+  expect_false(any(vapply(.extraPanels(.makeTestVisiumHDSPE()), is, logical(1), "FOVZoomPanel")))
+  expect_true(any(vapply(.extraPanels(.makeTestSPE()), is, logical(1), "FOVZoomPanel")))
+})

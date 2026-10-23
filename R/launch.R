@@ -36,7 +36,17 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
       "counts" %in% SummarizedExperiment::assayNames(spe))
     SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
   if (is.null(initial)) initial <- .defaultPanels(spe, mode, selection)
-  iSEE::iSEE(spe, initial = initial, ...)
+  args <- list(...)
+  if (is.null(args$extra)) args$extra <- .extraPanels(spe)
+  do.call(iSEE::iSEE, c(list(spe, initial = initial), args))
+}
+
+# Panel types offered in "Organize panels" in addition to the initial ones.
+.extraPanels <- function(spe) {
+  extra <- list(SpatialPlotPanel(), SpatialQCPanel(), SpatialStatsPanel(),
+                SVGPanel(), SpatialNichePanel())
+  if (.selectionUnit(spe) == "fov") extra <- c(extra, list(FOVZoomPanel(), FOVStatsPanel()))
+  extra
 }
 
 .defaultPanels <- function(spe, mode, selection = "") {
