@@ -91,3 +91,11 @@ test_that("genes with a hyphen in their name can be plotted", {
   expect_s3_class(p, "ggplot")
   expect_no_error(ggplot2::ggplot_build(p))
 })
+
+test_that("SVG tables are kept per session, not shared", {
+  a <- new.env(); b <- new.env()
+  assign("p", data.frame(gene = "A"), envir = .svgTables(a))
+  assign("p", data.frame(gene = "B"), envir = .svgTables(b))
+  expect_identical(get("p", envir = .svgTables(a))$gene, "A")
+  expect_identical(get("p", envir = .svgTables(b))$gene, "B")
+})

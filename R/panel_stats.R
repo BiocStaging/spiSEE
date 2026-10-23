@@ -110,8 +110,13 @@ setMethod("initialize", "SVGPanel", function(.Object, ...) {
 })
 
 # Last computed table per panel, so a row click can find its gene without
-# recomputing. Session-scoped by panel name.
-.svgTableCache <- new.env(parent = emptyenv())
+# recomputing. Kept on the session's own pObjects (a package-level cache
+# would be shared between simultaneous sessions of one server).
+.svgTables <- function(pObjects) {
+  if (is.null(pObjects$iseeSpatial_svg_tables))
+    pObjects$iseeSpatial_svg_tables <- new.env(parent = emptyenv())
+  pObjects$iseeSpatial_svg_tables
+}
 
 #' @rdname SVGPanel
 #' @export
@@ -155,7 +160,7 @@ setMethod(".renderOutput", "SVGPanel", function(x, se, output, pObjects, rObject
     key <- list(panel@ComputeTrigger)
     if (is.null(last_tbl) || !identical(key, last_key)) {
       last_tbl <<- .generateOutput(panel, se); last_key <<- key
-      .svgTableCache[[enc]] <- last_tbl
+      assign(enc, last_tbl, envir = .svgTables(pObjects))
     }
     tbl <- last_tbl; names(tbl) <- c("Gene", "Moran's I")
     DT::formatRound(DT::datatable(tbl, selection = "single", rownames = FALSE,
@@ -172,7 +177,7 @@ setMethod(".createObservers", "SVGPanel", function(x, se, input, session, pObjec
   .computeObserver(enc, input, pObjects, rObjects)
   shiny::observeEvent(input[[paste0(enc, "_rows_selected")]], {
     idx <- input[[paste0(enc, "_rows_selected")]]
-    tbl <- .svgTableCache[[enc]]
+    tbl <- get0(enc, envir = .svgTables(pObjects), inherits = FALSE)
     if (is.null(tbl) || !length(idx) || idx > nrow(tbl)) return()
     target <- pObjects$memory[[enc]]@LinkedPanel
     if (!nzchar(target) || is.null(pObjects$memory[[target]]) ||
