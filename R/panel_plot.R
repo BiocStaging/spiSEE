@@ -84,7 +84,7 @@ setMethod(".defineInterface", "SpatialPlotPanel", function(x, se, select_info) {
     shiny::selectizeInput(paste0(enc, "_ColorBy"), "Colour by (annotation, QC metric or gene):",
                           choices = .resolveColorBy(x, se), selected = .resolveColorBy(x, se)),
     shiny::checkboxInput(paste0(enc, "_UsePolygons"), "Draw cell polygons (slow on large regions)",
-                         value = x@UsePolygons),
+                         value = isTRUE(x@UsePolygons)),
     shiny::sliderInput(paste0(enc, "_PointSize"), "Point size:", min = 0.1, max = 3,
                        value = x@PointSize, step = 0.1),
     .selectionHelp(se)
@@ -112,7 +112,7 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
   }
   if (.selectionUnit(se) == "fov") args["sampleId"] <- list(NULL)   # as the CosMx panels always did
 
-  if (x@UsePolygons) {
+  if (isTRUE(x@UsePolygons)) {
     # plotPolygons() stops without a "polygons" column, and that error used
     # to hang the panel silently instead of surfacing: check first.
     #
