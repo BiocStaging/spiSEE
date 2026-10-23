@@ -16,10 +16,6 @@
   }
 }
 
-# Kept for scripts written against the old API.
-.subsetByFOV   <- function(se, sel_fovs)  { if (!nzchar(sel_fovs)) return(se); se[, as.character(colData(se)[["fov"]]) %in% .splitIDs(sel_fovs)] }
-.subsetByCells <- function(se, sel_cells) { if (!nzchar(sel_cells)) return(se); se[, colnames(se) %in% .splitIDs(sel_cells)] }
-
 # Every panel with a `Selection` slot receives the map's selection. Found by
 # slot rather than a fixed list, so panels added at runtime are included.
 .findSelectablePanels <- function(pObjects) {

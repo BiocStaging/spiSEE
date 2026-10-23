@@ -2,7 +2,7 @@
 # smoke tests -- real CosMx data is a ~450MB RDS living outside the repo,
 # far too heavy to ship or load in a test suite. This fixture is just big
 # enough (a handful of FOVs, a few dozen cells) to exercise the actual code
-# paths that don't need real segmentation polygons (.subsetByFOV, panel
+# paths that don't need real segmentation polygons (.subsetBySelection, panel
 # constructors, the live compute functions' graceful-fallback branches).
 # Tests that need a real neighbour graph (e.g. the "graph_plot" spatial
 # stat) skip unless the real dataset is present locally -- see
@@ -46,7 +46,7 @@
 }
 
 # Small synthetic Xenium-shaped SpatialExperiment, same reasoning as
-# .makeTestSPE() above but for .subsetByCells()/Xenium panel constructors.
+# .makeTestSPE() above but for .subsetBySelection()/Xenium panel constructors.
 .makeTestXeniumSPE <- function(n_cells = 40, n_genes = 10, seed = 1) {
   set.seed(seed)
   counts <- matrix(rpois(n_cells * n_genes, lambda = 3), nrow = n_genes,
