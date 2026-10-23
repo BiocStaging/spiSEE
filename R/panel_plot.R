@@ -99,12 +99,19 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
   if (ncol(se) == 0) return(.notAvailablePlot("No cells in this selection"))
   if (identical(colorby, "fov") && "fov" %in% colnames(colData(se))) return(.plotFOVOverview(se))
   se <- .forceCategorical(se, colorby)
+  label <- colorby
+  pal_col <- paste0(label, "_colors")
   if (!colorby %in% colnames(colData(se)) && colorby %in% rownames(se))
     colData(se)[[colorby]] <- as.numeric(SingleCellExperiment::logcounts(se)[colorby, ])
+  # SpaceTrooper rebuilds a data.frame from colData, which renames "MT-ATP6"
+  # to "MT.ATP6" and breaks the lookup: plot a copy under a safe name.
+  if (!identical(colorby, make.names(colorby))) {
+    colData(se)[[".colour_by"]] <- colData(se)[[colorby]]
+    colorby <- ".colour_by"
+  }
 
   args <- list(se, colourBy = colorby)
   # Stored label colours (CosMx: SingleR_label_colors) are reused when present.
-  pal_col <- paste0(colorby, "_colors")
   if (pal_col %in% colnames(colData(se))) {
     map <- unique(data.frame(l = as.character(colData(se)[[colorby]]),
                              c = as.character(colData(se)[[pal_col]])))
@@ -124,9 +131,11 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
     # avoids relying on that inconsistency resolving itself upstream.
     if (!"polygons" %in% colnames(colData(se)))
       return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
-    .polygonPlot(se, colorby, args$palette)
+    .polygonPlot(se, colorby, args$palette) + ggplot2::labs(fill = label)
   } else {
-    do.call(SpaceTrooper::plotCentroids, c(args, size = x@PointSize))
+    p <- do.call(SpaceTrooper::plotCentroids, c(args, size = x@PointSize))
+    if (!identical(label, colorby)) p <- p + ggplot2::labs(colour = label, fill = label)
+    p
   }
 })
 

@@ -82,3 +82,12 @@ test_that("Xenium test bundle: loader, k-NN graph and known top SVG", {
   tbl <- .computeSVGRanking(spe, top_n = 50)
   expect_identical(tbl$gene[1], "Defa5")   # verified on this bundle with k = 6
 })
+
+test_that("genes with a hyphen in their name can be plotted", {
+  skip_if_not_installed("SpaceTrooper")
+  spe <- .makeTestVisiumHDSPE()
+  rownames(spe)[1] <- "MT-ATP6"
+  p <- .generateOutput(SpatialPlotPanel(ColorBy = "MT-ATP6"), spe)
+  expect_s3_class(p, "ggplot")
+  expect_no_error(ggplot2::ggplot_build(p))
+})
