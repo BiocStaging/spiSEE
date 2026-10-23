@@ -120,15 +120,8 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
   if (.selectionUnit(se) == "fov") args["sampleId"] <- list(NULL)   # as the CosMx panels always did
 
   if (isTRUE(x@UsePolygons)) {
-    # plotPolygons() stops without a "polygons" column, and that error used
-    # to hang the panel silently instead of surfacing: check first.
-    #
-    # polyColumn="polygons" is explicit here because plotPolygons()'s own
-    # default ("polygons.global") doesn't match its own hardcoded
-    # stopifnot("polygons" %in% names(colData(spe))) -- those two names
-    # disagree inside SpaceTrooper itself. Matching our own check's name
-    # (colData(se)$polygons, set per-platform by the data-prep scripts)
-    # avoids relying on that inconsistency resolving itself upstream.
+    # Without a "polygons" column there is nothing to draw: say so rather
+    # than hang the panel silently.
     if (!"polygons" %in% colnames(colData(se)))
       return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
     .polygonPlot(se, colorby, args$palette) + ggplot2::labs(fill = label)
