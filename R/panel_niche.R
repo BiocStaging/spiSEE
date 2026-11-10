@@ -10,12 +10,14 @@ utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
 # Follows the map selection through the `Selection` slot (SpatialPanelBase),
 # on any platform.
 #
-# Two modes, chosen automatically:
-#  - Stored: if computeNiches()/computeSpatialDomains() were run offline
-#    (inst/scripts/precompute_niches.R), the stored colData columns are shown
-#    instantly for the current selection.
-#  - Recompute: pressing Compute re-runs the analysis on the current
-#    selection with the parameters in the panel (k, number of niches, lambda).
+# In the app nothing is computed until Compute is pressed:
+#  - Before Compute: the full-data result is shown on the whole tissue
+#    (stored by computeNiches()/computeSpatialDomains() offline, see
+#    inst/scripts/precompute_niches.R, else computed once on all cells).
+#  - Compute: runs on the map selection at that moment with the panel's
+#    parameters (k, number of niches, lambda). Later selections or parameter
+#    changes wait for the next Compute; switching the plot type reuses the
+#    result.
 # ============================================================
 
 .NICHE_PLOTS <- c(
@@ -141,8 +143,9 @@ setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) 
     shiny::helpText(status),
     shiny::actionButton(paste0(enc, "_Compute"), "Compute on current selection",
                         class = "btn btn-primary btn-sm", width = "100%"),
-    shiny::helpText("Without Compute, the precomputed full-data result is shown",
-      "for the selected cells (instant). Compute re-runs on the selection only.")
+    shiny::helpText("Until Compute is pressed, the full-data result is shown on the",
+      "whole tissue. Compute runs on the current map selection; a new selection",
+      "or new parameters wait for the next Compute.")
   ))
 })
 
@@ -171,21 +174,38 @@ setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) 
   list(se = se, lab = lab)
 }
 
-#' @rdname SpatialNichePanel
-#' @export
-setMethod(".generateOutput", "SpatialNichePanel", function(x, se, ...) {
+# Checks, analysis (or a cached one) and plot. `cache` holds the results of
+# one Compute, per analysis kind, so switching the plot type does not re-run
+# it; `note` is added to the plot to say what the result was computed on.
+.nicheOutput <- function(x, se, cache = new.env(), note = NULL) {
   if (ncol(.subsetBySelection(se, x@Selection)) < 50)
     return(.notAvailablePlot("Too few cells in this selection (need >= 50)"))
-  if (is.na(x@LabelCol) && is.na(.defaultLabelCol(se)) && !x@PlotType %in% c("domain_map", "cluster_map", "domain_vs_cluster"))
+  wants_domains <- x@PlotType %in% c("domain_map", "cluster_map", "domain_vs_cluster")
+  if (is.na(x@LabelCol) && is.na(.defaultLabelCol(se)) && !wants_domains)
     return(.notAvailablePlot("No categorical cell-type column found in colData"))
-  d <- tryCatch(.nicheData(x, se), error = function(e) e)
-  if (inherits(d, "error")) return(.notAvailablePlot(conditionMessage(d)))
+  kind <- if (wants_domains) "domains" else "niches"
+  d <- cache[[kind]]
+  if (is.null(d)) {
+    d <- tryCatch(.nicheData(x, se), error = function(e) e)
+    if (inherits(d, "error")) return(.notAvailablePlot(conditionMessage(d)))
+    cache[[kind]] <- d
+  }
+  .nichePlot(x, d, note)
+}
+
+#' @rdname SpatialNichePanel
+#' @export
+setMethod(".generateOutput", "SpatialNichePanel", function(x, se, ...) .nicheOutput(x, se))
+
+.nichePlot <- function(x, d, note = NULL) {
   s <- d$se; cd <- colData(s)
   up <- isTRUE(x@UsePolygons)
-  switch(x@PlotType,
+  # heatmaps are not ggplots: the note goes under the title
+  ht <- function(title) if (is.null(note)) title else paste0(title, "\n", note)
+  p <- switch(x@PlotType,
     niche_map     = .tissuePlot(s, cd$niche, sprintf("Niches (k = %d, by %s)", x@K, d$lab), use_polygons = up),
     entropy_map   = .tissuePlot(s, cd$niche_entropy, "Neighbourhood entropy (bits)", discrete = FALSE, use_polygons = up),
-    niche_heatmap = .enrichmentHeatmap(cd$niche, cd[[d$lab]], "Cell types per niche (log2 obs/exp)"),
+    niche_heatmap = .enrichmentHeatmap(cd$niche, cd[[d$lab]], ht("Cell types per niche (log2 obs/exp)")),
     niche_bar     = {
       comp <- SingleCellExperiment::reducedDim(s, "NicheComposition")
       ok <- !is.na(cd$niche)
@@ -202,15 +222,36 @@ setMethod(".generateOutput", "SpatialNichePanel", function(x, se, ...) {
     domain_map    = .tissuePlot(s, cd$spatial_domain, sprintf("Spatial domains (lambda = %.2f)", x@Lambda), use_polygons = up),
     cluster_map   = .tissuePlot(s, cd$expr_cluster, "Expression-only clusters (lambda = 0)", use_polygons = up),
     domain_vs_cluster = .enrichmentHeatmap(cd$spatial_domain, cd$expr_cluster,
-                                           "Domains vs expression clusters (log2 obs/exp)"),
+                                           ht("Domains vs expression clusters (log2 obs/exp)")),
     .notAvailablePlot(paste("Unknown plot type:", x@PlotType)))
-})
+  if (!is.null(note) && inherits(p, "ggplot")) p <- p + ggplot2::labs(caption = note)
+  p
+}
 
 #' @rdname SpatialNichePanel
 #' @export
 setMethod(".renderOutput", "SpatialNichePanel", function(x, se, output, pObjects, rObjects) {
-  .renderCachedSpatialPlot(x, se, output, pObjects, rObjects,
-    c("Selection", "PlotType", "LabelCol", "K", "NNiches", "Lambda", "ComputeTrigger", "UsePolygons"))
+  plot_name <- .getEncodedName(x)
+  # Selection and parameters are not in the key: they apply on Compute only.
+  key <- .panelKey(plot_name, pObjects, rObjects,
+                   function(pn) list(pn@PlotType, pn@UsePolygons, pn@ComputeTrigger))
+  last <- new.env()   # this session's last Compute: panel snapshot + results
+  output[[plot_name]] <- shiny::renderPlot({
+    key()
+    x <- pObjects$memory[[plot_name]]
+    if (!identical(last$trigger, x@ComputeTrigger)) {
+      snap <- x
+      if (!nzchar(x@ComputeTrigger)) snap@Selection <- ""
+      last$trigger <- x@ComputeTrigger; last$snap <- snap; last$cache <- new.env()
+    }
+    snap <- last$snap
+    snap@PlotType <- x@PlotType; snap@UsePolygons <- x@UsePolygons
+    n <- ncol(.subsetBySelection(se, snap@Selection))
+    note <- if (!nzchar(snap@ComputeTrigger))
+      "All cells (full-data result). Press Compute to run on the map selection."
+    else sprintf("Computed on %d cells (map selection at last Compute).", n)
+    .drawPlot(.nicheOutput(snap, se, last$cache, note))
+  })
 })
 
 #' @rdname SpatialNichePanel

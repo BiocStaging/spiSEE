@@ -91,3 +91,20 @@ test_that("SpatialNichePanel constructor defaults", {
   expect_identical(p@NNiches, 6L)
   expect_identical(p@Selection, "")
 })
+
+test_that("niche results are reused when only the plot type changes", {
+  skip_if_not_installed("SpatialExperiment")
+  spe <- .makeTestSPE(n_cells = 300)
+  calls <- 0
+  real <- .nicheData
+  local_mocked_bindings(.nicheData = function(x, se) { calls <<- calls + 1; real(x, se) })
+  cache <- new.env()
+  p <- SpatialNichePanel(LabelCol = "SingleR_label", K = 10L, NNiches = 3L, ComputeTrigger = "t1")
+  out1 <- .nicheOutput(p, spe, cache, note = "Computed on 300 cells")
+  p@PlotType <- "niche_heatmap"; out2 <- .nicheOutput(p, spe, cache)
+  p@PlotType <- "niche_bar";     out3 <- .nicheOutput(p, spe, cache)
+  expect_equal(calls, 1)
+  expect_s3_class(out1, "ggplot")
+  expect_identical(out1$labels$caption, "Computed on 300 cells")
+  expect_s3_class(out2, "pheatmap")
+})
