@@ -23,3 +23,8 @@ test_that(".panelKey reacts only to its own panel and to real slot changes", {
     expect_identical(seen$key, "c")
   })
 })
+
+test_that("an empty ColorBy from a loading menu is ignored", {
+  expect_identical(.castColorBy(""), NA_character_)
+  expect_identical(.castColorBy("Malat1"), "Malat1")
+})

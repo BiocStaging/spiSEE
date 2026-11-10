@@ -132,6 +132,15 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
   }
 })
 
+# A server-side selectize reports "" while its choices are still loading.
+# Storing it would change the cache key, so the plot was drawn once with ""
+# (resolved to the default column, not the panel's gene) and again when the
+# real value arrived. "" is never a menu choice: ignore it.
+.castColorBy <- function(v) {
+  v <- as.character(v)
+  if (identical(v, "")) NA_character_ else v
+}
+
 #' @rdname SpatialPlotPanel
 #' @export
 setMethod(".renderOutput", "SpatialPlotPanel", function(x, se, output, pObjects, rObjects) {
@@ -144,7 +153,7 @@ setMethod(".renderOutput", "SpatialPlotPanel", function(x, se, output, pObjects,
 setMethod(".createObservers", "SpatialPlotPanel", function(x, se, input, session, pObjects, rObjects) {
   callNextMethod(); enc <- .getEncodedName(x)
   .serverSelectize(session, enc, "ColorBy", .colorByChoices(se), .resolveColorBy(x, se))
-  .slotObserver(enc, "ColorBy", input, pObjects, rObjects, cast = as.character)
+  .slotObserver(enc, "ColorBy", input, pObjects, rObjects, cast = .castColorBy)
   .slotObserver(enc, "UsePolygons", input, pObjects, rObjects, cast = as.logical)
   .slotObserver(enc, "PointSize", input, pObjects, rObjects, cast = as.numeric)
 })
