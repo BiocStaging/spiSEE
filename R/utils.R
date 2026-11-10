@@ -36,22 +36,32 @@
   } else p
 }
 
-# Cached plot rendering shared by every plot panel.
+# Reactive render key of one panel.
 #
-# iSEE's rObjects$modified is reassigned as a whole list on every update, so
-# ANY panel's .requestUpdate() invalidates every panel's render block. The
-# cache key is built from this panel's own slots: an unrelated change is a
-# cache hit (no recompute, no re-transmission, no flicker).
+# iSEE's .requestUpdate() reassigns the whole rObjects$modified list, and
+# iSEE resets it right after, so an output that reads it is invalidated
+# twice by every update of any panel: plots grey out and are re-sent, tables
+# are rebuilt. This value changes only when this panel was marked as
+# modified AND the slots in key_fun() differ; reactiveVal() ignores identical
+# values, so outputs that read it re-run only for their own changes.
+.panelKey <- function(enc, pObjects, rObjects, key_fun) {
+  rv <- shiny::reactiveVal(key_fun(pObjects$memory[[enc]]))
+  shiny::observe({
+    if (enc %in% names(rObjects$modified)) rv(key_fun(pObjects$memory[[enc]]))
+  })
+  rv
+}
+
+# Cached plot rendering shared by every plot panel; re-renders only when one
+# of key_slots changes (see .panelKey).
 .renderCachedSpatialPlot <- function(x, se, output, pObjects, rObjects, key_slots) {
   plot_name <- .getEncodedName(x)
+  key <- .panelKey(plot_name, pObjects, rObjects,
+                   function(pn) lapply(key_slots, function(s) methods::slot(pn, s)))
   output[[plot_name]] <- shiny::renderCachedPlot({
-    force(rObjects$modified[[plot_name]])
+    key()
     .drawPlot(.generateOutput(pObjects$memory[[plot_name]], se))
-  }, cacheKeyExpr = {
-    force(rObjects$modified[[plot_name]])
-    pn <- pObjects$memory[[plot_name]]
-    c(list(plot_name), lapply(key_slots, function(s) methods::slot(pn, s)))
-  })
+  }, cacheKeyExpr = list(plot_name, key()))
 }
 
 # One observer per simple input <-> slot pair.

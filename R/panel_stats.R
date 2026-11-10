@@ -153,16 +153,14 @@ setMethod(".generateOutput", "SVGPanel", function(x, se, ...) {
 #' @export
 setMethod(".renderOutput", "SVGPanel", function(x, se, output, pObjects, rObjects) {
   enc <- .getEncodedName(x)
-  last_key <- NULL; last_tbl <- NULL
+  # Rebuilt only on Compute: re-sending the table resets its page, order and
+  # selected row.
+  key <- .panelKey(enc, pObjects, rObjects, function(pn) pn@ComputeTrigger)
   output[[enc]] <- DT::renderDataTable({
-    force(rObjects$modified[[enc]])
-    panel <- pObjects$memory[[enc]]
-    key <- list(panel@ComputeTrigger)
-    if (is.null(last_tbl) || !identical(key, last_key)) {
-      last_tbl <<- .generateOutput(panel, se); last_key <<- key
-      assign(enc, last_tbl, envir = .svgTables(pObjects))
-    }
-    tbl <- last_tbl; names(tbl) <- c("Gene", "Moran's I")
+    key()
+    tbl <- .generateOutput(pObjects$memory[[enc]], se)
+    assign(enc, tbl, envir = .svgTables(pObjects))
+    names(tbl) <- c("Gene", "Moran's I")
     DT::formatRound(DT::datatable(tbl, selection = "single", rownames = FALSE,
       options = list(pageLength = 15, order = list(list(1, "desc")))), "Moran's I", 3)
   })

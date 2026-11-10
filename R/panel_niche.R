@@ -209,23 +209,8 @@ setMethod(".generateOutput", "SpatialNichePanel", function(x, se, ...) {
 #' @rdname SpatialNichePanel
 #' @export
 setMethod(".renderOutput", "SpatialNichePanel", function(x, se, output, pObjects, rObjects) {
-  plot_name <- .getEncodedName(x)
-  # Same renderCachedPlot pattern as the stats panels: rObjects$modified is
-  # shared, so cache on this panel's own state to avoid re-rendering on
-  # unrelated panel changes.
-  output[[plot_name]] <- shiny::renderCachedPlot({
-    force(rObjects$modified[[plot_name]])
-    p <- .generateOutput(pObjects$memory[[plot_name]], se)
-    if (inherits(p, "pheatmap") || inherits(p, "gtable")) {
-      grid::grid.newpage(); grid::grid.draw(if (inherits(p, "pheatmap")) p$gtable else p)
-      invisible(NULL)
-    } else p
-  }, cacheKeyExpr = {
-    force(rObjects$modified[[plot_name]])
-    pn <- pObjects$memory[[plot_name]]
-    list(plot_name, pn@Selection, pn@PlotType, pn@LabelCol,
-         pn@K, pn@NNiches, pn@Lambda, pn@ComputeTrigger, pn@UsePolygons)
-  })
+  .renderCachedSpatialPlot(x, se, output, pObjects, rObjects,
+    c("Selection", "PlotType", "LabelCol", "K", "NNiches", "Lambda", "ComputeTrigger", "UsePolygons"))
 })
 
 #' @rdname SpatialNichePanel
