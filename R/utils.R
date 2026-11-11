@@ -141,8 +141,8 @@
 # One observer per simple input <-> slot pair.
 #   cast:     coerce the input value to the slot type
 #   redraw:   request a re-render (FALSE for parameters that only apply on Compute)
-# multiple: NULL input means "nothing selected" (multi-select) instead of
-# "ignore"
+#   multiple: NULL input means "nothing selected" (multi-select) instead
+#             of "ignore"
 .slotObserver <- function(enc, field, input, pObjects, rObjects,
                           cast = identity, redraw = TRUE, multiple = FALSE) {
     id <- paste0(enc, "_", field)

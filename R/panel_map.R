@@ -308,64 +308,61 @@ setMethod(".createObservers", "SpatialMapPanel",
     callNextMethod()
     enc <- .getEncodedName(x)
     all_ids <- .allRegionIDs(se)
+    .mapPendingObservers(enc, input, pObjects)
+    apply_sel <- function(ids)
+        .applyMapSelection(enc, ids, session, pObjects, rObjects)
 
-    # Pending state mirrored from the browser: stored only, nothing re-renders.
-    shiny::observeEvent(input[[paste0(enc, "_pendingSync")]],
-        {
-            pObjects$memory[[enc]]@PendingIDs <- paste(input[[paste0(enc,
-                "_pendingSync")]], collapse = ",")
-        },
-        ignoreNULL = FALSE,
-        ignoreInit = TRUE)
-    shiny::observeEvent(input[[paste0(enc, "_pendingRemoveSync")]],
-        {
-            pObjects$memory[[enc]]@PendingRemoveIDs <- paste(input[[paste0(enc,
-                "_pendingRemoveSync")]], collapse = ",")
-        },
-        ignoreNULL = FALSE,
-        ignoreInit = TRUE)
-
-    # `ids` must be the FULL new committed set, not just this round's pending
-    # clicks -- it becomes both the panels' Selection and the browser's
-    # `committed` set, so anything left out here is dropped everywhere.
-    .apply <- function(ids) {
-        sel <- paste(ids, collapse = ",")
-        for (target in .findSelectablePanels(pObjects)) {
-            pObjects$memory[[target]]@Selection <- sel
-            .spatialUpdate(target, rObjects)
-        }
-        pObjects$memory[[enc]]@CommittedIDs <- sel
-        pObjects$memory[[enc]]@PendingIDs <- ""
-        pObjects$memory[[enc]]@PendingRemoveIDs <- ""
-        session$sendCustomMessage(paste0(enc, "_markCommitted"), as.list(ids))
-    }
-
-    shiny::observeEvent(input[[paste0(enc, "_Validate")]],
-        {
-            # Previously committed tiles aren't re-sent by the browser on every
-            # click
-            # (only the deltas are, via PendingIDs/PendingRemoveIDs), so the new
-            # committed set must be folded in from the panel's own CommittedIDs
-            # --
-            # otherwise a second Validate round wipes out everything from the
-            # first.
-            committed <- .splitIDs(pObjects$memory[[enc]]@CommittedIDs)
-            pending   <- .splitIDs(pObjects$memory[[enc]]@PendingIDs)
-            removed   <- .splitIDs(pObjects$memory[[enc]]@PendingRemoveIDs)
-            .apply(setdiff(union(committed, pending), removed))
-        },
-        ignoreInit = TRUE)
+    shiny::observeEvent(input[[paste0(enc, "_Validate")]], {
+        # Previously committed tiles aren't re-sent by the browser on every
+        # click (only the deltas are, via PendingIDs/PendingRemoveIDs), so the
+        # new committed set must be folded in from the panel's own
+        # CommittedIDs -- otherwise a second Validate round wipes out
+        # everything from the first.
+        mem <- pObjects$memory[[enc]]
+        committed <- .splitIDs(mem@CommittedIDs)
+        pending <- .splitIDs(mem@PendingIDs)
+        removed <- .splitIDs(mem@PendingRemoveIDs)
+        apply_sel(setdiff(union(committed, pending), removed))
+    }, ignoreInit = TRUE)
 
     shiny::observeEvent(input[[paste0(enc, "_ClearPending")]],
-    .apply(character(0)), ignoreInit = TRUE)
+                        apply_sel(character(0)), ignoreInit = TRUE)
 
-    shiny::observeEvent(input[[paste0(enc, "_SelectAll")]],
-        {
-            pObjects$memory[[enc]]@PendingIDs <- paste(all_ids, collapse = ",")
-            session$sendCustomMessage(paste0(enc, "_selectAll"), list())
-        },
-        ignoreInit = TRUE)
+    shiny::observeEvent(input[[paste0(enc, "_SelectAll")]], {
+        pObjects$memory[[enc]]@PendingIDs <- paste(all_ids, collapse = ",")
+        session$sendCustomMessage(paste0(enc, "_selectAll"), list())
+    }, ignoreInit = TRUE)
 })
+
+# Pending state mirrored from the browser: stored only, nothing re-renders.
+.mapPendingObservers <- function(enc, input, pObjects) {
+    sync <- function(input_name, slot) {
+        id <- paste0(enc, input_name)
+        shiny::observeEvent(input[[id]], {
+            methods::slot(pObjects$memory[[enc]], slot) <-
+                paste(input[[id]], collapse = ",")
+        }, ignoreNULL = FALSE, ignoreInit = TRUE)
+    }
+    sync("_pendingSync", "PendingIDs")
+    sync("_pendingRemoveSync", "PendingRemoveIDs")
+    invisible(NULL)
+}
+
+# `ids` must be the FULL new committed set, not just this round's pending
+# clicks -- it becomes both the panels' Selection and the browser's
+# `committed` set, so anything left out here is dropped everywhere.
+.applyMapSelection <- function(enc, ids, session, pObjects, rObjects) {
+    sel <- paste(ids, collapse = ",")
+    for (target in .findSelectablePanels(pObjects)) {
+        pObjects$memory[[target]]@Selection <- sel
+        .spatialUpdate(target, rObjects)
+    }
+    pObjects$memory[[enc]]@CommittedIDs <- sel
+    pObjects$memory[[enc]]@PendingIDs <- ""
+    pObjects$memory[[enc]]@PendingRemoveIDs <- ""
+    session$sendCustomMessage(paste0(enc, "_markCommitted"), as.list(ids))
+}
+
 
 #' Overview map for building a region selection
 #'

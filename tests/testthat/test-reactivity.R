@@ -63,3 +63,32 @@ test_that("panel errors become a readable validation message (F3)", {
     err2 <- tryCatch(.safeOutput(shiny::req(FALSE), "P"), error = function(e) e)
     expect_s3_class(err2, "shiny.silent.error")
 })
+
+test_that("map selection: browser state is stored, Validate sets every panel", {
+    shiny::testServer(function(input, output, session) {
+        pObjects <- new.env()
+        pObjects$memory <- list(SpatialMapPanel1 = SpatialMapPanel(),
+                                SpatialPlotPanel1 = SpatialPlotPanel(),
+                                SpatialQCPanel1 = SpatialQCPanel())
+        rObjects <- shiny::reactiveValues(modified = list())
+        .mapPendingObservers("SpatialMapPanel1", input, pObjects)
+    }, {
+        session$flushReact()   # observers use ignoreInit = TRUE
+        session$setInputs(SpatialMapPanel1_pendingSync = c("3", "5"),
+                          SpatialMapPanel1_pendingRemoveSync = "7")
+        map <- pObjects$memory$SpatialMapPanel1
+        expect_identical(map@PendingIDs, "3,5")
+        expect_identical(map@PendingRemoveIDs, "7")
+
+        .applyMapSelection("SpatialMapPanel1", c("3", "5"), session,
+                           pObjects, rObjects)
+        expect_identical(pObjects$memory$SpatialPlotPanel1@Selection, "3,5")
+        expect_identical(pObjects$memory$SpatialQCPanel1@Selection, "3,5")
+        map <- pObjects$memory$SpatialMapPanel1
+        expect_identical(map@CommittedIDs, "3,5")
+        expect_identical(map@PendingIDs, "")
+        expect_identical(map@PendingRemoveIDs, "")
+        expect_false(is.null(shiny::isolate(
+            rObjects[[.updateName("SpatialPlotPanel1")]])))
+    })
+})

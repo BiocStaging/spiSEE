@@ -51,7 +51,7 @@ test_that("plot panels render on synthetic data without the app", {
                     "ggplot")
     p <- .generateOutput(SpatialPlotPanel(UsePolygons = TRUE), spe)
     expect_s3_class(p, "ggplot")    # graceful message, no polygons loaded
-    # not a tile platform
+    # not a tile platform: a message, not an error
     expect_s3_class(.generateOutput(FOVZoomPanel(), spe), "ggplot")
 })
 
