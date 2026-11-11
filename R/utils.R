@@ -70,6 +70,19 @@
   rv
 }
 
+# Runs a panel's output code. An R error is shown in the panel as its
+# message (validate(), grey text) and logged to the console, instead of
+# Shiny's generic error output (seen as "[object Object]", F3). Shiny's own
+# silent errors (req(), validate()) pass through unchanged. Errors are not
+# cached by renderCachedPlot, so the panel retries on its next update.
+.safeOutput <- function(expr, panel) {
+  tryCatch(expr, error = function(e) {
+    if (inherits(e, "shiny.silent.error")) stop(e)
+    message("[iseeSpatial] ", panel, ": ", conditionMessage(e))
+    shiny::validate(shiny::need(FALSE, paste("Error:", conditionMessage(e))))
+  })
+}
+
 # Cached plot rendering shared by every plot panel; re-renders only when one
 # of key_slots changes (see .panelKey).
 .renderCachedSpatialPlot <- function(x, se, output, pObjects, rObjects, key_slots) {
@@ -78,7 +91,7 @@
                    function(pn) lapply(key_slots, function(s) methods::slot(pn, s)))
   output[[plot_name]] <- shiny::renderCachedPlot({
     key()
-    .drawPlot(.generateOutput(pObjects$memory[[plot_name]], se))
+    .safeOutput(.drawPlot(.generateOutput(pObjects$memory[[plot_name]], se)), plot_name)
   }, cacheKeyExpr = list(plot_name, key()))
 }
 

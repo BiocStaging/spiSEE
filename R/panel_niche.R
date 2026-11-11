@@ -250,7 +250,7 @@ setMethod(".renderOutput", "SpatialNichePanel", function(x, se, output, pObjects
     note <- if (!nzchar(snap@ComputeTrigger))
       "All cells (full-data result). Press Compute to run on the map selection."
     else sprintf("Computed on %d cells (map selection at last Compute).", n)
-    .drawPlot(.nicheOutput(snap, se, last$cache, note))
+    .safeOutput(.drawPlot(.nicheOutput(snap, se, last$cache, note)), plot_name)
   })
 })
 

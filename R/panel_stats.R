@@ -158,7 +158,7 @@ setMethod(".renderOutput", "SVGPanel", function(x, se, output, pObjects, rObject
   key <- .panelKey(enc, pObjects, rObjects, function(pn) pn@ComputeTrigger)
   output[[enc]] <- DT::renderDataTable({
     key()
-    tbl <- .generateOutput(pObjects$memory[[enc]], se)
+    tbl <- .safeOutput(.generateOutput(pObjects$memory[[enc]], se), enc)
     assign(enc, tbl, envir = .svgTables(pObjects))
     names(tbl) <- c("Gene", "Moran's I")
     DT::formatRound(DT::datatable(tbl, selection = "single", rownames = FALSE,

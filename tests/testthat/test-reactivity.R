@@ -38,3 +38,15 @@ test_that("an empty ColorBy from a loading menu is ignored", {
   expect_identical(.castColorBy(""), NA_character_)
   expect_identical(.castColorBy("Malat1"), "Malat1")
 })
+
+test_that("panel errors become a readable validation message (F3)", {
+  expect_identical(.safeOutput(42, "P"), 42)
+  expect_message(
+    err <- tryCatch(.safeOutput(stop("boom"), "P"), error = function(e) e),
+    "P: boom")
+  expect_s3_class(err, "shiny.silent.error")
+  expect_match(conditionMessage(err), "Error: boom")
+  # req() / validate() from inside a panel pass through untouched
+  err2 <- tryCatch(.safeOutput(shiny::req(FALSE), "P"), error = function(e) e)
+  expect_s3_class(err2, "shiny.silent.error")
+})
