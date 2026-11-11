@@ -31,7 +31,7 @@
 #'     assays = list(counts = matrix(rpois(200, 3), 10, 20,
 #'         dimnames = list(paste0("g", 1:10), paste0("c", 1:20)))),
 #'     spatialCoords = matrix(runif(40), 20, 2, dimnames = list(NULL, c("x", "y"))))
-#' app <- iseeSpatial(spe, mode = "qc")
+#' app <- iseeSpatial(spe, mode = "qc", cache = FALSE)
 #' if (interactive()) shiny::runApp(app)
 #' @export
 iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
@@ -72,8 +72,10 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
                    SpatialPlotPanel(ColorBy = if (length(qc)) qc[1] else "", Selection = selection),
                    SpatialQCPanel(Metric = if (length(qc)) qc[1] else "", Selection = selection))
     if (length(area)) panels <- append(panels, list(SpatialQCPanel(Metric = area[1], Selection = selection)))
+    # SpaceTrooper quality score: QC_score in older releases, QScore in devel (1.3.x).
+    score <- intersect(c("QScore", "QC_score"), qc)
     if (tiles) panels <- append(panels, list(FOVZoomPanel(
-      ColorBy = if ("QC_score" %in% qc) "QC_score" else "", Selection = selection)))
+      ColorBy = if (length(score)) score[1] else "", Selection = selection)))
     if (tiles && !is.null(S4Vectors::metadata(spe)$fov_stats))
       panels <- append(panels, list(FOVStatsPanel(Selection = selection)))
     return(panels)

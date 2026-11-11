@@ -92,7 +92,7 @@ test_that("SVG tables are kept per session, not shared", {
 })
 
 test_that("the launcher offers the spatial panels in 'Organize panels'", {
-  expect_s3_class(iseeSpatial(.makeTestVisiumHDSPE(), mode = "qc"), "shiny.appobj")
+  expect_s3_class(iseeSpatial(.makeTestVisiumHDSPE(), mode = "qc", cache = FALSE), "shiny.appobj")
   expect_false(any(vapply(.extraPanels(.makeTestVisiumHDSPE()), is, logical(1), "FOVZoomPanel")))
   expect_true(any(vapply(.extraPanels(.makeTestSPE()), is, logical(1), "FOVZoomPanel")))
 })
@@ -133,6 +133,14 @@ test_that("placeholders show their message in the panel (F9)", {
   expect_true(any(vapply(p$layers, function(l) inherits(l$geom, "GeomText"), logical(1))))
   f <- tempfile(fileext = ".png"); grDevices::png(f, 500, 400); print(p); grDevices::dev.off()
   expect_gt(file.size(f), 0)
+})
+
+test_that("FOV zoom explains a dataset without cell polygons", {
+  spe <- .makeTestSPE()
+  spe$polygons <- NULL
+  fov <- as.character(spe$fov[1])
+  p <- .generateOutput(FOVZoomPanel(Selection = fov), spe)
+  expect_match(p$labels$title, "has none")
 })
 
 test_that("panel outputs turn on Shiny's busy indicators (F10)", {

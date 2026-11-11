@@ -1,6 +1,8 @@
 ---
 title: "iseeSpatial: interactive exploration of cell-resolution spatial transcriptomics"
-author: "Emile Danvin"
+author:
+- name: Emile Danvin
+- name: Dario Righelli
 date: "`r Sys.Date()`"
 output: BiocStyle::html_document
 vignette: >
@@ -10,98 +12,218 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
+                      fig.height = 4.5)
 ```
 
 # Introduction
 
-`iseeSpatial` adds spatial panels to `r BiocStyle::Biocpkg("iSEE")` for data at
-cellular resolution: imaging-based (CosMx, Xenium) and sequencing-based
-(Visium HD, cell-segmented). A region selected on an overview map is applied
-to every panel, and analyses (spatial statistics, spatially variable genes,
-niches, domains) run on that region.
+`r BiocStyle::Biocpkg("iseeSpatial")` adds spatial panels to
+`r BiocStyle::Biocpkg("iSEE")` for data at cellular resolution:
+imaging-based (CosMx, Xenium) and sequencing-based (Visium HD,
+cell-segmented). The data are a standard
+`r BiocStyle::Biocpkg("SpatialExperiment")`.
+
+A region selected on an overview map (fields of view for CosMx, single
+cells for the other platforms) is applied to every panel: spatial plots,
+quality-control histograms, spatial statistics, spatially variable genes,
+cellular niches and spatial domains. Heavy analyses run only when the
+user presses *Compute*, on the selected region.
+
+# Installation
 
 ```{r install, eval = FALSE}
-if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
 BiocManager::install("iseeSpatial")
 ```
 
-# A small example
+# Example data
 
-We simulate a tissue with two zones so the vignette runs without downloads.
+We use a small CosMx dataset shipped with
+`r BiocStyle::Biocpkg("SpaceTrooper")`: one field of view (FOV) of a
+tumour sample from the DBKERO database (https://kero.hgc.jp/), with 905
+cells, about 1,000 genes, cell polygons and a cell-type label per cell.
 
-```{r simulate}
+```{r read}
 library(iseeSpatial)
-set.seed(1)
-n <- 2000
-xy <- cbind(x = runif(n, 0, 1000), y = runif(n, 0, 1000))
-zone <- ifelse(xy[, "x"] < 500, "left", "right")
-type <- ifelse(zone == "left",
-               sample(c("Tumor", "T.cells"), n, TRUE, c(0.8, 0.2)),
-               sample(c("Fibroblast", "T.cells"), n, TRUE, c(0.7, 0.3)))
-counts <- matrix(rpois(30 * n, 2), 30, n,
-                 dimnames = list(paste0("GENE", 1:30), paste0("cell", 1:n)))
-counts["GENE1", zone == "left"] <- counts["GENE1", zone == "left"] + 5
-spe <- SpatialExperiment(assays = list(counts = counts, logcounts = log1p(counts)),
-                         colData = S4Vectors::DataFrame(Level1 = factor(type),
-                                                        sum = colSums(counts)),
-                         spatialCoords = xy)
-spe <- setPlatform(spe, "visiumhd")
+library(SpaceTrooper)
+
+dir <- system.file("extdata", "CosMx_DBKero_Tiny", package = "SpaceTrooper")
+spe <- readCosmxSPE(dirName = dir, sampleName = "DBKero")
+spe
+```
+
+## Quality control
+
+`spatialPerCellQC()` adds per-cell metrics (total counts, detected genes,
+cell area in µm², distance to the FOV border, ...) and removes cells with
+no counts. The cell polygons are then read and stored in `colData`; the
+spatial panels draw them when *Use polygons* is ticked.
+
+```{r qc}
+spe <- spatialPerCellQC(spe)
+spe <- readAndAddPolygonsToSPE(spe)
+summary(spe$Area_um)
+```
+
+## Cell types and normalisation
+
+The cell-type labels come with the example data. Negative-control probes
+are removed before normalisation.
+
+```{r labels}
+labels <- read.delim(file.path(dir, "labels_tiny.tsv"))
+spe$cell_type <- factor(labels$label[match(colnames(spe), labels$cell_id)])
+sort(table(spe$cell_type), decreasing = TRUE)
+
+spe <- spe[!grepl("^NegPrb", rownames(spe)), ]
+spe <- scuttle::logNormCounts(spe)
+```
+
+The platform decides how a region is selected (FOV tiles for CosMx). It is
+detected from characteristic `colData` columns or set explicitly:
+
+```{r platform}
+spe <- setPlatform(spe, "cosmx")
 getPlatform(spe)
 ```
+
+`load_cosmx()`, `load_xenium()` and `load_visiumhd()` (see
+[Other platforms](#other-platforms)) give an object ready for the app in
+one call.
 
 # Niches and spatial domains
 
 The spatial neighbour graph is built once (k nearest cells) and stored on
-the object. **k is a choice**, not a constant: small k describes direct
-contacts, large k a wider region; pick it from the structures studied and
+the object. **k is a choice**, not a constant: a small k describes direct
+contacts, a large k a wider region. Pick it from the structures studied and
 report it.
 
-```{r niches}
+```{r graph}
 spe <- buildSpatialGraph(spe, k = 15)
-spe <- computeNiches(spe, label_col = "Level1", k = 15, n_niches = 3)
-table(spe$niche)
-summary(spe$niche_entropy)
 ```
 
-Each cell's neighbourhood composition is kept, so one can ask, for example,
-what surrounds tumour cells:
+## Niches
+
+A niche groups cells whose neighbourhoods have a similar cell-type
+composition. `niche_entropy` measures how mixed each neighbourhood is
+(0 = a single cell type).
+
+```{r niches}
+spe <- computeNiches(spe, label_col = "cell_type", k = 15, n_niches = 4)
+table(spe$niche, spe$cell_type)[, c("BC cells", "CAFs", "TAMs", "Blood ECs")]
+```
+
+Each cell's neighbourhood composition is kept as a reduced dimension, so
+one can ask, for example, what surrounds the tumour-associated
+macrophages (TAMs):
 
 ```{r composition}
 comp <- reducedDim(spe, "NicheComposition")
-round(colMeans(comp[spe$Level1 == "Tumor", ], na.rm = TRUE), 2)
+round(sort(colMeans(comp[spe$cell_type == "TAMs", ], na.rm = TRUE),
+           decreasing = TRUE)[1:4], 2)
 ```
+
+```{r niche-plot, fig.cap = "Niches of the example FOV.", fig.height = 5.5}
+df <- data.frame(spatialCoords(spe), niche = spe$niche)
+ggplot2::ggplot(df, ggplot2::aes(CenterX_global_px, CenterY_global_px,
+                                  colour = niche)) +
+    ggplot2::geom_point(size = 0.8) +
+    ggplot2::coord_fixed() +
+    ggplot2::labs(x = "x (px)", y = "y (px)") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(legend.position = "bottom") +
+    ggplot2::guides(colour = ggplot2::guide_legend(ncol = 2))
+```
+
+## Spatial domains
 
 Spatial domains cluster expression combined with the neighbourhood average
-(`lambda` = weight of the neighbourhood; `lambda = 0` gives plain expression
-clusters, returned as `expr_cluster` for comparison):
+(`lambda` = weight of the neighbourhood; `lambda = 0` gives plain
+expression clusters, also returned as `expr_cluster` for comparison). A
+PCA is needed first.
 
 ```{r domains}
-reducedDim(spe, "PCA") <- prcomp(t(logcounts(spe)), rank. = 10)$x
-spe <- computeSpatialDomains(spe, k_spatial = 15, lambda = 0.5, resolution = 0.5)
-table(spe$spatial_domain, zone)
+pca <- prcomp(t(as.matrix(logcounts(spe))), rank. = 15)
+reducedDim(spe, "PCA") <- pca$x
+spe <- computeSpatialDomains(spe, k_spatial = 15, lambda = 0.5,
+                             resolution = 0.5)
+table(domain = spe$spatial_domain, expression = spe$expr_cluster)
 ```
 
-# Launching the app
+Niches and domains can be computed once on the whole dataset, as here, and
+saved with the object; the app then shows them without recomputing, and
+recomputes on a region only when asked.
+
+# The app
+
+## Analysis mode
 
 ```{r app}
-app <- iseeSpatial(spe, mode = "analysis")
+app <- iseeSpatial(spe, mode = "analysis", cache = FALSE)
 if (interactive()) shiny::runApp(app)
 ```
 
-`mode = "qc"` gives a QC-oriented layout. Panels can also be combined with
-any standard iSEE panel through `initial =`.
+The analysis layout has:
 
-# Loading real data
+* **Overview map**: the FOVs (CosMx) or cells; click or brush to select a
+  region, *Clear* to go back to the whole dataset.
+* **Two spatial plots**: coloured by cell type and by a gene; cells or
+  polygons.
+* **Spatial statistics**: global and local Moran's I of a gene
+  (`r BiocStyle::Biocpkg("Voyager")`), local cluster significance at a level
+  set in the panel, join-count statistics and co-occurrence of the cell
+  types, L-functions (`r BiocStyle::Biocpkg("spatialFDA")`).
+* **Spatially variable genes**: a ranking on the selected region; clicking
+  a gene shows it in the linked spatial plot.
+* **Niches / domains**: the results above, or recomputed on the selected
+  region with *Compute*.
 
-```{r loaders, eval = FALSE}
-spe <- load_cosmx("cos_isee_ready.RDS")               # prepared CosMx object
-spe <- load_xenium("path/to/xenium_output")           # 10x Xenium bundle
-spe <- load_visiumhd("path/to/segmented_outputs")     # 10x Visium HD, cell-segmented
+## QC mode
+
+```{r app-qc}
+app <- iseeSpatial(spe, mode = "qc", cache = FALSE)
 ```
 
-The full Visium HD workflow of the OSTA book (QC, SingleR annotation), plus
-niches and domains, is in
+Meant for unfiltered data: an overview map, a spatial plot of a QC metric,
+QC histograms with outlier fences, and for CosMx an FOV zoom panel.
+
+## Custom layouts
+
+Panels can be combined freely, with each other and with any standard iSEE
+panel, through `initial =`:
+
+```{r custom}
+panels <- list(
+    SpatialMapPanel(),
+    SpatialPlotPanel(ColorBy = "cell_type", UsePolygons = TRUE),
+    SpatialQCPanel(Metric = "Area_um"),
+    iSEE::ReducedDimensionPlot(Type = "PCA", ColorByColumnData = "niche",
+                               ColorBy = "Column data"))
+app <- iseeSpatial(spe, initial = panels, cache = FALSE)
+```
+
+## Image cache
+
+Spatial plots are cached as images on disk (`spatialCacheDir()`), so going
+back to a view already seen, or restarting the app, is instant. The cache
+keeps 1 GB by default and drops the least recently used images first;
+`cache = FALSE` keeps images in memory only (used in this vignette, so that
+building it writes nothing to the user's folders) and `clearSpatialCache()`
+empties the folder.
+
+# Other platforms {#other-platforms}
+
+```{r loaders, eval = FALSE}
+spe <- load_cosmx("cosmx_spe.rds")                # a prepared CosMx object
+spe <- load_xenium("path/to/xenium/outs")         # 10x Xenium bundle
+spe <- load_visiumhd("path/to/segmented_outputs") # Visium HD, cell-segmented
+```
+
+Xenium and Visium HD data are selected cell by cell on the map. The full
+Visium HD workflow of the OSTA book (QC, SingleR annotation, niches and
+domains) is in
 `system.file("scripts", "visiumhd_osta_workflow.R", package = "iseeSpatial")`.
 
 # Session information

@@ -14,7 +14,7 @@
 .PLATFORMS <- list(
   cosmx = list(
     name = "CosMx", unit = "fov", region_col = "fov",
-    qc_metrics = c("total", "detected", "Area_um", "QC_score", "log2CountArea",
+    qc_metrics = c("total", "detected", "Area_um", "QC_score", "QScore", "log2CountArea",
                    "Mean.DAPI", "Mean.GFAP", "dist_border"),
     label_cols = c("SingleR_label"),
     detect = c("fov", "Area_um")),

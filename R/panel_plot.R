@@ -214,9 +214,11 @@ setMethod(".defineInterface", "FOVZoomPanel", function(x, se, select_info) {
 setMethod(".generateOutput", "FOVZoomPanel", function(x, se, ...) {
   if (.selectionUnit(se) != "fov")
     return(.notAvailablePlot("FOV zoom needs FOV-based data (CosMx)"))
-  fovs <- suppressWarnings(as.integer(.splitIDs(x@Selection)))
-  fovs <- fovs[!is.na(fovs)]
+  ids <- .splitIDs(x@Selection)
+  fovs <- as.integer(ids[grepl("^[0-9]+$", ids)])
   if (length(fovs) == 0) return(.notAvailablePlot("Select FOVs on the map, then press Validate."))
+  if (!"polygons" %in% colnames(colData(se)))
+    return(.notAvailablePlot("FOV zoom draws cell polygons; this dataset has none."))
   cb <- if (nzchar(x@ColorBy)) x@ColorBy else .qcMetrics(se)[1]
   do.call(SpaceTrooper::plotZoomFovsMap,
           c(list(se, fovs = fovs, colourBy = cb),

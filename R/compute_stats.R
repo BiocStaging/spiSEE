@@ -57,94 +57,140 @@ NULL
   "L-cross function (Lcross)"       = "lcross_plot")
 
 .computeSpatialStat <- function(se, plot_type, genes = character(0),
-                                group_col = NA_character_, k = 6L, alpha = 0.05) {
-  has_groups <- !is.na(group_col) && group_col %in% colnames(colData(se)) &&
-    !all(is.na(colData(se)[[group_col]]))
-  if (has_groups) se <- se[, !is.na(colData(se)[[group_col]])]
-  if (ncol(se) < max(5, k + 1))
-    return(.notAvailablePlot(sprintf("Too few cells (%d) in this selection for k = %d", ncol(se), k)))
-  need_groups <- c("lest_plot", "lcross_plot", "locclust_plot", "joincount_plot", "joincount_heatmap_plot")
-  if (plot_type %in% need_groups && !has_groups)
-    return(.notAvailablePlot("No cell-type column chosen / available for this statistic"))
+                                group_col = NA_character_, k = 6L,
+                                alpha = 0.05) {
+    has_groups <- !is.na(group_col) &&
+        group_col %in% colnames(colData(se)) &&
+        !all(is.na(colData(se)[[group_col]]))
+    if (has_groups) se <- se[, !is.na(colData(se)[[group_col]])]
+    if (ncol(se) < max(5, k + 1)) {
+        return(.notAvailablePlot(sprintf(
+            "Too few cells (%d) in this selection for k = %d", ncol(se), k)))
+    }
+    need_groups <- c("lest_plot", "lcross_plot", "locclust_plot",
+                     "joincount_plot", "joincount_heatmap_plot")
+    if (plot_type %in% need_groups && !has_groups) {
+        return(.notAvailablePlot(
+            "No cell-type column chosen / available for this statistic"))
+    }
+    # L-functions work on point patterns; no neighbour graph involved.
+    if (plot_type %in% c("lest_plot", "lcross_plot"))
+        return(.lFunctionPlot(se, plot_type, group_col))
 
-  # L-functions work on point patterns; no neighbour graph involved.
-  if (plot_type %in% c("lest_plot", "lcross_plot")) {
-    counts <- sort(table(droplevels(factor(colData(se)[[group_col]]))), decreasing = TRUE)
+    sfe <- .toSFEWithKNNNeighbors(se, k)
+    genes <- intersect(genes, rownames(sfe))
+    gene_plots <- c("localmoran_plot", "moran_plot", "locclust_plot")
+    if (plot_type %in% gene_plots && length(genes) == 0)
+        return(.notAvailablePlot("Choose at least one gene present in the data"))
+
+    switch(plot_type,
+        graph_plot = Voyager::plotColGraph(sfe, colGraphName = "knn",
+                                           colGeometryName = 1) +
+            ggplot2::theme_void(),
+        localmoran_plot = .localMoranPlot(sfe, genes),
+        moran_plot = .moranScatterPlot(sfe, genes[1]),
+        locclust_plot = .localClusterPlot(sfe, genes[1], alpha, k),
+        joincount_plot = .joincountBarPlot(sfe, group_col, k),
+        joincount_heatmap_plot = .joincountHeatmap(sfe, group_col, k),
+        .notAvailablePlot(paste("Unknown plot type:", plot_type)))
+}
+
+# Lest / Lcross (spatialFDA) on the most frequent cell types (>= 10 cells).
+.lFunctionPlot <- function(se, plot_type, group_col) {
+    labs <- droplevels(factor(colData(se)[[group_col]]))
+    counts <- sort(table(labs), decreasing = TRUE)
     top <- names(counts[counts >= 10])
     n_needed <- if (plot_type == "lcross_plot") 2 else 1
-    if (length(top) < n_needed) return(.notAvailablePlot("Not enough cells per cell type in this selection"))
+    if (length(top) < n_needed) {
+        return(.notAvailablePlot(
+            "Not enough cells per cell type in this selection"))
+    }
     res <- spatialFDA::calcMetricPerFov(
-      spe = se, fun = if (plot_type == "lest_plot") "Lest" else "Lcross",
-      subsetby = "sample_id", marks = group_col, selection = top[seq_len(n_needed)],
-      rSeq = seq(0, 500, length.out = 100), by = "sample_id", ncores = 1)
-    return(spatialFDA::plotMetricPerFov(res, theo = TRUE, correction = "iso", x = "r", imageId = "sample_id"))
-  }
+        spe = se, fun = if (plot_type == "lest_plot") "Lest" else "Lcross",
+        subsetby = "sample_id", marks = group_col,
+        selection = top[seq_len(n_needed)],
+        rSeq = seq(0, 500, length.out = 100), by = "sample_id", ncores = 1)
+    spatialFDA::plotMetricPerFov(res, theo = TRUE, correction = "iso",
+                                 x = "r", imageId = "sample_id")
+}
 
-  sfe <- .toSFEWithKNNNeighbors(se, k)
-  genes <- intersect(genes, rownames(sfe))
-  if (plot_type %in% c("localmoran_plot", "moran_plot", "locclust_plot") && length(genes) == 0)
-    return(.notAvailablePlot("Choose at least one gene present in the data"))
+.runLocalMoran <- function(sfe, genes) {
+    Voyager::runUnivariate(sfe, features = genes, type = "localmoran",
+                           zero.policy = TRUE, colGraphName = "knn",
+                           colGeometryName = 1)
+}
 
-  switch(plot_type,
-    graph_plot = Voyager::plotColGraph(sfe, colGraphName = "knn", colGeometryName = 1) + ggplot2::theme_void(),
+.localMoranPlot <- function(sfe, genes) {
+    sfe <- .runLocalMoran(sfe, genes)
+    Voyager::plotLocalResult(sfe, name = "localmoran", features = genes,
+                             ncol = 2, colGeometryName = 1, divergent = TRUE,
+                             diverge_center = 0)
+}
 
-    localmoran_plot = {
-      sfe <- Voyager::runUnivariate(sfe, features = genes, type = "localmoran", zero.policy = TRUE,
-                                    colGraphName = "knn", colGeometryName = 1)
-      Voyager::plotLocalResult(sfe, name = "localmoran", features = genes, ncol = 2,
-                               colGeometryName = 1, divergent = TRUE, diverge_center = 0)
-    },
+.moranScatterPlot <- function(sfe, gene) {
+    sfe <- Voyager::runUnivariate(sfe, feature = gene, zero.policy = TRUE,
+                                  type = "moran.plot", colGraphName = "knn",
+                                  colGeometryName = 1)
+    Voyager::moranPlot(sfe, feature = gene, graphName = "knn")
+}
 
-    moran_plot = {
-      sfe <- Voyager::runUnivariate(sfe, feature = genes[1], zero.policy = TRUE, type = "moran.plot",
-                                    colGraphName = "knn", colGeometryName = 1)
-      Voyager::moranPlot(sfe, feature = genes[1], graphName = "knn")
-    },
+# Cells whose local Moran's I is significant (adjusted p < alpha), coloured
+# by their cluster type (High-High, Low-Low, ...); the others are greyed.
+.localClusterPlot <- function(sfe, gene, alpha, k) {
+    sfe <- .runLocalMoran(sfe, gene)
+    # localResults()/localResults<-() are SpatialFeatureExperiment's own
+    # generic (Voyager imports but does not re-export it -- Voyager::
+    # localResults looks fine at a glance since it resolves via
+    # inheritance, but errors at call time: "not an exported object").
+    lm <- SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]]
+    lm$locClust <- ifelse(lm[["-log10p_adj"]] > -log10(alpha),
+                          as.character(lm$mean), "non-significant")
+    SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]] <- lm
+    Voyager::plotLocalResult(sfe, features = gene, name = "localmoran",
+                             attribute = "locClust", colGeometryName = 1) +
+        ggplot2::labs(caption = sprintf(
+            "Significant: adjusted p < %g (local Moran's I, k = %d)",
+            alpha, k))
+}
 
-    locclust_plot = {
-      sfe <- Voyager::runUnivariate(sfe, features = genes[1], type = "localmoran", zero.policy = TRUE,
-                                    colGraphName = "knn", colGeometryName = 1)
-      # localResults()/localResults<-() are SpatialFeatureExperiment's own
-      # generic (Voyager imports but does not re-export it -- Voyager::
-      # localResults looks fine at a glance since it resolves via
-      # inheritance, but errors at call time: "not an exported object").
-      lm <- SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]]
-      lm$locClust <- with(lm, ifelse(`-log10p_adj` > -log10(alpha), as.character(mean), "non-significant"))
-      SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]] <- lm
-      Voyager::plotLocalResult(sfe, features = genes[1], name = "localmoran",
-                               attribute = "locClust", colGeometryName = 1) +
-        ggplot2::labs(caption = sprintf("Significant: adjusted p < %g (local Moran's I, k = %d)", alpha, k))
-    },
-
-    joincount_plot = {
-      df <- .joincountDF(sfe, group_col)
-      df <- df[order(-abs(df$z_value)), ]
-      df$pair <- factor(df$pair, levels = rev(df$pair))
-      ggplot2::ggplot(df, ggplot2::aes(x = pair, y = z_value, fill = z_value > 0)) +
-        ggplot2::geom_col() + ggplot2::coord_flip() +
-        ggplot2::scale_fill_manual(values = c(`TRUE` = "#F7A11A", `FALSE` = "#4ECDC4"), guide = "none") +
-        ggplot2::labs(x = NULL, y = "z-value", title = sprintf("Join-count statistics (%s, k = %d)", group_col, k)) +
+.joincountBarPlot <- function(sfe, group_col, k) {
+    df <- .joincountDF(sfe, group_col)
+    df <- df[order(-abs(df$z_value)), ]
+    df$pair <- factor(df$pair, levels = rev(df$pair))
+    ggplot2::ggplot(df, ggplot2::aes(x = pair, y = z_value,
+                                     fill = z_value > 0)) +
+        ggplot2::geom_col() +
+        ggplot2::coord_flip() +
+        ggplot2::scale_fill_manual(
+            values = c(`TRUE` = "#F7A11A", `FALSE` = "#4ECDC4"),
+            guide = "none") +
+        ggplot2::labs(x = NULL, y = "z-value", title = sprintf(
+            "Join-count statistics (%s, k = %d)", group_col, k)) +
         ggplot2::theme_minimal()
-    },
+}
 
-    joincount_heatmap_plot = {
-      df <- .joincountDF(sfe, group_col)
-      lv <- levels(droplevels(factor(colData(sfe)[[group_col]])))
-      z <- matrix(NA_real_, length(lv), length(lv), dimnames = list(lv, lv))
-      parts <- strsplit(df$pair, ":")
-      for (i in seq_along(parts)) {
+.joincountHeatmap <- function(sfe, group_col, k) {
+    df <- .joincountDF(sfe, group_col)
+    lv <- levels(droplevels(factor(colData(sfe)[[group_col]])))
+    z <- matrix(NA_real_, length(lv), length(lv), dimnames = list(lv, lv))
+    parts <- strsplit(df$pair, ":")
+    for (i in seq_along(parts)) {
         if (length(parts[[i]]) != 2) next          # skip the "Jtot" total row
-        z[parts[[i]][1], parts[[i]][2]] <- z[parts[[i]][2], parts[[i]][1]] <- df$z_value[i]
-      }
-      zl <- max(abs(z), na.rm = TRUE)
-      if (!is.finite(zl) || zl == 0) return(.notAvailablePlot("Not enough cell-type pairs in this selection"))
-      pheatmap::pheatmap(z, cluster_rows = FALSE, cluster_cols = FALSE,
-        color = grDevices::colorRampPalette(c("#4ECDC4", "white", "#F7A11A"))(101),
-        breaks = seq(-zl, zl, length.out = 102), display_numbers = TRUE, number_format = "%.1f",
-        na_col = "grey90", main = sprintf("Cell-type co-occurrence (join-count z, k = %d)", k), silent = TRUE)
-    },
-
-    .notAvailablePlot(paste("Unknown plot type:", plot_type)))
+        a <- parts[[i]][1]
+        b <- parts[[i]][2]
+        z[a, b] <- z[b, a] <- df$z_value[i]
+    }
+    zl <- max(abs(z), na.rm = TRUE)
+    if (!is.finite(zl) || zl == 0) {
+        return(.notAvailablePlot(
+            "Not enough cell-type pairs in this selection"))
+    }
+    pal <- grDevices::colorRampPalette(c("#4ECDC4", "white", "#F7A11A"))
+    pheatmap::pheatmap(z, cluster_rows = FALSE, cluster_cols = FALSE,
+        color = pal(101), breaks = seq(-zl, zl, length.out = 102),
+        display_numbers = TRUE, number_format = "%.1f", na_col = "grey90",
+        main = sprintf("Cell-type co-occurrence (join-count z, k = %d)", k),
+        silent = TRUE)
 }
 
 # Moran's I scan over the most expressed genes (or metadata(se)$gene_ranks).
