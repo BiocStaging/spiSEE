@@ -2,8 +2,9 @@ Package: iseeSpatial
 Title: Interactive Exploration of Cell-Resolution Spatial Transcriptomics with iSEE
 Version: 0.99.0
 Authors@R:
-    person("Emile", "Danvin", email = "emile.danvin@gmail.com",
-           role = c("aut", "cre"))
+    c(person("Emile", "Danvin", email = "emile.danvin@gmail.com",
+             role = c("aut", "cre")),
+      person("Dario", "Righelli", role = c("aut", "ths")))
 Description: Extends the iSEE interface with panels for spatial
     transcriptomics at cellular resolution, from imaging-based (CosMx,
     Xenium) and sequencing-based (Visium HD, cell-segmented) platforms. A
