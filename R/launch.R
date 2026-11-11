@@ -77,8 +77,7 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
                            Selection = selection))
         if (length(area)) panels <- append(panels,
                                            list(SpatialQCPanel(Metric = area[1], Selection = selection)))
-        # SpaceTrooper quality score: QC_score in older releases, QScore in
-        # devel (1.3.x).
+        # SpaceTrooper's quality score: QScore (devel) or QC_score (older).
         score <- intersect(c("QScore", "QC_score"), qc)
         if (tiles) panels <- append(panels, list(FOVZoomPanel(
             ColorBy = if (length(score)) score[1] else "",

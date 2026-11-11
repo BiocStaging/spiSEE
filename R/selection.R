@@ -1,6 +1,4 @@
-# ============================================================
 # Selection: one slot (`Selection`), interpreted by the platform.
-# ============================================================
 
 .splitIDs <- function(x) if (length(x) == 0 || !nzchar(x)) character(0) else strsplit(x, ",", fixed = TRUE)[[1]]
 

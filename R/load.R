@@ -1,8 +1,6 @@
-# ============================================================
 # Loaders. Each returns a SpatialExperiment with a `logcounts` assay and
 # the platform recorded (setPlatform), ready for iseeSpatial().
 # Reader packages are in Suggests: only the loader you use must be installed.
-# ============================================================
 
 .needs <- function(pkg) {
     if (!requireNamespace(pkg, quietly = TRUE))
@@ -49,9 +47,8 @@ load_xenium <- function(xenium_dir) {
     SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
     bnd <- file.path(xenium_dir, "cell_boundaries.parquet")
     if (file.exists(bnd)) {
-        # readAndAddPolygonsToSPE() expects metadata set by SpaceTrooper's own
-        # readers, which readXeniumSXE() does not set: use the two steps
-        # directly.
+        # readAndAddPolygonsToSPE() needs metadata that readXeniumSXE()
+        # does not set, so read and add the polygons in two steps.
         pol <- tryCatch(SpaceTrooper::readPolygonsXenium(bnd, type = "parquet"),
             error = function(e) {
                 message("  (cell boundaries not read: ", conditionMessage(e),
@@ -73,8 +70,8 @@ load_xenium <- function(xenium_dir) {
 #' chapter "Visium HD (segmented)". Gene symbols become unique row names,
 #' a `logcounts` assay is added if missing, and the platform is recorded.
 #' For the full workflow (QC, annotation, niches) see
-#' `system.file("scripts", "visiumhd_osta_workflow.R", package =
-#' "iseeSpatial")`.
+#' `system.file("scripts", "visiumhd_osta_workflow.R",
+#' package = "iseeSpatial")`.
 #'
 #' @param segmented_outputs Path to the `segmented_outputs` directory.
 #' @param images Image resolution to load (passed to `TENxVisiumHD`).

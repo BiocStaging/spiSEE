@@ -1,8 +1,6 @@
-# ============================================================
 # SpatialQCPanel - histogram of a QC metric over the selection, with
 # SpaceTrooper's medcouple outlier fences when `<metric>_outlier_mc` exists.
 # FOVStatsPanel - per-FOV boxplots (tile platforms; metadata(se)$fov_stats).
-# ============================================================
 
 setMethod("initialize", "SpatialQCPanel", function(.Object, ...) {
     .Object <- callNextMethod(.Object, ...)
@@ -56,7 +54,7 @@ setMethod(".generateOutput", "SpatialQCPanel", function(x, se, ...) {
         ggplot2::labs(title = .prettyMetric(metric), x = .prettyMetric(metric))
     if (is.null(fences)) return(p)
     # SpaceTrooper names the legend after the internal column
-    # ("Fences transcript_counts_outlier_mc") and shows no counts (F8).
+    # ("Fences transcript_counts_outlier_mc") and shows no counts.
     flagged <- as.logical(colData(se)[[fences]])
     p + ggplot2::labs(colour = "Outlier fences (medcouple)",
         subtitle = .flaggedText(flagged))
@@ -109,7 +107,7 @@ setMethod(".createObservers", "SpatialQCPanel",
 SpatialQCPanel <- function(Metric = "", UseFences = TRUE, ...)
     new("SpatialQCPanel", Metric = Metric, UseFences = UseFences, ...)
 
-# ── FOVStatsPanel ───────────────────────────────────────────────────────
+# FOVStatsPanel
 
 #' @rdname FOVStatsPanel
 #' @export

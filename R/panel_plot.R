@@ -1,8 +1,5 @@
-# ============================================================
-# SpatialPlotPanel - cells on the tissue, coloured by an annotation, a QC
-# metric or a gene. Replaces CosMxSpatialPanel, CosMxGenePanel and
-# XeniumSpatialPanel (one class, any platform).
-# ============================================================
+# SpatialPlotPanel: cells on the tissue, coloured by an annotation, a QC
+# metric or a gene.
 
 # Cells with 'polygons' above this count are drawn as centroids unless the
 # user ticks "Draw cell polygons" by hand.
@@ -30,12 +27,7 @@
 setMethod("initialize", "SpatialPlotPanel", function(.Object, ...) {
     .Object <- callNextMethod(.Object, ...)
     if (length(.Object@ColorBy)     == 0) .Object@ColorBy     <- ""
-    # NA = not yet resolved against a dataset; .refineParameters() below
-    # turns this into TRUE/FALSE once the data (and whether it has a
-    # 'polygons' column) is known, so polygons default on wherever that
-    # data exists instead of needing to be switched on by hand every time.
-    # A user's own explicit tick/untick is never NA, so it's never touched
-    # again once set.
+    # NA: .refineParameters() sets TRUE when the data have polygons.
     if (length(.Object@UsePolygons) == 0) .Object@UsePolygons <- NA
     if (length(.Object@PointSize)   == 0) .Object@PointSize   <- 0.5
     .Object
@@ -146,10 +138,7 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
     }
 })
 
-# A server-side selectize reports "" while its choices are still loading.
-# Storing it would change the cache key, so the plot was drawn once with ""
-# (resolved to the default column, not the panel's gene) and again when the
-# real value arrived. "" is never a menu choice: ignore it.
+# A server-side selectize reports "" while its choices load: ignore it.
 .castColorBy <- function(v) {
     v <- as.character(v)
     if (identical(v, "")) NA_character_ else v
@@ -198,9 +187,7 @@ SpatialPlotPanel <- function(ColorBy = "", UsePolygons = NA, PointSize = 0.5,
     new("SpatialPlotPanel", ColorBy = ColorBy, UsePolygons = UsePolygons,
         PointSize = PointSize, ...)
 
-# ============================================================
 # FOVZoomPanel - SpaceTrooper zoom on the selected FOVs (tile platforms).
-# ============================================================
 
 setMethod("initialize", "FOVZoomPanel", function(.Object, ...) {
     .Object <- callNextMethod(.Object, ...)

@@ -1,6 +1,4 @@
-# ============================================================
 # SpatialStatsPanel and SVGPanel: heavy computations, run on Compute only.
-# ============================================================
 
 setMethod("initialize", "SpatialStatsPanel", function(.Object, ...) {
     .Object <- callNextMethod(.Object, ...)
@@ -131,7 +129,7 @@ SpatialStatsPanel <- function(PlotType = "graph_plot", Genes = character(0),
         LabelCol = LabelCol,
         K = as.integer(K), Alpha = as.numeric(Alpha), ...)
 
-# ── SVGPanel ────────────────────────────────────────────────────────────
+# SVGPanel
 
 setMethod("initialize", "SVGPanel", function(.Object, ...) {
     .Object <- callNextMethod(.Object, ...)

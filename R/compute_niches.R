@@ -2,13 +2,10 @@
 #' @importFrom S4Vectors metadata metadata<-
 NULL
 
-# ============================================================
 # Spatial graph, cellular niches and spatial domains.
 #
-# Answers the "what is the neighbour graph *for*?" question: today the k-NN
-# graph is rebuilt per selection only to feed Moran's I / join-count. Here it
-# is built ONCE on the whole dataset (stored as a colPair, so subsetting the
-# object subsets the graph for free) and reused for two clusterings:
+# The k-NN graph is built once on the whole dataset (stored as a colPair,
+# so subsetting the object subsets the graph) and used for two clusterings:
 #
 #  1. Cellular niches ("neighbourhoods"): each cell is described by the
 #     cell-type composition of its k nearest spatial neighbours; k-means on
@@ -23,11 +20,7 @@ NULL
 # Everything heavy is a plain function that works offline on the full object
 # (see inst/scripts/precompute_niches.R); SpatialNichePanel only displays the
 # stored result, and recomputes on the current selection on request.
-#
-# The matrix-level helpers (.knnAdjacency, .neighbourComposition, ...) take
-# plain matrices/vectors so they can be unit-tested without any
-# SpatialExperiment machinery.
-# ============================================================
+
 
 # ---- matrix-level helpers -------------------------------------------------
 

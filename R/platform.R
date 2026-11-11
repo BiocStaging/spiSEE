@@ -1,15 +1,6 @@
-# ============================================================
-# Platform adapter.
-#
-# The only things that really differ between platforms are a handful of
-# facts: how a selection is expressed (FOV tiles vs single cells), which
-# colData columns hold QC metrics and cell-type labels, and which metric to
-# show first. They live here, in one table, instead of being hard-coded in
-# parallel CosMx*/Xenium* panel classes.
-#
-# Adding a platform = adding one entry to .PLATFORMS (and, if needed, a
-# loader in load.R). No new panel class.
-# ============================================================
+# Platform table: how a selection is expressed (FOV tiles or cells) and
+# which colData columns hold QC metrics and cell-type labels. Adding a
+# platform means adding one entry here (and a loader in load.R if needed).
 
 .PLATFORMS <- list(
     cosmx = list(

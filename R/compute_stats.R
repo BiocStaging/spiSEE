@@ -1,22 +1,10 @@
 #' @import SpatialFeatureExperiment
 NULL
 
-# ============================================================
-# Spatial statistics on a selected region (merged CosMx + Xenium versions).
-#
-# The neighbour graph is k-NN on cell centroids, rebuilt on the selection so
-# that every cell has k neighbours inside the region. k is a parameter: the
-# right scale depends on the structures being looked at.
-#
-# Why k-NN and not polygon adjacency (poly2nb): on CosMx poly2nb took ~10 s
-# for ~5,700 cells and left many cells without neighbours; centroids also
-# exist on every platform, polygons do not.
-#
-# `as(se, "SpatialFeatureExperiment")` needs SpatialFeatureExperiment's
-# coercion method registered, hence the @import above: relying on load
-# order broke a real install (works under load_all, fails after
-# R CMD INSTALL). Do not remove it.
-# ============================================================
+# Spatial statistics on a selected region. The neighbour graph is k-NN on
+# cell centroids (available on every platform, unlike polygons), rebuilt on
+# the selection so every cell has k neighbours inside the region.
+# The @import above registers the coercion to SpatialFeatureExperiment.
 
 .toSFEWithKNNNeighbors <- function(se, k = 6L) {
     sfe <- as(se, "SpatialFeatureExperiment")
@@ -140,10 +128,7 @@ NULL
 # by their cluster type (High-High, Low-Low, ...); the others are greyed.
 .localClusterPlot <- function(sfe, gene, alpha, k) {
     sfe <- .runLocalMoran(sfe, gene)
-    # localResults()/localResults<-() are SpatialFeatureExperiment's own
-    # generic (Voyager imports but does not re-export it -- Voyager::
-    # localResults looks fine at a glance since it resolves via
-    # inheritance, but errors at call time: "not an exported object").
+    # localResults() is exported by SpatialFeatureExperiment, not Voyager.
     lm <- SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]]
     lm$locClust <- ifelse(lm[["-log10p_adj"]] > -log10(alpha),
         as.character(lm$mean), "non-significant")
@@ -197,7 +182,7 @@ NULL
 
 # Moran's I scan over the most expressed genes (or metadata(se)$gene_ranks).
 .computeSVGRanking <- function(se, top_n = 200L, k = 6L) {
-    # An empty table carries the reason, shown in the panel (F4).
+    # An empty table carries the reason, shown in the panel.
     empty <- function(why) structure(data.frame(gene = character(0),
                                                 moran_i = numeric(0)),
                                                 reason = why)

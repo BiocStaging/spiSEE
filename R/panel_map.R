@@ -1,24 +1,8 @@
-# ============================================================
-# SpatialMapPanel - overview map where the user builds a selection.
-#
-# One class for every platform; what is selectable comes from the platform
-# (platform.R):
-#   - "fov"  (CosMx): FOV tiles drawn as plotly rectangles on a cached image
-#                      of the tissue; clicks toggle tiles.
-#   - "cell" (Xenium, Visium HD): cell centroids as an invisible WebGL point
-#                      trace on a cached image; clicks/box-select pick cells.
-#
-# Selection is entirely client-side (JS attached with htmlwidgets::onRender):
-# clicking, box-select, "All" and highlight changes never touch R. Only
-# Validate talks to the server: it writes the pending set into the
-# `Selection` slot of every panel that has one (.findSelectablePanels) and
-# requests their update. Validate REPLACES the previous selection; Clear
-# resets it to the whole dataset.
-#
-# Both background images are rendered once and cached on disk
-# (tools::R_user_dir), keyed by a digest of the data's shape -- rasterising
-# ~50k points costs ~1 s, which used to be paid on every click.
-# ============================================================
+# SpatialMapPanel: overview map where the user builds a selection, of FOV
+# tiles (CosMx) or cells (Xenium, Visium HD), drawn over a background image
+# cached on disk. Clicks and box selections are handled in the browser
+# (htmlwidgets::onRender); only Validate and Clear reach R, and they set the
+# `Selection` slot of every selectable panel.
 
 setMethod("initialize", "SpatialMapPanel", function(.Object, ...) {
     .Object <- callNextMethod(.Object, ...)
@@ -75,7 +59,7 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
     ))
 })
 
-# ── Background images (built once, cached on disk) ──────────────────────
+# Background images (built once, cached on disk)
 
 .mapCacheKey <- function(se, unit) {
     xy <- SpatialExperiment::spatialCoords(se)
@@ -157,7 +141,7 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
         ids = colnames(se), px = unname(xy[, 1]), py = unname(xy[, 2]))
 }
 
-# ── Widget ──────────────────────────────────────────────────────────────
+# Widget
 
 # Client-side selection logic shared by both modes. Only `redraw()` differs:
 # tiles restyle rectangle outlines, cells restyle a highlight trace.
@@ -313,11 +297,7 @@ setMethod(".createObservers", "SpatialMapPanel",
         .applyMapSelection(enc, ids, session, pObjects, rObjects)
 
     shiny::observeEvent(input[[paste0(enc, "_Validate")]], {
-        # Previously committed tiles aren't re-sent by the browser on every
-        # click (only the deltas are, via PendingIDs/PendingRemoveIDs), so the
-        # new committed set must be folded in from the panel's own
-        # CommittedIDs -- otherwise a second Validate round wipes out
-        # everything from the first.
+        # The browser sends only the changes; add them to the committed set.
         mem <- pObjects$memory[[enc]]
         committed <- .splitIDs(mem@CommittedIDs)
         pending <- .splitIDs(mem@PendingIDs)

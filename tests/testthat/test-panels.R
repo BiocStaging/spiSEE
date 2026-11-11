@@ -117,7 +117,7 @@ test_that("the launcher offers the spatial panels in 'Organize panels'", {
                            "FOVZoomPanel")))
 })
 
-test_that("join counts use binary symmetric weights (F14)", {
+test_that("join counts use binary symmetric weights", {
     sfe <- .toSFEWithKNNNeighbors(.makeTestSPE(n_cells = 120), k = 6L)
     lw <- .joincountWeights(sfe)
     expect_identical(lw$style, "B")
@@ -128,14 +128,14 @@ test_that("join counts use binary symmetric weights (F14)", {
     expect_true(all(df$Variance[!is.na(df$Variance)] >= 0))
 })
 
-test_that("local cluster significance level is a panel parameter (F7)", {
+test_that("local cluster significance level is a panel parameter", {
     expect_identical(SpatialStatsPanel()@Alpha, 0.05)
     expect_identical(SpatialStatsPanel(Alpha = 0.01)@Alpha, 0.01)
     expect_error(SpatialStatsPanel(Alpha = 1.5), "Alpha")
     expect_true("alpha" %in% names(formals(.computeSpatialStat)))
 })
 
-test_that("QC histogram: readable names and flagged-cell count (F8)", {
+test_that("QC histogram: readable names and flagged-cell count", {
     spe <- .makeTestSPE(n_cells = 200)
     colData(spe)$total_outlier_mc <- scuttle::isOutlier(colData(spe)$total,
         nmads = 1)
@@ -150,7 +150,7 @@ test_that("QC histogram: readable names and flagged-cell count (F8)", {
                      "1 of 4 cells flagged as outliers (25.0%)")
 })
 
-test_that("placeholders show their message in the panel (F9)", {
+test_that("placeholders show their message in the panel", {
     p <- .generateOutput(FOVZoomPanel(), .makeTestSPE())
     expect_identical(p$labels$title,
                      "Select FOVs on the map, then press Validate.")
@@ -171,7 +171,7 @@ test_that("FOV zoom explains a dataset without cell polygons", {
     expect_match(p$labels$title, "has none")
 })
 
-test_that("panel outputs turn on Shiny's busy indicators (F10)", {
+test_that("panel outputs turn on Shiny's busy indicators", {
     for (x in list(SpatialPlotPanel(), SpatialMapPanel(), SVGPanel(),
                    SpatialNichePanel())) {
         x@PanelId <- 1L
@@ -192,7 +192,7 @@ test_that("scale bar is turned off only when the technology is unknown", {
     expect_identical(.scaleBarArgs(f_new, spe), list())
 })
 
-test_that("an empty SVG table says why (F4)", {
+test_that("an empty SVG table says why", {
     spe <- .makeTestSPE()
     expect_match(attr(.generateOutput(SVGPanel(), spe), "reason"),
                  "Press Compute")

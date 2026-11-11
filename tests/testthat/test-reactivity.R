@@ -52,7 +52,7 @@ test_that("an empty ColorBy from a loading menu is ignored", {
     expect_identical(.castColorBy("Malat1"), "Malat1")
 })
 
-test_that("panel errors become a readable validation message (F3)", {
+test_that("panel errors become a readable validation message", {
     expect_identical(.safeOutput(42, "P"), 42)
     expect_message(
         err <- tryCatch(.safeOutput(stop("boom"), "P"), error = function(e) e),

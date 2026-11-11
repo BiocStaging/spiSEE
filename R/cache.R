@@ -1,17 +1,7 @@
-# ============================================================
-# Image cache of the plot panels (.renderCachedSpatialPlot).
-#
-# By default images are kept on disk and survive app restarts (on the demo
-# server an app stops after 10 minutes idle). The cache has a size limit;
-# when it is full the least recently used images are removed first, so the
-# images seen at every start and after every Clear (no selection) stay.
-#
-# Keys = dataset fingerprint + package version + panel name + the panel's
-# key slots. The fingerprint keeps two datasets with the same panel settings
-# apart; the version drops images drawn by older plot code. Under
-# devtools::load_all() the code changes without a version bump, so a memory
-# cache (cleared when R stops) is used instead.
-# ============================================================
+# Image cache of the plot panels, on disk by default (size-limited, least
+# recently used removed first). Keys: dataset fingerprint, package version,
+# panel name and the panel's key slots. Under devtools::load_all() a memory
+# cache is used, since the code changes without a version bump.
 
 .CACHE <- new.env(parent = emptyenv())
 

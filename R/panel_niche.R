@@ -5,21 +5,9 @@ NULL
 
 utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
 
-# ============================================================
-# SpatialNichePanel - cellular niches and spatial domains, for any platform.
-#
-# Follows the map selection through the `Selection` slot (SpatialPanelBase),
-# on any platform.
-#
-# In the app nothing is computed until Compute is pressed:
-#  - Before Compute: the full-data result is shown on the whole tissue
-#    (stored by computeNiches()/computeSpatialDomains() offline, see
-#    inst/scripts/precompute_niches.R, else computed once on all cells).
-#  - Compute: runs on the map selection at that moment with the panel's
-#    parameters (k, number of niches, lambda). Later selections or parameter
-#    changes wait for the next Compute; switching the plot type reuses the
-#    result.
-# ============================================================
+# SpatialNichePanel: cellular niches and spatial domains. Before Compute it
+# shows the full-data result (precomputed, or computed once on all cells);
+# Compute reruns on the current map selection with the panel's parameters.
 
 .NICHE_PLOTS <- c(
     "Niches on tissue"                       = "niche_map",
@@ -37,13 +25,8 @@ utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
     if (use_polygons && !has_poly)
         return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
     if (use_polygons) {
-        # Real cell-shape polygons instead of a centroid scatter; same geom_sf
-        # mechanism as SpatialPlotPanel's UsePolygons (see panel_plot.R), but
-        # hand-rolled here rather than via SpaceTrooper::plotPolygons() since
-        # this panel's "on tissue" plots are already a shared ggplot helper
-        # used by several PlotTypes, not just one colourBy column.
-        # colData(se)$polygons is an sf data frame; data.frame() would split it
-        # into polygons.* columns, so build an sf object from its geometry.
+        # Cell polygons: build an sf object from the geometry column
+        # (data.frame() would split it into polygons.* columns).
         df <- sf::st_sf(value = values,
                         geometry = sf::st_geometry(colData(se)[["polygons"]]))
         p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +

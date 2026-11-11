@@ -1,11 +1,7 @@
-# ============================================================
 # Shared helpers: plot fallbacks, cached rendering, input observers.
-# ============================================================
 
-# Every panel output is wrapped with Shiny's busy indicators (spinner on
-# the output being computed, a pulse at the top of the page while the
-# server is busy), so a panel that computes does not look frozen (F10).
-# singleton(): included once per page, whatever the number of panels.
+# Shiny busy indicators on every panel output (spinner while computing);
+# singleton() includes them once per page.
 .withBusy <- function(output_tag) {
     htmltools::tagList(
         htmltools::singleton(shiny::useBusyIndicators(spinners = TRUE,
@@ -25,8 +21,7 @@
 }
 
 # Placeholder shown instead of a plot: the message centred in the panel, in
-# large grey text, so an empty panel reads as "waiting for you" rather than
-# broken (F9). The message is also the plot title, for tests and exports.
+# large grey text. The message is also the plot title, for tests and exports.
 .notAvailablePlot <- function(msg) {
     wrapped <- paste(strwrap(msg, width = 45), collapse = "\n")
     ggplot2::ggplot() +
@@ -71,15 +66,9 @@
     } else p
 }
 
-# Update requests for iseeSpatial panels.
-#
-# iSEE's .requestUpdate() is not used for them: its update observer
-# (.create_child_propagation_observer) then calls .generateOutput() on the
-# panel itself, and the panel's render computes it again, so every Validate
-# or Clear computed each panel twice, including the ones whose result did
-# not change (niches, SVG ranking, statistics). Our panels do not send iSEE
-# multi-selections, so they need none of that observer's work. Instead each
-# panel has its own counter in rObjects, read only by its .panelKey().
+# Update requests for iseeSpatial panels. iSEE's .requestUpdate() would
+# make iSEE compute the panel's output a second time, so each panel has its
+# own counter in rObjects instead, read only by its .panelKey().
 .updateName <- function(enc) paste0(enc, "_iseeSpatialUpdate")
 
 .spatialUpdate <- function(enc, rObjects) {
@@ -89,12 +78,9 @@
     invisible(NULL)
 }
 
-# Reactive render key of one panel. It changes only when the panel was asked
-# to update (our counter, or iSEE's rObjects$modified for changes made by
-# iSEE itself) AND the slots in key_fun() differ; reactiveVal() ignores
-# identical values, so outputs that read it re-run only for their own
-# changes. (rObjects$modified is reassigned as a whole list on every update,
-# so outputs must not read it directly.)
+# Reactive render key of one panel: changes only when the panel is asked to
+# update and the slots in key_fun() differ (reactiveVal() ignores identical
+# values), so an output re-runs only for its own changes.
 .panelKey <- function(enc, pObjects, rObjects, key_fun) {
     rv <- shiny::reactiveVal(key_fun(pObjects$memory[[enc]]))
     shiny::observe({
@@ -105,11 +91,8 @@
     rv
 }
 
-# Runs a panel's output code. An R error is shown in the panel as its
-# message (validate(), grey text) and logged to the console, instead of
-# Shiny's generic error output (seen as "[object Object]", F3). Shiny's own
-# silent errors (req(), validate()) pass through unchanged. Errors are not
-# cached by renderCachedPlot, so the panel retries on its next update.
+# Runs a panel's output code; an R error is shown in the panel as its
+# message and logged to the console. Errors are not cached.
 .safeOutput <- function(expr, panel) {
     tryCatch(expr, error = function(e) {
         if (inherits(e, "shiny.silent.error")) stop(e)

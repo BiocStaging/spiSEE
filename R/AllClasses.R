@@ -1,13 +1,5 @@
-# ============================================================
-# All panel classes in one place (collated first, alphabetically).
-#
-# Every panel that follows the overview map's selection extends
-# SpatialPanelBase and therefore carries a `Selection` slot: a
-# comma-separated list of region IDs whose meaning depends on the platform
-# (FOV ids on CosMx, cell ids on Xenium / Visium HD; see platform.R). The map
-# panel finds receivers by that slot, so panels added at runtime through
-# iSEE's "Organize panels" also follow the selection.
-# ============================================================
+# Panel classes. Panels that follow the map selection extend
+# SpatialPanelBase: a `Selection` slot of comma-separated FOV or cell ids.
 
 #' Base class for iseeSpatial panels
 #'
