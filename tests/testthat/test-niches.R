@@ -108,3 +108,12 @@ test_that("niche results are reused when only the plot type changes", {
   expect_identical(out1$labels$caption, "Computed on 300 cells")
   expect_s3_class(out2, "pheatmap")
 })
+
+test_that("niche clustering is reproducible and leaves the user's random state alone", {
+  set.seed(42); before <- .Random.seed
+  x <- matrix(c(rnorm(50), rnorm(50, 5)), ncol = 2)
+  set.seed(42); invisible(runif(1)); state <- .Random.seed
+  a <- .safeKmeans(x, 2, seed = 7)
+  expect_identical(.Random.seed, state)
+  expect_identical(a, .safeKmeans(x, 2, seed = 7))
+})

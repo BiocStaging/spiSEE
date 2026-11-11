@@ -93,9 +93,10 @@ NULL
   n_distinct <- nrow(unique(round(x, 6)))
   centers <- min(as.integer(centers), n_distinct)
   if (centers < 2L) stop("not enough distinct neighbourhoods to form 2 clusters")
-  set.seed(seed)
-  stats::kmeans(x, centers = centers, nstart = if (nrow(x) > 5e4) 3 else 10, iter.max = if (nrow(x) > 5e4) 300 else 100,
-                algorithm = if (nrow(x) > 5e4) "MacQueen" else "Hartigan-Wong")$cluster
+  # withr::with_seed: reproducible without changing the user's random state
+  withr::with_seed(seed,
+    stats::kmeans(x, centers = centers, nstart = if (nrow(x) > 5e4) 3 else 10, iter.max = if (nrow(x) > 5e4) 300 else 100,
+                  algorithm = if (nrow(x) > 5e4) "MacQueen" else "Hartigan-Wong")$cluster)
 }
 
 # Concatenate an embedding with its neighbourhood mean, weighted so lambda
@@ -115,8 +116,7 @@ NULL
   sym <- (adj + Matrix::t(adj)) > 0
   g <- igraph::graph_from_adjacency_matrix(sym * 1, mode = "undirected",
                                            weighted = NULL, diag = FALSE)
-  set.seed(seed)
-  igraph::membership(igraph::cluster_louvain(g, resolution = resolution))
+  withr::with_seed(seed, igraph::membership(igraph::cluster_louvain(g, resolution = resolution)))
 }
 
 # ---- SpatialExperiment-level API ------------------------------------------
@@ -227,8 +227,8 @@ computeSpatialDomains <- function(spe, k_spatial = 15L, lambda = 0.2,
     emb <- SingleCellExperiment::reducedDim(spe, use_dimred)
     emb <- emb[, seq_len(min(n_pcs, ncol(emb))), drop = FALSE]
   } else {
-    set.seed(seed)
-    emb <- scater::calculatePCA(spe, ncomponents = min(n_pcs, nrow(spe) - 1L))
+    emb <- withr::with_seed(seed,
+      scater::calculatePCA(spe, ncomponents = min(n_pcs, nrow(spe) - 1L)))
   }
   adj <- .getSpatialAdjacency(spe, k_spatial)
   dom <- .graphCluster(.augmentEmbedding(emb, adj, lambda), k = k_graph,

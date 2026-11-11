@@ -53,7 +53,8 @@ Imports:
     DT,
     sf,
     shiny (>= 1.8.1),
-    htmltools
+    htmltools,
+    withr
 Suggests:
     SpatialExperimentIO,
     VisiumIO,
@@ -62,8 +63,7 @@ Suggests:
     knitr,
     rmarkdown,
     scuttle,
-    testthat (>= 3.0.0),
-    withr
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 biocViews: Software, Spatial, Transcriptomics, SingleCell, Visualization,
     GUI, ShinyApps, Clustering, QualityControl
