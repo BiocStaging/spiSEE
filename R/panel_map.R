@@ -37,7 +37,7 @@ setMethod(".panelColor", "SpatialMapPanel", function(x) "#118AB2")
 #' @rdname SpatialMapPanel
 #' @export
 setMethod(".defineOutput", "SpatialMapPanel", function(x)
-  plotly::plotlyOutput(.getEncodedName(x), height = "600px"))
+  .withBusy(plotly::plotlyOutput(.getEncodedName(x), height = "600px")))
 
 #' @rdname SpatialMapPanel
 #' @export

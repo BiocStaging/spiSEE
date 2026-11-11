@@ -20,7 +20,7 @@ setMethod(".panelColor", "SpatialQCPanel", function(x) "#E63946")
 #' @rdname SpatialQCPanel
 #' @export
 setMethod(".defineOutput", "SpatialQCPanel", function(x)
-  shiny::plotOutput(.getEncodedName(x), height = "400px"))
+  .withBusy(shiny::plotOutput(.getEncodedName(x), height = "400px")))
 
 .resolveMetric <- function(x, se) {
   m <- .qcMetrics(se)
@@ -110,7 +110,7 @@ setMethod(".panelColor", "FOVStatsPanel", function(x) "#8338EC")
 #' @rdname FOVStatsPanel
 #' @export
 setMethod(".defineOutput", "FOVStatsPanel", function(x)
-  shiny::plotOutput(.getEncodedName(x), height = "600px"))
+  .withBusy(shiny::plotOutput(.getEncodedName(x), height = "600px")))
 #' @rdname FOVStatsPanel
 #' @export
 setMethod(".defineInterface", "FOVStatsPanel", function(x, se, select_info) {

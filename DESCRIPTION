@@ -52,7 +52,8 @@ Imports:
     cachem,
     DT,
     sf,
-    shiny
+    shiny (>= 1.8.1),
+    htmltools
 Suggests:
     SpatialExperimentIO,
     VisiumIO,

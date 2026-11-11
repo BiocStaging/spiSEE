@@ -112,7 +112,7 @@ setMethod(".panelColor", "SpatialNichePanel", function(x) "#7B2CBF")
 #' @rdname SpatialNichePanel
 #' @export
 setMethod(".defineOutput", "SpatialNichePanel", function(x)
-  shiny::plotOutput(.getEncodedName(x), height = "600px"))
+  .withBusy(shiny::plotOutput(.getEncodedName(x), height = "600px")))
 
 #' @rdname SpatialNichePanel
 #' @export

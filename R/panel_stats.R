@@ -27,7 +27,7 @@ setMethod(".panelColor", "SpatialStatsPanel", function(x) "#4ECDC4")
 #' @rdname SpatialStatsPanel
 #' @export
 setMethod(".defineOutput", "SpatialStatsPanel", function(x)
-  shiny::plotOutput(.getEncodedName(x), height = "550px"))
+  .withBusy(shiny::plotOutput(.getEncodedName(x), height = "550px")))
 
 .kInput <- function(enc, value, label = "Neighbours per cell (k):")
   shiny::numericInput(paste0(enc, "_K"), label, value = value, min = 2, max = 200, step = 1)
@@ -139,7 +139,7 @@ setMethod(".fullName",   "SVGPanel", function(x) "Spatially Variable Genes")
 setMethod(".panelColor", "SVGPanel", function(x) "#F7A11A")
 #' @rdname SVGPanel
 #' @export
-setMethod(".defineOutput", "SVGPanel", function(x) DT::dataTableOutput(.getEncodedName(x)))
+setMethod(".defineOutput", "SVGPanel", function(x) .withBusy(DT::dataTableOutput(.getEncodedName(x))))
 
 #' @rdname SVGPanel
 #' @export

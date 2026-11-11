@@ -59,7 +59,7 @@ setMethod(".panelColor", "SpatialPlotPanel", function(x) "#EF476F")
 #' @rdname SpatialPlotPanel
 #' @export
 setMethod(".defineOutput", "SpatialPlotPanel", function(x)
-  shiny::plotOutput(.getEncodedName(x), height = "600px"))
+  .withBusy(shiny::plotOutput(.getEncodedName(x), height = "600px")))
 
 # Menu content: annotations, then QC metrics, then genes.
 .colorByChoices <- function(se) {
@@ -194,7 +194,7 @@ setMethod(".panelColor", "FOVZoomPanel", function(x) "#3A86FF")
 #' @rdname FOVZoomPanel
 #' @export
 setMethod(".defineOutput", "FOVZoomPanel", function(x)
-  shiny::plotOutput(.getEncodedName(x), height = "550px"))
+  .withBusy(shiny::plotOutput(.getEncodedName(x), height = "550px")))
 
 #' @rdname FOVZoomPanel
 #' @export

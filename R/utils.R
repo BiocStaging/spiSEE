@@ -2,6 +2,16 @@
 # Shared helpers: plot fallbacks, cached rendering, input observers.
 # ============================================================
 
+# Every panel output is wrapped with Shiny's busy indicators (spinner on
+# the output being computed, a pulse at the top of the page while the
+# server is busy), so a panel that computes does not look frozen (F10).
+# singleton(): included once per page, whatever the number of panels.
+.withBusy <- function(output_tag) {
+  htmltools::tagList(
+    htmltools::singleton(shiny::useBusyIndicators(spinners = TRUE, pulse = TRUE)),
+    output_tag)
+}
+
 # Placeholder shown instead of a plot: the message centred in the panel, in
 # large grey text, so an empty panel reads as "waiting for you" rather than
 # broken (F9). The message is also the plot title, for tests and exports.

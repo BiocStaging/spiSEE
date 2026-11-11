@@ -134,3 +134,12 @@ test_that("placeholders show their message in the panel (F9)", {
   f <- tempfile(fileext = ".png"); grDevices::png(f, 500, 400); print(p); grDevices::dev.off()
   expect_gt(file.size(f), 0)
 })
+
+test_that("panel outputs turn on Shiny's busy indicators (F10)", {
+  for (x in list(SpatialPlotPanel(), SpatialMapPanel(), SVGPanel(), SpatialNichePanel())) {
+    x@PanelId <- 1L
+    html <- htmltools::renderTags(.defineOutput(x))$html
+    expect_match(html, "shinyBusySpinners")
+    expect_match(html, .getEncodedName(x), fixed = TRUE)
+  }
+})
