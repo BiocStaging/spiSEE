@@ -27,9 +27,19 @@ NULL
   sfe
 }
 
+# Join counts need binary, symmetric weights: the test (Cliff and Ord 1981)
+# assumes a symmetric matrix and counts joins, so the row-standardised k-NN
+# graph used by the Moran statistics ("W", not symmetric) is not suitable;
+# with it the variance can even be negative (?spdep::joincount.multi). Two
+# cells are joined if either is among the other's k nearest neighbours.
+.joincountWeights <- function(sfe) {
+  nb <- spdep::make.sym.nb(SpatialFeatureExperiment::colGraph(sfe, "knn")$neighbours)
+  spdep::nb2listw(nb, style = "B", zero.policy = TRUE)
+}
+
 .joincountDF <- function(sfe, group_col) {
   jc <- spdep::joincount.multi(factor(colData(sfe)[[group_col]]),
-                               SpatialFeatureExperiment::colGraph(sfe, "knn"), zero.policy = TRUE)
+                               .joincountWeights(sfe), zero.policy = TRUE)
   df <- as.data.frame(jc)
   colnames(df)[colnames(df) == "z-value"] <- "z_value"
   df$pair <- rownames(jc)

@@ -105,3 +105,14 @@ test_that("the launcher offers the spatial panels in 'Organize panels'", {
   expect_false(any(vapply(.extraPanels(.makeTestVisiumHDSPE()), is, logical(1), "FOVZoomPanel")))
   expect_true(any(vapply(.extraPanels(.makeTestSPE()), is, logical(1), "FOVZoomPanel")))
 })
+
+test_that("join counts use binary symmetric weights (F14)", {
+  sfe <- .toSFEWithKNNNeighbors(.makeTestSPE(n_cells = 120), k = 6L)
+  lw <- .joincountWeights(sfe)
+  expect_identical(lw$style, "B")
+  m <- spdep::listw2mat(lw)
+  expect_true(isSymmetric(unname(m)))
+  expect_true(all(m %in% c(0, 1)))
+  df <- .joincountDF(sfe, "SingleR_label")
+  expect_true(all(df$Variance[!is.na(df$Variance)] >= 0))
+})
