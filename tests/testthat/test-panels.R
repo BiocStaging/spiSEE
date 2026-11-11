@@ -114,3 +114,15 @@ test_that("local cluster significance level is a panel parameter (F7)", {
   expect_error(SpatialStatsPanel(Alpha = 1.5), "Alpha")
   expect_true("alpha" %in% names(formals(.computeSpatialStat)))
 })
+
+test_that("QC histogram: readable names and flagged-cell count (F8)", {
+  spe <- .makeTestSPE(n_cells = 200)
+  colData(spe)$total_outlier_mc <- scuttle::isOutlier(colData(spe)$total, nmads = 1)
+  n <- sum(colData(spe)$total_outlier_mc)
+  p <- .generateOutput(SpatialQCPanel(Metric = "total", UseFences = TRUE), spe)
+  expect_s3_class(p, "ggplot")
+  expect_identical(p$labels$colour, "Outlier fences (medcouple)")
+  expect_match(p$labels$subtitle, sprintf("^%d of 200 cells flagged", n))
+  expect_identical(.prettyMetric("transcript_counts"), "Transcript counts")
+  expect_identical(.flaggedText(c(TRUE, FALSE, NA, FALSE)), "1 of 4 cells flagged as outliers (25.0%)")
+})

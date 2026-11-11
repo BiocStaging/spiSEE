@@ -60,6 +60,7 @@ Suggests:
     BiocStyle,
     knitr,
     rmarkdown,
+    scuttle,
     testthat (>= 3.0.0),
     withr
 VignetteBuilder: knitr

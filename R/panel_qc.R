@@ -48,8 +48,29 @@ setMethod(".generateOutput", "SpatialQCPanel", function(x, se, ...) {
   fence_col <- paste0(metric, "_outlier_mc")
   fences <- if (x@UseFences && fence_col %in% colnames(colData(se))) fence_col else NULL
   se <- .subsetBySelection(se, x@Selection)
-  SpaceTrooper::plotMetricHist(se, metric = metric, useFences = fences)
+  if (ncol(se) == 0) return(.notAvailablePlot("No cells in this selection"))
+  p <- SpaceTrooper::plotMetricHist(se, metric = metric, useFences = fences) +
+    ggplot2::labs(title = .prettyMetric(metric), x = .prettyMetric(metric))
+  if (is.null(fences)) return(p)
+  # SpaceTrooper names the legend after the internal column
+  # ("Fences transcript_counts_outlier_mc") and shows no counts (F8).
+  flagged <- as.logical(colData(se)[[fences]])
+  p + ggplot2::labs(colour = "Outlier fences (medcouple)",
+                    subtitle = .flaggedText(flagged))
 })
+
+# "transcript_counts" -> "Transcript counts"; "nCount_RNA" stays as is.
+.prettyMetric <- function(m) {
+  if (!grepl("_", m)) return(m)
+  s <- gsub("_", " ", m)
+  paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
+}
+
+.flaggedText <- function(flagged) {
+  n <- sum(flagged, na.rm = TRUE); tot <- length(flagged)
+  sprintf("%s of %s cells flagged as outliers (%.1f%%)",
+          format(n, big.mark = ","), format(tot, big.mark = ","), if (tot) 100 * n / tot else 0)
+}
 
 #' @rdname SpatialQCPanel
 #' @export
