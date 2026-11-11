@@ -126,3 +126,11 @@ test_that("QC histogram: readable names and flagged-cell count (F8)", {
   expect_identical(.prettyMetric("transcript_counts"), "Transcript counts")
   expect_identical(.flaggedText(c(TRUE, FALSE, NA, FALSE)), "1 of 4 cells flagged as outliers (25.0%)")
 })
+
+test_that("placeholders show their message in the panel (F9)", {
+  p <- .generateOutput(FOVZoomPanel(), .makeTestSPE())
+  expect_identical(p$labels$title, "Select FOVs on the map, then press Validate.")
+  expect_true(any(vapply(p$layers, function(l) inherits(l$geom, "GeomText"), logical(1))))
+  f <- tempfile(fileext = ".png"); grDevices::png(f, 500, 400); print(p); grDevices::dev.off()
+  expect_gt(file.size(f), 0)
+})

@@ -2,8 +2,17 @@
 # Shared helpers: plot fallbacks, cached rendering, input observers.
 # ============================================================
 
+# Placeholder shown instead of a plot: the message centred in the panel, in
+# large grey text, so an empty panel reads as "waiting for you" rather than
+# broken (F9). The message is also the plot title, for tests and exports.
 .notAvailablePlot <- function(msg) {
-  ggplot2::ggplot() + ggplot2::labs(title = msg) + ggplot2::theme_void()
+  wrapped <- paste(strwrap(msg, width = 45), collapse = "\n")
+  ggplot2::ggplot() +
+    ggplot2::annotate("text", x = 0, y = 0, label = wrapped, size = 5.5,
+                      colour = "grey45", lineheight = 1.1) +
+    ggplot2::xlim(-1, 1) + ggplot2::ylim(-1, 1) +
+    ggplot2::labs(title = msg) + ggplot2::theme_void() +
+    ggplot2::theme(plot.title = ggplot2::element_blank())
 }
 
 .FORCE_CATEGORICAL <- c("fov", "SingleR_label", "low_qcscore", "ex")
