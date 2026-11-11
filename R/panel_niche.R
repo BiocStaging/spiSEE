@@ -263,7 +263,7 @@ setMethod(".createObservers", "SpatialNichePanel", function(x, se, input, sessio
   shiny::observeEvent(input[[paste0(enc, "_PlotType")]], {
     v <- input[[paste0(enc, "_PlotType")]]
     if (!identical(v, pObjects$memory[[enc]]@PlotType)) {
-      pObjects$memory[[enc]]@PlotType <- v; .requestUpdate(enc, rObjects) }
+      pObjects$memory[[enc]]@PlotType <- v; .spatialUpdate(enc, rObjects) }
   }, ignoreInit = TRUE)
   .slotObserver(enc, "UsePolygons", input, pObjects, rObjects, cast = as.logical)
   setters <- list(LabelCol = as.character, K = as.integer, NNiches = as.integer, Lambda = as.numeric)
@@ -276,7 +276,7 @@ setMethod(".createObservers", "SpatialNichePanel", function(x, se, input, sessio
   })
   shiny::observeEvent(input[[paste0(enc, "_Compute")]], {
     pObjects$memory[[enc]]@ComputeTrigger <- as.character(Sys.time())
-    .requestUpdate(enc, rObjects)
+    .spatialUpdate(enc, rObjects)
   }, ignoreInit = TRUE)
 })
 

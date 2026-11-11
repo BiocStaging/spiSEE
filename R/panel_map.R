@@ -278,7 +278,7 @@ setMethod(".createObservers", "SpatialMapPanel", function(x, se, input, session,
     sel <- paste(ids, collapse = ",")
     for (target in .findSelectablePanels(pObjects)) {
       pObjects$memory[[target]]@Selection <- sel
-      .requestUpdate(target, rObjects)
+      .spatialUpdate(target, rObjects)
     }
     pObjects$memory[[enc]]@CommittedIDs <- sel
     pObjects$memory[[enc]]@PendingIDs <- ""

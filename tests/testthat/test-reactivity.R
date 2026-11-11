@@ -21,6 +21,16 @@ test_that(".panelKey reacts only to its own panel and to real slot changes", {
     rObjects$modified <- list(A = character(0)); session$flushReact()
     expect_equal(seen$runs, 2)
     expect_identical(seen$key, "c")
+    # our own update signal: re-runs on a real change, and leaves iSEE's
+    # rObjects$modified alone (iSEE would recompute the panel itself)
+    pObjects$memory$A@ColorBy <- "d"
+    before <- rObjects$modified
+    .spatialUpdate("A", rObjects); session$flushReact()
+    expect_equal(seen$runs, 3)
+    expect_identical(seen$key, "d")
+    expect_identical(rObjects$modified, before)
+    .spatialUpdate("A", rObjects); session$flushReact()
+    expect_equal(seen$runs, 3)
   })
 })
 

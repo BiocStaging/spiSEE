@@ -187,7 +187,7 @@ setMethod(".createObservers", "SVGPanel", function(x, se, input, session, pObjec
     pObjects$memory[[target]]@ColorBy <- gene
     shiny::updateSelectizeInput(session, paste0(target, "_ColorBy"), selected = gene,
                                 choices = .colorByChoices(se), server = TRUE)
-    .requestUpdate(target, rObjects)
+    .spatialUpdate(target, rObjects)
   }, ignoreInit = TRUE, ignoreNULL = TRUE)
 })
 

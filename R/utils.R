@@ -36,18 +36,36 @@
   } else p
 }
 
-# Reactive render key of one panel.
+# Update requests for iseeSpatial panels.
 #
-# iSEE's .requestUpdate() reassigns the whole rObjects$modified list, and
-# iSEE resets it right after, so an output that reads it is invalidated
-# twice by every update of any panel: plots grey out and are re-sent, tables
-# are rebuilt. This value changes only when this panel was marked as
-# modified AND the slots in key_fun() differ; reactiveVal() ignores identical
-# values, so outputs that read it re-run only for their own changes.
+# iSEE's .requestUpdate() is not used for them: its update observer
+# (.create_child_propagation_observer) then calls .generateOutput() on the
+# panel itself, and the panel's render computes it again, so every Validate
+# or Clear computed each panel twice, including the ones whose result did
+# not change (niches, SVG ranking, statistics). Our panels do not send iSEE
+# multi-selections, so they need none of that observer's work. Instead each
+# panel has its own counter in rObjects, read only by its .panelKey().
+.updateName <- function(enc) paste0(enc, "_iseeSpatialUpdate")
+
+.spatialUpdate <- function(enc, rObjects) {
+  nm <- .updateName(enc)
+  n <- shiny::isolate(rObjects[[nm]])
+  rObjects[[nm]] <- if (is.null(n)) 1L else n + 1L
+  invisible(NULL)
+}
+
+# Reactive render key of one panel. It changes only when the panel was asked
+# to update (our counter, or iSEE's rObjects$modified for changes made by
+# iSEE itself) AND the slots in key_fun() differ; reactiveVal() ignores
+# identical values, so outputs that read it re-run only for their own
+# changes. (rObjects$modified is reassigned as a whole list on every update,
+# so outputs must not read it directly.)
 .panelKey <- function(enc, pObjects, rObjects, key_fun) {
   rv <- shiny::reactiveVal(key_fun(pObjects$memory[[enc]]))
   shiny::observe({
-    if (enc %in% names(rObjects$modified)) rv(key_fun(pObjects$memory[[enc]]))
+    rObjects[[.updateName(enc)]]
+    rObjects$modified
+    rv(key_fun(pObjects$memory[[enc]]))
   })
   rv
 }
@@ -81,7 +99,7 @@
     if (!multiple && (length(v) != 1 || is.na(v))) return()
     if (!identical(v, methods::slot(pObjects$memory[[enc]], field))) {
       methods::slot(pObjects$memory[[enc]], field) <- v
-      if (redraw) .requestUpdate(enc, rObjects)
+      if (redraw) .spatialUpdate(enc, rObjects)
     }
   }, ignoreInit = TRUE, ignoreNULL = !multiple)
 }
@@ -90,7 +108,7 @@
 .computeObserver <- function(enc, input, pObjects, rObjects) {
   shiny::observeEvent(input[[paste0(enc, "_Compute")]], {
     pObjects$memory[[enc]]@ComputeTrigger <- as.character(Sys.time())
-    .requestUpdate(enc, rObjects)
+    .spatialUpdate(enc, rObjects)
   }, ignoreInit = TRUE)
 }
 
