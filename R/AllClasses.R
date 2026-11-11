@@ -22,7 +22,7 @@
 #' @examples
 #' # every iseeSpatial panel except the map follows the map selection
 #' is(SpatialPlotPanel(Selection = "1,2"), "SpatialPanelBase")
-#' SpatialPlotPanel(Selection = "1,2")@Selection
+#' SpatialPlotPanel(Selection = "1,2")[["Selection"]]
 #' @name SpatialPanelBase-class
 #' @aliases SpatialPanelBase-class
 #' @export
