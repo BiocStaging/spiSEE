@@ -8,8 +8,14 @@ setMethod("initialize", "SpatialStatsPanel", function(.Object, ...) {
   if (length(.Object@Genes)          == 0) .Object@Genes          <- character(0)
   if (length(.Object@LabelCol)       == 0) .Object@LabelCol       <- NA_character_
   if (length(.Object@K)              == 0) .Object@K              <- 6L
+  if (length(.Object@Alpha)          == 0) .Object@Alpha          <- 0.05
   if (length(.Object@ComputeTrigger) == 0) .Object@ComputeTrigger <- ""
   .Object
+})
+
+setValidity("SpatialStatsPanel", function(object) {
+  a <- object@Alpha
+  if (length(a) != 1 || is.na(a) || a <= 0 || a >= 1) "'Alpha' must be a single number in (0, 1)" else TRUE
 })
 
 #' @rdname SpatialStatsPanel
@@ -41,6 +47,8 @@ setMethod(".defineInterface", "SpatialStatsPanel", function(x, se, select_info) 
                        choices = labs, selected = lab),
     .kInput(enc, x@K),
     shiny::helpText("k sets the spatial scale: small k = immediate neighbours, large k = wider region."),
+    shiny::numericInput(paste0(enc, "_Alpha"), "Significance level (local clusters, adjusted p):",
+                        value = x@Alpha, min = 0.001, max = 0.5, step = 0.01),
     .selectionHelp(se),
     .computeButton(enc),
     shiny::helpText("Nothing recomputes until you press Compute.")))
@@ -53,7 +61,7 @@ setMethod(".generateOutput", "SpatialStatsPanel", function(x, se, ...) {
     return(.notAvailablePlot("Choose a statistic and a region, then press Compute."))
   lab <- if (!is.na(x@LabelCol)) x@LabelCol else .defaultLabelCol(se)
   .computeSpatialStat(.subsetBySelection(se, x@Selection), x@PlotType,
-                      genes = x@Genes, group_col = lab, k = x@K)
+                      genes = x@Genes, group_col = lab, k = x@K, alpha = x@Alpha)
 })
 
 #' @rdname SpatialStatsPanel
@@ -73,6 +81,8 @@ setMethod(".createObservers", "SpatialStatsPanel", function(x, se, input, sessio
   .slotObserver(enc, "Genes", input, pObjects, rObjects, cast = as.character, redraw = FALSE, multiple = TRUE)
   .slotObserver(enc, "LabelCol", input, pObjects, rObjects, cast = as.character, redraw = FALSE)
   .slotObserver(enc, "K", input, pObjects, rObjects, cast = as.integer, redraw = FALSE)
+  .slotObserver(enc, "Alpha", input, pObjects, rObjects, redraw = FALSE,
+                cast = function(v) { v <- as.numeric(v); if (length(v) == 1 && !is.na(v) && v > 0 && v < 1) v else NA_real_ })
   .computeObserver(enc, input, pObjects, rObjects)
 })
 
@@ -88,15 +98,18 @@ setMethod(".createObservers", "SpatialStatsPanel", function(x, se, input, sessio
 #' @param Genes Genes for the Moran-type statistics.
 #' @param LabelCol Cell-type column (`NA` = auto-detect).
 #' @param K Number of spatial neighbours per cell.
+#' @param Alpha Significance level for the local cluster plot: a cell is
+#'   called significant when its adjusted p-value (local Moran's I) is
+#'   below `Alpha`. Shown on the plot.
 #' @param ... Other slots, e.g. `Selection`.
 #' @return A `SpatialStatsPanel` object.
 #' @examples
 #' SpatialStatsPanel(PlotType = "joincount_plot", K = 10)
 #' @export
 SpatialStatsPanel <- function(PlotType = "graph_plot", Genes = character(0),
-                              LabelCol = NA_character_, K = 6L, ...)
+                              LabelCol = NA_character_, K = 6L, Alpha = 0.05, ...)
   new("SpatialStatsPanel", PlotType = PlotType, Genes = Genes, LabelCol = LabelCol,
-      K = as.integer(K), ...)
+      K = as.integer(K), Alpha = as.numeric(Alpha), ...)
 
 # ── SVGPanel ────────────────────────────────────────────────────────────
 

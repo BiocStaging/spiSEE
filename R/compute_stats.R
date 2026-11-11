@@ -57,7 +57,7 @@ NULL
   "L-cross function (Lcross)"       = "lcross_plot")
 
 .computeSpatialStat <- function(se, plot_type, genes = character(0),
-                                group_col = NA_character_, k = 6L) {
+                                group_col = NA_character_, k = 6L, alpha = 0.05) {
   has_groups <- !is.na(group_col) && group_col %in% colnames(colData(se)) &&
     !all(is.na(colData(se)[[group_col]]))
   if (has_groups) se <- se[, !is.na(colData(se)[[group_col]])]
@@ -109,10 +109,11 @@ NULL
       # localResults looks fine at a glance since it resolves via
       # inheritance, but errors at call time: "not an exported object").
       lm <- SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]]
-      lm$locClust <- with(lm, ifelse(`-log10p_adj` > -log10(0.05), as.character(mean), "non-significant"))
+      lm$locClust <- with(lm, ifelse(`-log10p_adj` > -log10(alpha), as.character(mean), "non-significant"))
       SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]] <- lm
       Voyager::plotLocalResult(sfe, features = genes[1], name = "localmoran",
-                               attribute = "locClust", colGeometryName = 1)
+                               attribute = "locClust", colGeometryName = 1) +
+        ggplot2::labs(caption = sprintf("Significant: adjusted p < %g (local Moran's I, k = %d)", alpha, k))
     },
 
     joincount_plot = {

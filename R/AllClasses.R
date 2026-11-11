@@ -80,7 +80,7 @@ setClass("FOVStatsPanel", contains = "SpatialPanelBase")
 #' @export
 setClass("SpatialStatsPanel", contains = "SpatialPanelBase",
   slots = c(PlotType = "character", Genes = "character", LabelCol = "character",
-            K = "integer", ComputeTrigger = "character"))
+            K = "integer", Alpha = "numeric", ComputeTrigger = "character"))
 
 #' @inheritParams SpatialMapPanel
 #' @rdname SVGPanel

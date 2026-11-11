@@ -32,6 +32,7 @@ SpatialStatsPanel(
   Genes = character(0),
   LabelCol = NA_character_,
   K = 6L,
+  Alpha = 0.05,
   ...
 )
 }
@@ -64,6 +65,10 @@ method.}
 \item{LabelCol}{Cell-type column (\code{NA} = auto-detect).}
 
 \item{K}{Number of spatial neighbours per cell.}
+
+\item{Alpha}{Significance level for the local cluster plot: a cell is
+called significant when its adjusted p-value (local Moran's I) is
+below \code{Alpha}. Shown on the plot.}
 }
 \value{
 A \code{SpatialStatsPanel} object.

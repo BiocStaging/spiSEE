@@ -107,3 +107,10 @@ test_that("join counts use binary symmetric weights (F14)", {
   df <- .joincountDF(sfe, "SingleR_label")
   expect_true(all(df$Variance[!is.na(df$Variance)] >= 0))
 })
+
+test_that("local cluster significance level is a panel parameter (F7)", {
+  expect_identical(SpatialStatsPanel()@Alpha, 0.05)
+  expect_identical(SpatialStatsPanel(Alpha = 0.01)@Alpha, 0.01)
+  expect_error(SpatialStatsPanel(Alpha = 1.5), "Alpha")
+  expect_true("alpha" %in% names(formals(.computeSpatialStat)))
+})
