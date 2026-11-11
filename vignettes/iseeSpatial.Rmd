@@ -21,7 +21,7 @@ cellular resolution: imaging-based (CosMx, Xenium) and sequencing-based
 to every panel, and analyses (spatial statistics, spatially variable genes,
 niches, domains) run on that region.
 
-```{r, eval = FALSE}
+```{r install, eval = FALSE}
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 BiocManager::install("iseeSpatial")
 ```
@@ -106,6 +106,6 @@ niches and domains, is in
 
 # Session information
 
-```{r}
+```{r session-info}
 sessionInfo()
 ```

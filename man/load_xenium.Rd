@@ -19,7 +19,6 @@ present, cell polygons via SpaceTrooper. Missing polygons are not an
 error: the panels work on centroids.
 }
 \examples{
-\dontrun{
-spe <- load_xenium("data-raw/xenium_test_data")
-}
+d <- "xenium_output"        # a Xenium output folder (outs/)
+if (dir.exists(d)) spe <- load_xenium(d)
 }

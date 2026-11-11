@@ -16,3 +16,8 @@ ids, depending on the platform). Empty string = whole dataset.}
 }
 }
 
+\examples{
+# every iseeSpatial panel except the map follows the map selection
+is(SpatialPlotPanel(Selection = "1,2"), "SpatialPanelBase")
+SpatialPlotPanel(Selection = "1,2")@Selection
+}

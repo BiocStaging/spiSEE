@@ -134,6 +134,18 @@ NULL
 #' @param BNPARAM A `BiocNeighborParam`; use `BiocNeighbors::AnnoyParam()`
 #'   for very large datasets.
 #' @return `spe` with `colPair(spe, name)` set.
+#' @examples
+#' # two zones of cell types on a 20 x 20 grid
+#' xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
+#' type <- ifelse(xy[, "x"] <= 10, c("Tumor", "T.cells")[(seq_len(400) %% 5 == 0) + 1],
+#'                c("Fibroblast", "T.cells")[(seq_len(400) %% 4 == 0) + 1])
+#' counts <- matrix(seq_len(400 * 10) %% 7, 10, 400,
+#'                  dimnames = list(paste0("g", 1:10), paste0("c", 1:400)))
+#' spe <- SpatialExperiment::SpatialExperiment(
+#'     assays = list(counts = counts, logcounts = log1p(counts)),
+#'     colData = S4Vectors::DataFrame(Level1 = type), spatialCoords = xy)
+#' spe <- buildSpatialGraph(spe, k = 8)
+#' SingleCellExperiment::colPairNames(spe)
 #' @export
 buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
                               BNPARAM = BiocNeighbors::KmknnParam()) {
@@ -172,6 +184,18 @@ buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
 #' @param seed Random seed for k-means.
 #' @return `spe` with niche annotations added. Cells with an `NA` label get
 #'   `NA` niche.
+#' @examples
+#' # two zones of cell types on a 20 x 20 grid
+#' xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
+#' type <- ifelse(xy[, "x"] <= 10, c("Tumor", "T.cells")[(seq_len(400) %% 5 == 0) + 1],
+#'                c("Fibroblast", "T.cells")[(seq_len(400) %% 4 == 0) + 1])
+#' counts <- matrix(seq_len(400 * 10) %% 7, 10, 400,
+#'                  dimnames = list(paste0("g", 1:10), paste0("c", 1:400)))
+#' spe <- SpatialExperiment::SpatialExperiment(
+#'     assays = list(counts = counts, logcounts = log1p(counts)),
+#'     colData = S4Vectors::DataFrame(Level1 = type), spatialCoords = xy)
+#' spe <- computeNiches(spe, label_col = "Level1", k = 8, n_niches = 2)
+#' table(spe$niche, spe$Level1)
 #' @export
 computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
                           include_self = FALSE, seed = 1L) {
@@ -219,6 +243,18 @@ computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
 #' @param resolution Louvain resolution (higher = more domains).
 #' @param seed Random seed.
 #' @return `spe` with `colData` columns `spatial_domain` and `expr_cluster`.
+#' @examples
+#' # two zones of cell types on a 20 x 20 grid
+#' xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
+#' type <- ifelse(xy[, "x"] <= 10, c("Tumor", "T.cells")[(seq_len(400) %% 5 == 0) + 1],
+#'                c("Fibroblast", "T.cells")[(seq_len(400) %% 4 == 0) + 1])
+#' counts <- matrix(seq_len(400 * 10) %% 7, 10, 400,
+#'                  dimnames = list(paste0("g", 1:10), paste0("c", 1:400)))
+#' spe <- SpatialExperiment::SpatialExperiment(
+#'     assays = list(counts = counts, logcounts = log1p(counts)),
+#'     colData = S4Vectors::DataFrame(Level1 = type), spatialCoords = xy)
+#' spe <- computeSpatialDomains(spe, k_spatial = 8, n_pcs = 3, k_graph = 10)
+#' table(spe$spatial_domain)
 #' @export
 computeSpatialDomains <- function(spe, k_spatial = 15L, lambda = 0.2,
                                   use_dimred = "PCA", n_pcs = 20L,

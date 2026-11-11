@@ -17,7 +17,6 @@ Reads a \code{SpatialExperiment} saved as RDS (for instance by the CosMx
 preparation script, \code{data-raw/DATASET.R}) and records the platform.
 }
 \examples{
-\dontrun{
-spe <- load_cosmx("cos_isee_ready.RDS")
-}
+f <- "cos_isee_ready.RDS"   # a CosMx SpatialExperiment saved with saveRDS()
+if (file.exists(f)) spe <- load_cosmx(f)
 }

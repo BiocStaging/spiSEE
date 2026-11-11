@@ -17,9 +17,8 @@
 #' @param rds_path Path to the `.RDS` file.
 #' @return A `SpatialExperiment`.
 #' @examples
-#' \dontrun{
-#' spe <- load_cosmx("cos_isee_ready.RDS")
-#' }
+#' f <- "cos_isee_ready.RDS"   # a CosMx SpatialExperiment saved with saveRDS()
+#' if (file.exists(f)) spe <- load_cosmx(f)
 #' @export
 load_cosmx <- function(rds_path) {
   spe <- readRDS(rds_path)
@@ -39,9 +38,8 @@ load_cosmx <- function(rds_path) {
 #' @param xenium_dir Path to an unzipped Xenium output directory.
 #' @return A `SpatialExperiment`.
 #' @examples
-#' \dontrun{
-#' spe <- load_xenium("data-raw/xenium_test_data")
-#' }
+#' d <- "xenium_output"        # a Xenium output folder (outs/)
+#' if (dir.exists(d)) spe <- load_xenium(d)
 #' @export
 load_xenium <- function(xenium_dir) {
   .needs("SpatialExperimentIO")
@@ -73,9 +71,8 @@ load_xenium <- function(xenium_dir) {
 #' @param images Image resolution to load (passed to `TENxVisiumHD`).
 #' @return A `SpatialExperiment`.
 #' @examples
-#' \dontrun{
-#' spe <- load_visiumhd("VisiumHD/segmented_outputs")
-#' }
+#' d <- "VisiumHD/segmented_outputs"   # Space Ranger cell segmentation output
+#' if (dir.exists(d)) spe <- load_visiumhd(d)
 #' @export
 load_visiumhd <- function(segmented_outputs, images = "lowres") {
   .needs("VisiumIO")

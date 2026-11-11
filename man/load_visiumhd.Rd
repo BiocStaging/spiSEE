@@ -23,7 +23,6 @@ For the full workflow (QC, annotation, niches) see
 \code{system.file("scripts", "visiumhd_osta_workflow.R", package = "iseeSpatial")}.
 }
 \examples{
-\dontrun{
-spe <- load_visiumhd("VisiumHD/segmented_outputs")
-}
+d <- "VisiumHD/segmented_outputs"   # Space Ranger cell segmentation output
+if (dir.exists(d)) spe <- load_visiumhd(d)
 }

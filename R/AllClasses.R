@@ -19,6 +19,10 @@
 #'   \item{`Selection`}{Comma-separated region identifiers (FOV ids or cell
 #'     ids, depending on the platform). Empty string = whole dataset.}
 #' }
+#' @examples
+#' # every iseeSpatial panel except the map follows the map selection
+#' is(SpatialPlotPanel(Selection = "1,2"), "SpatialPanelBase")
+#' SpatialPlotPanel(Selection = "1,2")@Selection
 #' @name SpatialPanelBase-class
 #' @aliases SpatialPanelBase-class
 #' @export
