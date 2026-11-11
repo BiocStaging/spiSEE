@@ -10,6 +10,8 @@ iseeSpatial(
   platform = NULL,
   selection = "",
   initial = NULL,
+  cache = getOption("iseeSpatial.cache", TRUE),
+  cache_size = getOption("iseeSpatial.cache_size", 1024^3),
   ...
 )
 }
@@ -26,6 +28,14 @@ iseeSpatial(
 Empty = whole dataset.}
 
 \item{initial}{Optional list of panels; replaces the default layout.}
+
+\item{cache}{Where plot images are cached: \code{TRUE} (default) on disk in
+\code{\link[=spatialCacheDir]{spatialCacheDir()}}, kept across restarts; a folder path; or \code{FALSE}
+for memory only (lost when R stops). Under \code{devtools::load_all()} the
+cache is always in memory.}
+
+\item{cache_size}{Maximum size of the disk cache in bytes (default 1 GB);
+the least recently used images are removed first.}
 
 \item{...}{Passed to \code{\link[iSEE:iSEE]{iSEE::iSEE()}}.}
 }

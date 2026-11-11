@@ -17,6 +17,12 @@
 #' @param selection Initial selection (comma-separated FOV or cell ids).
 #'   Empty = whole dataset.
 #' @param initial Optional list of panels; replaces the default layout.
+#' @param cache Where plot images are cached: `TRUE` (default) on disk in
+#'   [spatialCacheDir()], kept across restarts; a folder path; or `FALSE`
+#'   for memory only (lost when R stops). Under `devtools::load_all()` the
+#'   cache is always in memory.
+#' @param cache_size Maximum size of the disk cache in bytes (default 1 GB);
+#'   the least recently used images are removed first.
 #' @param ... Passed to [iSEE::iSEE()].
 #' @return A Shiny app object (prints/launches in an interactive session).
 #' @examples
@@ -28,13 +34,17 @@
 #' if (interactive()) shiny::runApp(app)
 #' @export
 iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
-                        selection = "", initial = NULL, ...) {
+                        selection = "", initial = NULL,
+                        cache = getOption("iseeSpatial.cache", TRUE),
+                        cache_size = getOption("iseeSpatial.cache_size", 1024^3), ...) {
   stopifnot(methods::is(spe, "SpatialExperiment"))
   mode <- match.arg(mode)
   if (!is.null(platform)) spe <- setPlatform(spe, platform)
   if (!"logcounts" %in% SummarizedExperiment::assayNames(spe) &&
       "counts" %in% SummarizedExperiment::assayNames(spe))
     SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
+  .configurePlotCache(cache, cache_size)
+  S4Vectors::metadata(spe)$iseeSpatial_fingerprint <- .datasetFingerprint(spe)
   if (is.null(initial)) initial <- .defaultPanels(spe, mode, selection)
   args <- list(...)
   if (is.null(args$extra)) args$extra <- .extraPanels(spe)

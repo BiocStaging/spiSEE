@@ -89,10 +89,12 @@
   plot_name <- .getEncodedName(x)
   key <- .panelKey(plot_name, pObjects, rObjects,
                    function(pn) lapply(key_slots, function(s) methods::slot(pn, s)))
+  fp <- .fingerprintOf(se)
+  ver <- as.character(utils::packageVersion("iseeSpatial"))
   output[[plot_name]] <- shiny::renderCachedPlot({
     key()
     .safeOutput(.drawPlot(.generateOutput(pObjects$memory[[plot_name]], se)), plot_name)
-  }, cacheKeyExpr = list(plot_name, key()))
+  }, cacheKeyExpr = list(fp, ver, plot_name, key()), cache = .plotCache())
 }
 
 # One observer per simple input <-> slot pair.

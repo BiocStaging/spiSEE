@@ -3,6 +3,7 @@
 \docType{class}
 \name{SpatialPlotPanel-class}
 \alias{SpatialPlotPanel-class}
+\alias{.refineParameters,SpatialPlotPanel-method}
 \alias{.fullName,SpatialPlotPanel-method}
 \alias{.panelColor,SpatialPlotPanel-method}
 \alias{.defineOutput,SpatialPlotPanel-method}
@@ -13,6 +14,8 @@
 \alias{SpatialPlotPanel}
 \title{Spatial plot of cells coloured by annotation, QC metric or gene}
 \usage{
+\S4method{.refineParameters}{SpatialPlotPanel}(x, se)
+
 \S4method{.fullName}{SpatialPlotPanel}(x)
 
 \S4method{.panelColor}{SpatialPlotPanel}(x)
@@ -27,7 +30,7 @@
 
 \S4method{.createObservers}{SpatialPlotPanel}(x, se, input, session, pObjects, rObjects)
 
-SpatialPlotPanel(ColorBy = "", UsePolygons = FALSE, PointSize = 0.5, ...)
+SpatialPlotPanel(ColorBy = "", UsePolygons = NA, PointSize = 0.5, ...)
 }
 \arguments{
 \item{x}{A panel instance (the class this page documents).}
@@ -52,8 +55,10 @@ method.}
 \item{ColorBy}{A \code{colData} column or a gene name. Empty string = first
 cell-type column, else first QC metric.}
 
-\item{UsePolygons}{Draw segmentation polygons instead of centroids
-(needs a \code{polygons} column, as created by SpaceTrooper).}
+\item{UsePolygons}{Draw segmentation polygons instead of centroids (needs
+a \code{polygons} column, as created by SpaceTrooper). \code{NA} (the default)
+follows the dataset: on at load time if a \code{polygons} column exists,
+off otherwise.}
 
 \item{PointSize}{Centroid size.}
 }

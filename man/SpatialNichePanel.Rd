@@ -3,6 +3,7 @@
 \docType{class}
 \name{SpatialNichePanel-class}
 \alias{SpatialNichePanel-class}
+\alias{.refineParameters,SpatialNichePanel-method}
 \alias{.fullName,SpatialNichePanel-method}
 \alias{.panelColor,SpatialNichePanel-method}
 \alias{.defineOutput,SpatialNichePanel-method}
@@ -13,6 +14,8 @@
 \alias{SpatialNichePanel}
 \title{Spatial niches and domains panel}
 \usage{
+\S4method{.refineParameters}{SpatialNichePanel}(x, se)
+
 \S4method{.fullName}{SpatialNichePanel}(x)
 
 \S4method{.panelColor}{SpatialNichePanel}(x)
@@ -33,6 +36,7 @@ SpatialNichePanel(
   K = 20L,
   NNiches = 6L,
   Lambda = 0.2,
+  UsePolygons = NA,
   ...
 )
 }
@@ -63,6 +67,11 @@ method.}
 
 \item{K, NNiches, Lambda}{Neighbours per cell, number of niches, spatial
 weight for domains.}
+
+\item{UsePolygons}{Draw real cell-shape polygons instead of a centroid
+scatter on the "on tissue" plot types (needs a \code{polygons} column, as
+created by SpaceTrooper). \code{NA} (the default) follows the dataset: on
+at load time if a \code{polygons} column exists, off otherwise.}
 }
 \value{
 A \code{SpatialNichePanel} object.
