@@ -14,7 +14,8 @@
 .PLATFORMS <- list(
     cosmx = list(
         name = "CosMx", unit = "fov", region_col = "fov",
-        qc_metrics = c("total", "detected", "Area_um", "QC_score", "QScore", "log2CountArea",
+        qc_metrics = c("total", "detected", "Area_um", "QC_score", "QScore",
+                       "log2CountArea",
             "Mean.DAPI", "Mean.GFAP", "dist_border"),
         label_cols = c("SingleR_label"),
         detect = c("fov", "Area_um")),
@@ -32,7 +33,8 @@
         detect = c("um2", "nuc_um2")),
     generic = list(
         name = "Spatial", unit = "cell", region_col = NA_character_,
-        qc_metrics = character(0), label_cols = character(0), detect = character(0))
+        qc_metrics = character(0), label_cols = character(0),
+        detect = character(0))
 )
 
 #' Set or detect the spatial platform of a dataset
@@ -55,7 +57,9 @@
 #' spe <- setPlatform(spe, "xenium")
 #' getPlatform(spe)
 #' @export
-setPlatform <- function(spe, platform = c("cosmx", "xenium", "visiumhd", "generic")) {
+setPlatform <- function(spe,
+                        platform = c("cosmx", "xenium", "visiumhd",
+                                     "generic")) {
     platform <- match.arg(platform)
     S4Vectors::metadata(spe)$iseeSpatial_platform <- platform
     spe
@@ -78,14 +82,16 @@ getPlatform <- function(spe) {
 # "fov" (tiles; CosMx-style map) or "cell" (point map).
 .selectionUnit <- function(se) {
     info <- .platformInfo(se)
-    if (identical(info$unit, "fov") && info$region_col %in% colnames(colData(se))) "fov" else "cell"
+    if (identical(info$unit,
+                  "fov") && info$region_col %in% colnames(colData(se))) "fov" else "cell"
 }
 
 # Numeric colData columns usable as QC metrics: platform ones first, then any
 # other numeric column (so unknown platforms still get something sensible).
 .qcMetrics <- function(se) {
     cd <- colData(se)
-    num <- colnames(cd)[vapply(cd, function(v) is.numeric(v) && !is.factor(v), logical(1))]
+    num <- colnames(cd)[vapply(cd, function(v) is.numeric(v) && !is.factor(v),
+                               logical(1))]
     num <- setdiff(num, c("niche_entropy"))
     known <- intersect(.platformInfo(se)$qc_metrics, num)
     c(known, setdiff(num, c(known, grep("_outlier", num, value = TRUE))))
@@ -101,17 +107,20 @@ getPlatform <- function(spe) {
             length(unique(stats::na.omit(v))) %in% 2:60
     }, logical(1))
     cand <- setdiff(colnames(cd)[ok], c("sample_id", "polygons"))
-    known <- intersect(c(.platformInfo(se)$label_cols, "cell_type", "celltype"), cand)
+    known <- intersect(c(.platformInfo(se)$label_cols, "cell_type",
+                         "celltype"), cand)
     c(known, setdiff(cand, known))
 }
 
 .defaultLabelCol <- function(se) {
-    cand <- setdiff(.labelColumns(se), c("niche", "spatial_domain", "expr_cluster"))
+    cand <- setdiff(.labelColumns(se),
+                    c("niche", "spatial_domain", "expr_cluster"))
     if (length(cand)) cand[1] else NA_character_
 }
 
 # Genes ordered for menus: precomputed ranking if present, else alphabetical.
 .geneChoices <- function(se) {
     r <- S4Vectors::metadata(se)$gene_ranks
-    if (!is.null(r)) c(intersect(r, rownames(se)), setdiff(sort(rownames(se)), r)) else sort(rownames(se))
+    if (!is.null(r)) c(intersect(r, rownames(se)),
+                       setdiff(sort(rownames(se)), r)) else sort(rownames(se))
 }

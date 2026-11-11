@@ -1,5 +1,6 @@
 #' @import iSEE
-#' @importFrom shiny plotOutput selectInput numericInput sliderInput actionButton helpText observeEvent checkboxInput
+#' @importFrom shiny plotOutput selectInput numericInput sliderInput
+#' actionButton helpText observeEvent checkboxInput
 NULL
 
 utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
@@ -30,7 +31,8 @@ utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
     "Domains vs expression clusters"         = "domain_vs_cluster"
 )
 
-.tissuePlot <- function(se, values, title, discrete = TRUE, use_polygons = FALSE) {
+.tissuePlot <- function(se, values, title, discrete = TRUE,
+                        use_polygons = FALSE) {
     has_poly <- "polygons" %in% colnames(colData(se))
     if (use_polygons && !has_poly)
         return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
@@ -42,7 +44,8 @@ utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
         # used by several PlotTypes, not just one colourBy column.
         # colData(se)$polygons is an sf data frame; data.frame() would split it
         # into polygons.* columns, so build an sf object from its geometry.
-        df <- sf::st_sf(value = values, geometry = sf::st_geometry(colData(se)[["polygons"]]))
+        df <- sf::st_sf(value = values,
+                        geometry = sf::st_geometry(colData(se)[["polygons"]]))
         p <- ggplot2::ggplot(df, ggplot2::aes(fill = value)) +
             ggplot2::geom_sf(colour = NA) +
             ggplot2::theme_void() + ggplot2::labs(title = title, fill = NULL)
@@ -75,8 +78,10 @@ utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
     keep <- !is.na(rows) & !is.na(cols)
     enr <- .log2Enrichment(as.character(rows[keep]), as.character(cols[keep]))
     zl <- max(abs(enr), 1e-6)
-    pheatmap::pheatmap(enr, cluster_rows = nrow(enr) > 2, cluster_cols = ncol(enr) > 2,
-        color = grDevices::colorRampPalette(c("#4ECDC4", "white", "#F7A11A"))(101),
+    pheatmap::pheatmap(enr, cluster_rows = nrow(enr) > 2,
+                       cluster_cols = ncol(enr) > 2,
+        color = grDevices::colorRampPalette(c("#4ECDC4", "white",
+                                              "#F7A11A"))(101),
         breaks = seq(-zl, zl, length.out = 102), main = title, silent = TRUE)
 }
 
@@ -105,7 +110,8 @@ setMethod(".refineParameters", "SpatialNichePanel", function(x, se) {
 
 #' @rdname SpatialNichePanel
 #' @export
-setMethod(".fullName",   "SpatialNichePanel", function(x) "Spatial Niches & Domains")
+setMethod(".fullName",   "SpatialNichePanel",
+          function(x) "Spatial Niches & Domains")
 #' @rdname SpatialNichePanel
 #' @export
 setMethod(".panelColor", "SpatialNichePanel", function(x) "#7B2CBF")
@@ -116,9 +122,11 @@ setMethod(".defineOutput", "SpatialNichePanel", function(x)
 
 #' @rdname SpatialNichePanel
 #' @export
-setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) {
+setMethod(".defineInterface", "SpatialNichePanel",
+          function(x, se, select_info) {
     enc <- .getEncodedName(x)
-    labs <- setdiff(.labelColumns(se), c("niche", "spatial_domain", "expr_cluster"))
+    labs <- setdiff(.labelColumns(se),
+                    c("niche", "spatial_domain", "expr_cluster"))
     sel_lab <- if (!is.na(x@LabelCol) && x@LabelCol %in% labs) x@LabelCol else .defaultLabelCol(se)
     stored <- c(niches = "niche" %in% colnames(colData(se)),
         domains = "spatial_domain" %in% colnames(colData(se)))
@@ -127,7 +135,8 @@ setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) 
         if (stored["domains"]) "yes" else "no")
     list(iSEE::collapseBox(
         id = paste0(enc, "_DataBoxOpen"), title = "Parameters", open = TRUE,
-        shiny::selectInput(paste0(enc, "_PlotType"), "Show:", choices = .NICHE_PLOTS,
+        shiny::selectInput(paste0(enc, "_PlotType"), "Show:",
+                           choices = .NICHE_PLOTS,
             selected = x@PlotType),
         shiny::selectInput(paste0(enc, "_LabelCol"), "Cell-type column:",
             choices = labs, selected = sel_lab),
@@ -138,10 +147,12 @@ setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) 
             value = x@K, min = 2, max = 200, step = 1),
         shiny::numericInput(paste0(enc, "_NNiches"), "Number of niches:",
             value = x@NNiches, min = 2, max = 30, step = 1),
-        shiny::sliderInput(paste0(enc, "_Lambda"), "Spatial weight for domains (lambda):",
+        shiny::sliderInput(paste0(enc, "_Lambda"),
+                           "Spatial weight for domains (lambda):",
             min = 0, max = 0.9, value = x@Lambda, step = 0.05),
         shiny::helpText(status),
-        shiny::actionButton(paste0(enc, "_Compute"), "Compute on current selection",
+        shiny::actionButton(paste0(enc, "_Compute"),
+                            "Compute on current selection",
             class = "btn btn-primary btn-sm", width = "100%"),
         shiny::helpText("Until Compute is pressed, the full-data result is shown on the",
             "whole tissue. Compute runs on the current map selection; a new selection",
@@ -153,12 +164,14 @@ setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) 
 .nicheData <- function(x, se) {
     se <- .subsetBySelection(se, x@Selection)
     lab <- if (!is.na(x@LabelCol)) x@LabelCol else .defaultLabelCol(se)
-    wants_domains <- x@PlotType %in% c("domain_map", "cluster_map", "domain_vs_cluster")
+    wants_domains <- x@PlotType %in% c("domain_map", "cluster_map",
+                                       "domain_vs_cluster")
     recompute <- nchar(x@ComputeTrigger) > 0
     if (wants_domains) {
         md <- S4Vectors::metadata(se)$iseeSpatial_domains
         stored_ok <- "spatial_domain" %in% colnames(colData(se)) && !is.null(md) &&
-            identical(as.integer(md$k_spatial), x@K) && isTRUE(all.equal(md$lambda, x@Lambda))
+            identical(as.integer(md$k_spatial),
+                      x@K) && isTRUE(all.equal(md$lambda, x@Lambda))
         if (recompute || !stored_ok)
             se <- computeSpatialDomains(se, k_spatial = x@K, lambda = x@Lambda)
     } else {
@@ -169,7 +182,8 @@ setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) 
             identical(md$label_col, lab) && identical(as.integer(md$k), x@K) &&
             identical(as.integer(md$n_niches), x@NNiches)
         if (recompute || !stored_ok)
-            se <- computeNiches(se, label_col = lab, k = x@K, n_niches = x@NNiches)
+            se <- computeNiches(se, label_col = lab, k = x@K,
+                                n_niches = x@NNiches)
     }
     list(se = se, lab = lab)
 }
@@ -180,7 +194,8 @@ setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) 
 .nicheOutput <- function(x, se, cache = new.env(), note = NULL) {
     if (ncol(.subsetBySelection(se, x@Selection)) < 50)
         return(.notAvailablePlot("Too few cells in this selection (need >= 50)"))
-    wants_domains <- x@PlotType %in% c("domain_map", "cluster_map", "domain_vs_cluster")
+    wants_domains <- x@PlotType %in% c("domain_map", "cluster_map",
+                                       "domain_vs_cluster")
     if (is.na(x@LabelCol) && is.na(.defaultLabelCol(se)) && !wants_domains)
         return(.notAvailablePlot("No categorical cell-type column found in colData"))
     kind <- if (wants_domains) "domains" else "niches"
@@ -195,43 +210,62 @@ setMethod(".defineInterface", "SpatialNichePanel", function(x, se, select_info) 
 
 #' @rdname SpatialNichePanel
 #' @export
-setMethod(".generateOutput", "SpatialNichePanel", function(x, se, ...) .nicheOutput(x, se))
+setMethod(".generateOutput", "SpatialNichePanel",
+          function(x, se, ...) .nicheOutput(x, se))
 
 .nichePlot <- function(x, d, note = NULL) {
     s <- d$se
     cd <- colData(s)
     up <- isTRUE(x@UsePolygons)
     # heatmaps are not ggplots: the note goes under the title
-    ht <- function(title) if (is.null(note)) title else paste0(title, "\n", note)
+    ht <- function(title) if (is.null(note)) title else paste0(title, "\n",
+        note)
     p <- switch(x@PlotType,
-        niche_map     = .tissuePlot(s, cd$niche, sprintf("Niches (k = %d, by %s)", x@K, d$lab), use_polygons = up),
-        entropy_map   = .tissuePlot(s, cd$niche_entropy, "Neighbourhood entropy (bits)", discrete = FALSE, use_polygons = up),
-        niche_heatmap = .enrichmentHeatmap(cd$niche, cd[[d$lab]], ht("Cell types per niche (log2 obs/exp)")),
+        niche_map     = .tissuePlot(s, cd$niche,
+                                    sprintf("Niches (k = %d, by %s)", x@K,
+                                            d$lab), use_polygons = up),
+        entropy_map   = .tissuePlot(s, cd$niche_entropy,
+                                    "Neighbourhood entropy (bits)",
+                                    discrete = FALSE, use_polygons = up),
+        niche_heatmap = .enrichmentHeatmap(cd$niche, cd[[d$lab]],
+        ht("Cell types per niche (log2 obs/exp)")),
         niche_bar     = {
             comp <- SingleCellExperiment::reducedDim(s, "NicheComposition")
             ok <- !is.na(cd$niche)
-            m <- stats::aggregate(comp[ok, , drop = FALSE], list(niche = cd$niche[ok]), mean)
-            long <- stats::reshape(m, direction = "long", varying = colnames(comp), v.names = "prop",
+            m <- stats::aggregate(comp[ok, , drop = FALSE],
+                                  list(niche = cd$niche[ok]), mean)
+            long <- stats::reshape(m, direction = "long",
+                                   varying = colnames(comp), v.names = "prop",
                 timevar = "celltype", times = colnames(comp), idvar = "niche")
-            ggplot2::ggplot(long, ggplot2::aes(x = niche, y = prop, fill = celltype)) +
+            ggplot2::ggplot(long,
+                            ggplot2::aes(x = niche, y = prop,
+                                         fill = celltype)) +
                 ggplot2::geom_col() + ggplot2::coord_flip() +
                 ggplot2::scale_fill_manual(values = stats::setNames(.discretePalette(ncol(comp)), colnames(comp))) +
-                ggplot2::labs(x = NULL, y = "Mean neighbour proportion", fill = NULL,
+                ggplot2::labs(x = NULL, y = "Mean neighbour proportion",
+                              fill = NULL,
                     title = "Average neighbourhood per niche") +
                 ggplot2::theme_minimal()
         },
-        domain_map    = .tissuePlot(s, cd$spatial_domain, sprintf("Spatial domains (lambda = %.2f)", x@Lambda), use_polygons = up),
-        cluster_map   = .tissuePlot(s, cd$expr_cluster, "Expression-only clusters (lambda = 0)", use_polygons = up),
-        domain_vs_cluster = .enrichmentHeatmap(cd$spatial_domain, cd$expr_cluster,
+        domain_map    = .tissuePlot(s, cd$spatial_domain,
+                                    sprintf("Spatial domains (lambda = %.2f)",
+                                            x@Lambda), use_polygons = up),
+        cluster_map   = .tissuePlot(s, cd$expr_cluster,
+                                    "Expression-only clusters (lambda = 0)",
+                                    use_polygons = up),
+        domain_vs_cluster = .enrichmentHeatmap(cd$spatial_domain,
+                                               cd$expr_cluster,
             ht("Domains vs expression clusters (log2 obs/exp)")),
         .notAvailablePlot(paste("Unknown plot type:", x@PlotType)))
-    if (!is.null(note) && inherits(p, "ggplot")) p <- p + ggplot2::labs(caption = note)
+    if (!is.null(note) && inherits(p,
+                                   "ggplot")) p <- p + ggplot2::labs(caption = note)
     p
 }
 
 #' @rdname SpatialNichePanel
 #' @export
-setMethod(".renderOutput", "SpatialNichePanel", function(x, se, output, pObjects, rObjects) {
+setMethod(".renderOutput", "SpatialNichePanel",
+          function(x, se, output, pObjects, rObjects) {
     plot_name <- .getEncodedName(x)
     # Selection and parameters are not in the key: they apply on Compute only.
     key <- .panelKey(plot_name, pObjects, rObjects,
@@ -254,13 +288,15 @@ setMethod(".renderOutput", "SpatialNichePanel", function(x, se, output, pObjects
         note <- if (!nzchar(snap@ComputeTrigger))
             "All cells (full-data result). Press Compute to run on the map selection."
         else sprintf("Computed on %d cells (map selection at last Compute).", n)
-        .safeOutput(.drawPlot(.nicheOutput(snap, se, last$cache, note)), plot_name)
+        .safeOutput(.drawPlot(.nicheOutput(snap, se, last$cache, note)),
+                    plot_name)
     })
 })
 
 #' @rdname SpatialNichePanel
 #' @export
-setMethod(".createObservers", "SpatialNichePanel", function(x, se, input, session, pObjects, rObjects) {
+setMethod(".createObservers", "SpatialNichePanel",
+          function(x, se, input, session, pObjects, rObjects) {
     callNextMethod()
     enc <- .getEncodedName(x)
     # PlotType redraws immediately (cheap when results are stored); parameters
@@ -274,8 +310,10 @@ setMethod(".createObservers", "SpatialNichePanel", function(x, se, input, sessio
             }
         },
         ignoreInit = TRUE)
-    .slotObserver(enc, "UsePolygons", input, pObjects, rObjects, cast = as.logical)
-    setters <- list(LabelCol = as.character, K = as.integer, NNiches = as.integer, Lambda = as.numeric)
+    .slotObserver(enc, "UsePolygons", input, pObjects, rObjects,
+                  cast = as.logical)
+    setters <- list(LabelCol = as.character, K = as.integer,
+                    NNiches = as.integer, Lambda = as.numeric)
     for (nm in names(setters)) local({
         field <- nm
         cast <- setters[[nm]]
@@ -318,7 +356,8 @@ setMethod(".createObservers", "SpatialNichePanel", function(x, se, input, sessio
 #' SpatialNichePanel(K = 30, NNiches = 8)
 #' @export
 SpatialNichePanel <- function(PlotType = "niche_map", LabelCol = NA_character_,
-                              K = 20L, NNiches = 6L, Lambda = 0.2, UsePolygons = NA, ...)
+                              K = 20L, NNiches = 6L, Lambda = 0.2,
+                              UsePolygons = NA, ...)
     new("SpatialNichePanel", PlotType = PlotType, LabelCol = LabelCol,
         K = as.integer(K), NNiches = as.integer(NNiches), Lambda = Lambda,
         UsePolygons = UsePolygons, ...)

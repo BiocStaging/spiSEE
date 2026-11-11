@@ -37,7 +37,8 @@
 iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
                         selection = "", initial = NULL,
                         cache = getOption("iseeSpatial.cache", TRUE),
-                        cache_size = getOption("iseeSpatial.cache_size", 1024^3), ...) {
+                        cache_size = getOption("iseeSpatial.cache_size",
+                                               1024^3), ...) {
     stopifnot(methods::is(spe, "SpatialExperiment"))
     mode <- match.arg(mode)
     if (!is.null(platform)) spe <- setPlatform(spe, platform)
@@ -58,7 +59,8 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
 .extraPanels <- function(spe) {
     extra <- list(SpatialPlotPanel(), SpatialQCPanel(), SpatialStatsPanel(),
         SVGPanel(), SpatialNichePanel())
-    if (.selectionUnit(spe) == "fov") extra <- c(extra, list(FOVZoomPanel(), FOVStatsPanel()))
+    if (.selectionUnit(spe) == "fov") extra <- c(extra,
+        list(FOVZoomPanel(), FOVStatsPanel()))
     extra
 }
 
@@ -69,20 +71,26 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
     lab <- .defaultLabelCol(spe)
     if (mode == "qc") {
         panels <- list(SpatialMapPanel(),
-            SpatialPlotPanel(ColorBy = if (length(qc)) qc[1] else "", Selection = selection),
-            SpatialQCPanel(Metric = if (length(qc)) qc[1] else "", Selection = selection))
-        if (length(area)) panels <- append(panels, list(SpatialQCPanel(Metric = area[1], Selection = selection)))
-        # SpaceTrooper quality score: QC_score in older releases, QScore in devel (1.3.x).
+            SpatialPlotPanel(ColorBy = if (length(qc)) qc[1] else "",
+                             Selection = selection),
+            SpatialQCPanel(Metric = if (length(qc)) qc[1] else "",
+                           Selection = selection))
+        if (length(area)) panels <- append(panels,
+                                           list(SpatialQCPanel(Metric = area[1], Selection = selection)))
+        # SpaceTrooper quality score: QC_score in older releases, QScore in
+        # devel (1.3.x).
         score <- intersect(c("QScore", "QC_score"), qc)
         if (tiles) panels <- append(panels, list(FOVZoomPanel(
-            ColorBy = if (length(score)) score[1] else "", Selection = selection)))
+            ColorBy = if (length(score)) score[1] else "",
+            Selection = selection)))
         if (tiles && !is.null(S4Vectors::metadata(spe)$fov_stats))
             panels <- append(panels, list(FOVStatsPanel(Selection = selection)))
         return(panels)
     }
     gene <- .geneChoices(spe)[1]
     list(SpatialMapPanel(),
-        SpatialPlotPanel(ColorBy = if (!is.na(lab)) lab else "", Selection = selection),
+        SpatialPlotPanel(ColorBy = if (!is.na(lab)) lab else "",
+                         Selection = selection),
         SpatialPlotPanel(ColorBy = gene, Selection = selection),
         SpatialStatsPanel(Genes = gene, LabelCol = lab, Selection = selection),
         SVGPanel(LinkedPanel = "SpatialPlotPanel2", Selection = selection),

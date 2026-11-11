@@ -1,7 +1,8 @@
 test_that(".panelKey reacts only to its own panel and to real slot changes", {
     shiny::testServer(function(input, output, session) {
         pObjects <- new.env()
-        pObjects$memory <- list(A = SpatialPlotPanel(ColorBy = "a"), B = SpatialPlotPanel(ColorBy = "b"))
+        pObjects$memory <- list(A = SpatialPlotPanel(ColorBy = "a"),
+                                B = SpatialPlotPanel(ColorBy = "b"))
         rObjects <- shiny::reactiveValues(modified = list())
         key <- .panelKey("A", pObjects, rObjects, function(pn) pn@ColorBy)
         seen <- new.env()

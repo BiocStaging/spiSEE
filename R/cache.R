@@ -28,7 +28,8 @@
 #' @examples
 #' spatialCacheDir()
 #' @export
-spatialCacheDir <- function() file.path(tools::R_user_dir("iseeSpatial", which = "cache"), "plots")
+spatialCacheDir <- function() file.path(tools::R_user_dir("iseeSpatial",
+    which = "cache"), "plots")
 
 #' @rdname spatialCacheDir
 #' @export
@@ -37,14 +38,17 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
     invisible(dir)
 }
 
-.isDevLoad <- function() exists(".__DEVTOOLS__", envir = asNamespace("iseeSpatial"), inherits = FALSE)
+.isDevLoad <- function() exists(".__DEVTOOLS__",
+                                envir = asNamespace("iseeSpatial"),
+                                inherits = FALSE)
 
 # cache: TRUE (default folder), FALSE (memory only, lost when R stops) or a
 # folder path. size: maximum size on disk, in bytes.
 .configurePlotCache <- function(cache = TRUE, size = 1024^3) {
     if (isTRUE(cache) && .isDevLoad()) cache <- FALSE
     .CACHE$cache <- if (isFALSE(cache)) {
-        "app"   # shiny's default: memory, shared by the sessions of this R process
+        # shiny's default: memory, shared by the sessions of this R process
+        "app"
     } else {
         # Own folder: cachem's size limit counts and evicts every .rds file in
         # it, so it must not share one with the map backgrounds (map_*.rds).
@@ -61,10 +65,15 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
 # coordinates, cell annotations (without the polygon geometries) and the
 # per-cell sums of the expression assay.
 .datasetFingerprint <- function(se) {
-    cd <- as.data.frame(colData(se)[, setdiff(colnames(colData(se)), "polygons"), drop = FALSE])
-    a <- intersect(c("logcounts", "counts"), SummarizedExperiment::assayNames(se))
-    sums <- if (length(a)) Matrix::colSums(SummarizedExperiment::assay(se, a[1])) else NULL
-    digest::digest(list(dimnames(se), SpatialExperiment::spatialCoords(se), cd, sums,
+    cd <- as.data.frame(colData(se)[,
+                                    setdiff(colnames(colData(se)), "polygons"),
+                                    drop = FALSE])
+    a <- intersect(c("logcounts", "counts"),
+                   SummarizedExperiment::assayNames(se))
+    sums <- if (length(a)) Matrix::colSums(SummarizedExperiment::assay(se,
+        a[1])) else NULL
+    digest::digest(list(dimnames(se), SpatialExperiment::spatialCoords(se), cd,
+                        sums,
         .selectionUnit(se)), algo = "xxhash64")
 }
 

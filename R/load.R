@@ -6,7 +6,9 @@
 
 .needs <- function(pkg) {
     if (!requireNamespace(pkg, quietly = TRUE))
-        stop("Package '", pkg, "' is needed for this loader: BiocManager::install('", pkg, "')", call. = FALSE)
+        stop("Package '", pkg,
+             "' is needed for this loader: BiocManager::install('", pkg, "')",
+             call. = FALSE)
 }
 
 #' Load a prepared CosMx dataset
@@ -48,13 +50,16 @@ load_xenium <- function(xenium_dir) {
     bnd <- file.path(xenium_dir, "cell_boundaries.parquet")
     if (file.exists(bnd)) {
         # readAndAddPolygonsToSPE() expects metadata set by SpaceTrooper's own
-        # readers, which readXeniumSXE() does not set: use the two steps directly.
+        # readers, which readXeniumSXE() does not set: use the two steps
+        # directly.
         pol <- tryCatch(SpaceTrooper::readPolygonsXenium(bnd, type = "parquet"),
             error = function(e) {
-                message("  (cell boundaries not read: ", conditionMessage(e), ")")
+                message("  (cell boundaries not read: ", conditionMessage(e),
+                        ")")
                 NULL
             })
-        if (!is.null(pol)) spe <- SpaceTrooper::addPolygonsToSPE(spe, pol, polygonsCol = "polygons")
+        if (!is.null(pol)) spe <- SpaceTrooper::addPolygonsToSPE(spe, pol,
+            polygonsCol = "polygons")
     }
     spe <- setPlatform(spe, "xenium")
     message(sprintf("Xenium: %d cells, %d genes", ncol(spe), nrow(spe)))
@@ -68,7 +73,8 @@ load_xenium <- function(xenium_dir) {
 #' chapter "Visium HD (segmented)". Gene symbols become unique row names,
 #' a `logcounts` assay is added if missing, and the platform is recorded.
 #' For the full workflow (QC, annotation, niches) see
-#' `system.file("scripts", "visiumhd_osta_workflow.R", package = "iseeSpatial")`.
+#' `system.file("scripts", "visiumhd_osta_workflow.R", package =
+#' "iseeSpatial")`.
 #'
 #' @param segmented_outputs Path to the `segmented_outputs` directory.
 #' @param images Image resolution to load (passed to `TENxVisiumHD`).

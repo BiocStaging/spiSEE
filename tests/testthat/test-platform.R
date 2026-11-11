@@ -20,7 +20,9 @@ test_that(".subsetBySelection uses FOVs on CosMx and cell ids elsewhere", {
     expect_identical(.subsetBySelection(spe, ""), spe)
     x <- .makeTestXeniumSPE()
     ids <- colnames(x)[1:5]
-    expect_setequal(colnames(.subsetBySelection(x, paste(ids, collapse = ","))), ids)
+    expect_setequal(colnames(.subsetBySelection(x,
+                                                paste(ids, collapse = ","))),
+                                                ids)
 })
 
 test_that("QC metrics and label columns put platform columns first", {

@@ -33,12 +33,14 @@ NULL
 
 # Directed k-NN adjacency (n x n, dgCMatrix, x = 1): row i has a 1 in the
 # columns of its k nearest neighbours (self excluded).
-.knnAdjacency <- function(coords, k = 10L, BNPARAM = BiocNeighbors::KmknnParam()) {
+.knnAdjacency <- function(coords, k = 10L,
+                          BNPARAM = BiocNeighbors::KmknnParam()) {
     coords <- as.matrix(coords)
     n <- nrow(coords)
     if (n < 2L) stop("need at least 2 cells to build a neighbour graph")
     k <- min(as.integer(k), n - 1L)
-    nn <- BiocNeighbors::findKNN(coords, k = k, BNPARAM = BNPARAM, get.distance = FALSE)
+    nn <- BiocNeighbors::findKNN(coords, k = k, BNPARAM = BNPARAM,
+                                 get.distance = FALSE)
     Matrix::sparseMatrix(i = rep(seq_len(n), times = k),
         j = as.vector(nn$index),
         x = 1, dims = c(n, n),
@@ -57,7 +59,8 @@ NULL
     labels <- droplevels(factor(labels))
     if (anyNA(labels)) stop("labels contain NA; drop unlabelled cells first")
     if (include_self) adj <- adj + Matrix::Diagonal(nrow(adj))
-    onehot <- Matrix::sparseMatrix(i = seq_along(labels), j = as.integer(labels),
+    onehot <- Matrix::sparseMatrix(i = seq_along(labels),
+                                   j = as.integer(labels),
         x = 1, dims = c(length(labels), nlevels(labels)))
     comp <- as.matrix(.rowNormalise(adj) %*% onehot)
     dimnames(comp) <- list(rownames(adj), levels(labels))
@@ -84,7 +87,9 @@ NULL
 # legend reads "N3: Astro/Oligo" instead of "3".
 .labelClusters <- function(cl, labels, prefix = "N") {
     enr <- .log2Enrichment(cl, labels)
-    tops <- apply(enr, 1, function(r) paste(names(sort(r, decreasing = TRUE))[seq_len(min(2, length(r)))], collapse = "/"))
+    tops <- apply(enr, 1,
+                  function(r) paste(names(sort(r,
+                                               decreasing = TRUE))[seq_len(min(2, length(r)))], collapse = "/"))
     ids <- paste0(prefix, rownames(enr))
     stats::setNames(paste0(ids, ": ", tops), rownames(enr))
 }
@@ -95,7 +100,9 @@ NULL
     if (centers < 2L) stop("not enough distinct neighbourhoods to form 2 clusters")
     # withr::with_seed: reproducible without changing the user's random state
     withr::with_seed(seed,
-        stats::kmeans(x, centers = centers, nstart = if (nrow(x) > 5e4) 3 else 10, iter.max = if (nrow(x) > 5e4) 300 else 100,
+        stats::kmeans(x, centers = centers,
+                      nstart = if (nrow(x) > 5e4) 3 else 10,
+                      iter.max = if (nrow(x) > 5e4) 300 else 100,
             algorithm = if (nrow(x) > 5e4) "MacQueen" else "Hartigan-Wong")$cluster)
 }
 
@@ -116,7 +123,9 @@ NULL
     sym <- (adj + Matrix::t(adj)) > 0
     g <- igraph::graph_from_adjacency_matrix(sym * 1, mode = "undirected",
         weighted = NULL, diag = FALSE)
-    withr::with_seed(seed, igraph::membership(igraph::cluster_louvain(g, resolution = resolution)))
+    withr::with_seed(seed,
+                     igraph::membership(igraph::cluster_louvain(g,
+                         resolution = resolution)))
 }
 
 # ---- SpatialExperiment-level API ------------------------------------------
@@ -149,7 +158,8 @@ NULL
 #' @export
 buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
                               BNPARAM = BiocNeighbors::KmknnParam()) {
-    adj <- .knnAdjacency(SpatialExperiment::spatialCoords(spe), k = k, BNPARAM = BNPARAM)
+    adj <- .knnAdjacency(SpatialExperiment::spatialCoords(spe), k = k,
+                         BNPARAM = BNPARAM)
     SingleCellExperiment::colPair(spe, name) <- adj
     S4Vectors::metadata(spe)$iseeSpatial_graph <- list(name = name, k = k)
     spe
@@ -200,7 +210,8 @@ buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
 computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
                           include_self = FALSE, seed = 1L) {
     cd <- SummarizedExperiment::colData(spe)
-    if (!label_col %in% colnames(cd)) stop("'", label_col, "' is not a colData column")
+    if (!label_col %in% colnames(cd)) stop("'", label_col,
+                                           "' is not a colData column")
     keep <- !is.na(cd[[label_col]])
     sub <- spe[, keep]
     adj <- .getSpatialAdjacency(sub, k)
@@ -213,10 +224,12 @@ computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
     niche[keep] <- nice[as.character(cl)]
     entropy <- rep(NA_real_, ncol(spe))
     entropy[keep] <- .shannonEntropy(comp)
-    full_comp <- matrix(NA_real_, ncol(spe), ncol(comp), dimnames = list(colnames(spe), colnames(comp)))
+    full_comp <- matrix(NA_real_, ncol(spe), ncol(comp),
+                        dimnames = list(colnames(spe), colnames(comp)))
     full_comp[keep, ] <- comp
 
-    SummarizedExperiment::colData(spe)$niche <- factor(niche, levels = unname(nice[order(as.integer(names(nice)))]))
+    SummarizedExperiment::colData(spe)$niche <- factor(niche,
+        levels = unname(nice[order(as.integer(names(nice)))]))
     SummarizedExperiment::colData(spe)$niche_entropy <- entropy
     SingleCellExperiment::reducedDim(spe, "NicheComposition") <- full_comp
     S4Vectors::metadata(spe)$iseeSpatial_niches <- list(
@@ -270,9 +283,12 @@ computeSpatialDomains <- function(spe, k_spatial = 15L, lambda = 0.2,
     dom <- .graphCluster(.augmentEmbedding(emb, adj, lambda), k = k_graph,
         resolution = resolution, seed = seed)
     ecl <- .graphCluster(emb, k = k_graph, resolution = resolution, seed = seed)
-    SummarizedExperiment::colData(spe)$spatial_domain <- factor(paste0("D", dom), levels = paste0("D", sort(unique(dom))))
-    SummarizedExperiment::colData(spe)$expr_cluster   <- factor(paste0("C", ecl), levels = paste0("C", sort(unique(ecl))))
+    SummarizedExperiment::colData(spe)$spatial_domain <- factor(paste0("D",
+        dom), levels = paste0("D", sort(unique(dom))))
+    SummarizedExperiment::colData(spe)$expr_cluster   <- factor(paste0("C",
+        ecl), levels = paste0("C", sort(unique(ecl))))
     S4Vectors::metadata(spe)$iseeSpatial_domains <- list(
-        k_spatial = k_spatial, lambda = lambda, k_graph = k_graph, resolution = resolution)
+        k_spatial = k_spatial, lambda = lambda, k_graph = k_graph,
+        resolution = resolution)
     spe
 }

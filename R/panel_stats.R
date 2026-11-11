@@ -30,24 +30,30 @@ setMethod(".defineOutput", "SpatialStatsPanel", function(x)
     .withBusy(shiny::plotOutput(.getEncodedName(x), height = "550px")))
 
 .kInput <- function(enc, value, label = "Neighbours per cell (k):")
-    shiny::numericInput(paste0(enc, "_K"), label, value = value, min = 2, max = 200, step = 1)
+    shiny::numericInput(paste0(enc, "_K"), label, value = value, min = 2,
+                        max = 200, step = 1)
 
 #' @rdname SpatialStatsPanel
 #' @export
-setMethod(".defineInterface", "SpatialStatsPanel", function(x, se, select_info) {
+setMethod(".defineInterface", "SpatialStatsPanel",
+          function(x, se, select_info) {
     enc <- .getEncodedName(x)
     labs <- .labelColumns(se)
     lab <- if (!is.na(x@LabelCol) && x@LabelCol %in% labs) x@LabelCol else .defaultLabelCol(se)
     list(iSEE::collapseBox(
         id = paste0(enc, "_DataBoxOpen"), title = "Parameters", open = TRUE,
-        shiny::selectInput(paste0(enc, "_PlotType"), "Statistic:", choices = .STATS_PLOTS, selected = x@PlotType),
-        shiny::selectizeInput(paste0(enc, "_Genes"), "Gene(s) (Moran's I, local clusters):",
+        shiny::selectInput(paste0(enc, "_PlotType"), "Statistic:",
+                           choices = .STATS_PLOTS, selected = x@PlotType),
+        shiny::selectizeInput(paste0(enc, "_Genes"),
+                              "Gene(s) (Moran's I, local clusters):",
             choices = x@Genes, selected = x@Genes, multiple = TRUE),
-        shiny::selectInput(paste0(enc, "_LabelCol"), "Cell-type column (join-count, L-functions):",
+        shiny::selectInput(paste0(enc, "_LabelCol"),
+                           "Cell-type column (join-count, L-functions):",
             choices = labs, selected = lab),
         .kInput(enc, x@K),
         shiny::helpText("k sets the spatial scale: small k = immediate neighbours, large k = wider region."),
-        shiny::numericInput(paste0(enc, "_Alpha"), "Significance level (local clusters, adjusted p):",
+        shiny::numericInput(paste0(enc, "_Alpha"),
+                            "Significance level (local clusters, adjusted p):",
             value = x@Alpha, min = 0.001, max = 0.5, step = 0.01),
         .selectionHelp(se),
         .computeButton(enc),
@@ -66,12 +72,15 @@ setMethod(".generateOutput", "SpatialStatsPanel", function(x, se, ...) {
 
 #' @rdname SpatialStatsPanel
 #' @export
-setMethod(".renderOutput", "SpatialStatsPanel", function(x, se, output, pObjects, rObjects)
-    .renderCachedSpatialPlot(x, se, output, pObjects, rObjects, "ComputeTrigger"))
+setMethod(".renderOutput", "SpatialStatsPanel",
+          function(x, se, output, pObjects, rObjects)
+    .renderCachedSpatialPlot(x, se, output, pObjects, rObjects,
+                             "ComputeTrigger"))
 
 #' @rdname SpatialStatsPanel
 #' @export
-setMethod(".createObservers", "SpatialStatsPanel", function(x, se, input, session, pObjects, rObjects) {
+setMethod(".createObservers", "SpatialStatsPanel",
+          function(x, se, input, session, pObjects, rObjects) {
     callNextMethod()
     enc <- .getEncodedName(x)
     genes <- .geneChoices(se)
@@ -79,10 +88,14 @@ setMethod(".createObservers", "SpatialStatsPanel", function(x, se, input, sessio
     if (!length(sel)) sel <- genes[1]
     .serverSelectize(session, enc, "Genes", genes, sel)
     # Parameters only take effect on Compute (the cache key is ComputeTrigger).
-    .slotObserver(enc, "PlotType", input, pObjects, rObjects, cast = as.character, redraw = FALSE)
-    .slotObserver(enc, "Genes", input, pObjects, rObjects, cast = as.character, redraw = FALSE, multiple = TRUE)
-    .slotObserver(enc, "LabelCol", input, pObjects, rObjects, cast = as.character, redraw = FALSE)
-    .slotObserver(enc, "K", input, pObjects, rObjects, cast = as.integer, redraw = FALSE)
+    .slotObserver(enc, "PlotType", input, pObjects, rObjects,
+                  cast = as.character, redraw = FALSE)
+    .slotObserver(enc, "Genes", input, pObjects, rObjects, cast = as.character,
+                  redraw = FALSE, multiple = TRUE)
+    .slotObserver(enc, "LabelCol", input, pObjects, rObjects,
+                  cast = as.character, redraw = FALSE)
+    .slotObserver(enc, "K", input, pObjects, rObjects, cast = as.integer,
+                  redraw = FALSE)
     .slotObserver(enc, "Alpha", input, pObjects, rObjects, redraw = FALSE,
         cast = function(v) {
             v <- as.numeric(v)
@@ -112,8 +125,10 @@ setMethod(".createObservers", "SpatialStatsPanel", function(x, se, input, sessio
 #' SpatialStatsPanel(PlotType = "joincount_plot", K = 10)
 #' @export
 SpatialStatsPanel <- function(PlotType = "graph_plot", Genes = character(0),
-                              LabelCol = NA_character_, K = 6L, Alpha = 0.05, ...)
-    new("SpatialStatsPanel", PlotType = PlotType, Genes = Genes, LabelCol = LabelCol,
+                              LabelCol = NA_character_, K = 6L, Alpha = 0.05,
+                              ...)
+    new("SpatialStatsPanel", PlotType = PlotType, Genes = Genes,
+        LabelCol = LabelCol,
         K = as.integer(K), Alpha = as.numeric(Alpha), ...)
 
 # ── SVGPanel ────────────────────────────────────────────────────────────
@@ -144,7 +159,8 @@ setMethod(".fullName",   "SVGPanel", function(x) "Spatially Variable Genes")
 setMethod(".panelColor", "SVGPanel", function(x) "#F7A11A")
 #' @rdname SVGPanel
 #' @export
-setMethod(".defineOutput", "SVGPanel", function(x) .withBusy(DT::dataTableOutput(.getEncodedName(x))))
+setMethod(".defineOutput", "SVGPanel",
+          function(x) .withBusy(DT::dataTableOutput(.getEncodedName(x))))
 
 #' @rdname SVGPanel
 #' @export
@@ -152,7 +168,8 @@ setMethod(".defineInterface", "SVGPanel", function(x, se, select_info) {
     enc <- .getEncodedName(x)
     list(iSEE::collapseBox(
         id = paste0(enc, "_DataBoxOpen"), title = "Parameters", open = TRUE,
-        shiny::numericInput(paste0(enc, "_TopN"), "Scan the top N most expressed genes:",
+        shiny::numericInput(paste0(enc, "_TopN"),
+                            "Scan the top N most expressed genes:",
             value = x@TopN, min = 10, max = 5000, step = 10),
         .kInput(enc, x@K),
         .selectionHelp(se),
@@ -166,12 +183,14 @@ setMethod(".generateOutput", "SVGPanel", function(x, se, ...) {
     if (!nzchar(x@ComputeTrigger))
         return(structure(data.frame(gene = character(0), moran_i = numeric(0)),
             reason = "Press Compute to rank genes in the current selection."))
-    .computeSVGRanking(.subsetBySelection(se, x@Selection), top_n = x@TopN, k = x@K)
+    .computeSVGRanking(.subsetBySelection(se, x@Selection), top_n = x@TopN,
+                       k = x@K)
 })
 
 #' @rdname SVGPanel
 #' @export
-setMethod(".renderOutput", "SVGPanel", function(x, se, output, pObjects, rObjects) {
+setMethod(".renderOutput", "SVGPanel",
+          function(x, se, output, pObjects, rObjects) {
     enc <- .getEncodedName(x)
     # Rebuilt only on Compute: re-sending the table resets its page, order and
     # selected row.
@@ -182,7 +201,8 @@ setMethod(".renderOutput", "SVGPanel", function(x, se, output, pObjects, rObject
         assign(enc, tbl, envir = .svgTables(pObjects))
         why <- attr(tbl, "reason")
         names(tbl) <- c("Gene", "Moran's I")
-        DT::formatRound(DT::datatable(tbl, selection = "single", rownames = FALSE,
+        DT::formatRound(DT::datatable(tbl, selection = "single",
+                                      rownames = FALSE,
             options = list(pageLength = 15, order = list(list(1, "desc")),
                 language = list(emptyTable = if (is.null(why)) "No result." else why))),
         "Moran's I", 3)
@@ -191,11 +211,14 @@ setMethod(".renderOutput", "SVGPanel", function(x, se, output, pObjects, rObject
 
 #' @rdname SVGPanel
 #' @export
-setMethod(".createObservers", "SVGPanel", function(x, se, input, session, pObjects, rObjects) {
+setMethod(".createObservers", "SVGPanel",
+          function(x, se, input, session, pObjects, rObjects) {
     callNextMethod()
     enc <- .getEncodedName(x)
-    .slotObserver(enc, "TopN", input, pObjects, rObjects, cast = as.integer, redraw = FALSE)
-    .slotObserver(enc, "K", input, pObjects, rObjects, cast = as.integer, redraw = FALSE)
+    .slotObserver(enc, "TopN", input, pObjects, rObjects, cast = as.integer,
+                  redraw = FALSE)
+    .slotObserver(enc, "K", input, pObjects, rObjects, cast = as.integer,
+                  redraw = FALSE)
     .computeObserver(enc, input, pObjects, rObjects)
     shiny::observeEvent(input[[paste0(enc, "_rows_selected")]],
         {
@@ -205,12 +228,14 @@ setMethod(".createObservers", "SVGPanel", function(x, se, input, session, pObjec
             target <- pObjects$memory[[enc]]@LinkedPanel
             if (!nzchar(target) || is.null(pObjects$memory[[target]]) ||
                 !"ColorBy" %in% methods::slotNames(pObjects$memory[[target]])) {
-                message("[iseeSpatial] SVGPanel: LinkedPanel '", target, "' not found or has no ColorBy.")
+                message("[iseeSpatial] SVGPanel: LinkedPanel '", target,
+                        "' not found or has no ColorBy.")
                 return()
             }
             gene <- tbl$gene[idx]
             pObjects$memory[[target]]@ColorBy <- gene
-            shiny::updateSelectizeInput(session, paste0(target, "_ColorBy"), selected = gene,
+            shiny::updateSelectizeInput(session, paste0(target, "_ColorBy"),
+                                        selected = gene,
                 choices = .colorByChoices(se), server = TRUE)
             .spatialUpdate(target, rObjects)
         },
@@ -231,4 +256,5 @@ setMethod(".createObservers", "SVGPanel", function(x, se, input, session, pObjec
 #' SVGPanel(TopN = 100, LinkedPanel = "SpatialPlotPanel1")
 #' @export
 SVGPanel <- function(TopN = 200L, K = 6L, LinkedPanel = "", ...)
-    new("SVGPanel", TopN = as.integer(TopN), K = as.integer(K), LinkedPanel = LinkedPanel, ...)
+    new("SVGPanel", TopN = as.integer(TopN), K = as.integer(K),
+        LinkedPanel = LinkedPanel, ...)

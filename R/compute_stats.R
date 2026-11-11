@@ -22,7 +22,8 @@ NULL
     sfe <- as(se, "SpatialFeatureExperiment")
     SpatialFeatureExperiment::colGraph(sfe, "knn") <-
         SpatialFeatureExperiment::findSpatialNeighbors(
-            sfe, type = "spatialCoords", method = "knearneigh", k = as.integer(k),
+            sfe, type = "spatialCoords", method = "knearneigh",
+            k = as.integer(k),
             style = "W", zero.policy = TRUE)
     sfe
 }
@@ -33,7 +34,8 @@ NULL
 # with it the variance can even be negative (?spdep::joincount.multi). Two
 # cells are joined if either is among the other's k nearest neighbours.
 .joincountWeights <- function(sfe) {
-    nb <- spdep::make.sym.nb(SpatialFeatureExperiment::colGraph(sfe, "knn")$neighbours)
+    nb <- spdep::make.sym.nb(SpatialFeatureExperiment::colGraph(sfe,
+        "knn")$neighbours)
     spdep::nb2listw(nb, style = "B", zero.policy = TRUE)
 }
 
@@ -196,7 +198,9 @@ NULL
 # Moran's I scan over the most expressed genes (or metadata(se)$gene_ranks).
 .computeSVGRanking <- function(se, top_n = 200L, k = 6L) {
     # An empty table carries the reason, shown in the panel (F4).
-    empty <- function(why) structure(data.frame(gene = character(0), moran_i = numeric(0)), reason = why)
+    empty <- function(why) structure(data.frame(gene = character(0),
+                                                moran_i = numeric(0)),
+                                                reason = why)
     if (ncol(se) < max(5, k + 1))
         return(empty(sprintf("Too few cells in this selection (%d) for k = %d.", ncol(se), k)))
     cand <- S4Vectors::metadata(se)$gene_ranks

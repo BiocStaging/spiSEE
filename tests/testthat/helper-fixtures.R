@@ -12,13 +12,16 @@
     counts <- matrix(rpois(n_cells * n_genes, lambda = 3), nrow = n_genes,
         dimnames = list(paste0("Gene", seq_len(n_genes)),
             paste0("cell", seq_len(n_cells))))
-    coords <- cbind(x = stats::runif(n_cells, 0, 100), y = stats::runif(n_cells, 0, 100))
+    coords <- cbind(x = stats::runif(n_cells, 0, 100),
+                    y = stats::runif(n_cells, 0, 100))
     cd <- S4Vectors::DataFrame(
-        fov           = factor(sample(seq_len(n_fovs), n_cells, replace = TRUE)),
+        fov           = factor(sample(seq_len(n_fovs), n_cells,
+                                      replace = TRUE)),
         total         = rpois(n_cells, 50),
         detected      = rpois(n_cells, 8),
         Area_um       = stats::runif(n_cells, 10, 40),
-        SingleR_label = factor(sample(c("A", "B", "C"), n_cells, replace = TRUE))
+        SingleR_label = factor(sample(c("A", "B", "C"), n_cells,
+                                      replace = TRUE))
     )
     spe <- SpatialExperiment::SpatialExperiment(
         assays = list(counts = counts, logcounts = log1p(counts)),
@@ -52,7 +55,8 @@
     counts <- matrix(rpois(n_cells * n_genes, lambda = 3), nrow = n_genes,
         dimnames = list(paste0("Gene", seq_len(n_genes)),
             paste0("cell", seq_len(n_cells))))
-    coords <- cbind(x = stats::runif(n_cells, 0, 100), y = stats::runif(n_cells, 0, 100))
+    coords <- cbind(x = stats::runif(n_cells, 0, 100),
+                    y = stats::runif(n_cells, 0, 100))
     cd <- S4Vectors::DataFrame(
         transcript_counts = rpois(n_cells, 20),
         total_counts       = rpois(n_cells, 25),
@@ -69,8 +73,10 @@
 # repo (data-raw/xenium_test_data, ~17MB), so tests gated on this always
 # run rather than skip -- see test-xenium-panels.R.
 .xeniumTestDataPath <- function() {
-    candidates <- c("../../data-raw/xenium_test_data", "data-raw/xenium_test_data",
-        "../../../iseeSpatial/data-raw/xenium_test_data", "../iseeSpatial/data-raw/xenium_test_data")
+    candidates <- c("../../data-raw/xenium_test_data",
+                    "data-raw/xenium_test_data",
+        "../../../iseeSpatial/data-raw/xenium_test_data",
+        "../iseeSpatial/data-raw/xenium_test_data")
     found <- candidates[dir.exists(candidates)]
     if (length(found) == 0) NA_character_ else found[1]
 }
@@ -80,13 +86,17 @@
 .makeTestVisiumHDSPE <- function(n_cells = 60, n_genes = 12, seed = 1) {
     set.seed(seed)
     counts <- matrix(rpois(n_cells * n_genes, lambda = 2), nrow = n_genes,
-        dimnames = list(paste0("GENE", seq_len(n_genes)), paste0("cellid_", seq_len(n_cells))))
-    coords <- cbind(x = stats::runif(n_cells, 0, 1000), y = stats::runif(n_cells, 0, 1000))
+        dimnames = list(paste0("GENE", seq_len(n_genes)),
+                        paste0("cellid_", seq_len(n_cells))))
+    coords <- cbind(x = stats::runif(n_cells, 0, 1000),
+                    y = stats::runif(n_cells, 0, 1000))
     cd <- S4Vectors::DataFrame(
         um2 = 4 * rpois(n_cells, 30), nuc = stats::runif(n_cells),
         sum = colSums(counts), detected = colSums(counts > 0),
-        Level1 = factor(sample(c("Tumor", "T.cells", "Fibroblast"), n_cells, replace = TRUE)))
+        Level1 = factor(sample(c("Tumor", "T.cells", "Fibroblast"), n_cells,
+                               replace = TRUE)))
     cd$nuc_um2 <- cd$um2 * cd$nuc
     SpatialExperiment::SpatialExperiment(
-        assays = list(counts = counts, logcounts = log1p(counts)), colData = cd, spatialCoords = coords)
+        assays = list(counts = counts, logcounts = log1p(counts)),
+        colData = cd, spatialCoords = coords)
 }

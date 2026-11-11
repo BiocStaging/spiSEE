@@ -81,9 +81,11 @@ test_that("buildSpatialGraph/computeNiches work on a SpatialExperiment and survi
     expect_true("spatial_knn" %in% SingleCellExperiment::colPairNames(spe))
     spe <- computeNiches(spe, label_col = "SingleR_label", k = 10, n_niches = 3)
     expect_true(all(c("niche", "niche_entropy") %in% colnames(colData(spe))))
-    expect_equal(nrow(SingleCellExperiment::reducedDim(spe, "NicheComposition")), 300L)
+    expect_equal(nrow(SingleCellExperiment::reducedDim(spe,
+        "NicheComposition")), 300L)
     sub <- .subsetBySelection(spe, "1,2")
-    expect_true(all(SingleCellExperiment::colPair(sub, "spatial_knn")@to <= ncol(sub)))
+    expect_true(all(SingleCellExperiment::colPair(sub,
+        "spatial_knn")@to <= ncol(sub)))
 })
 
 test_that("SpatialNichePanel constructor defaults", {
@@ -104,7 +106,8 @@ test_that("niche results are reused when only the plot type changes", {
         real(x, se)
     })
     cache <- new.env()
-    p <- SpatialNichePanel(LabelCol = "SingleR_label", K = 10L, NNiches = 3L, ComputeTrigger = "t1")
+    p <- SpatialNichePanel(LabelCol = "SingleR_label", K = 10L, NNiches = 3L,
+                           ComputeTrigger = "t1")
     out1 <- .nicheOutput(p, spe, cache, note = "Computed on 300 cells")
     p@PlotType <- "niche_heatmap"
     out2 <- .nicheOutput(p, spe, cache)

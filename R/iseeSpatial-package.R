@@ -1,4 +1,5 @@
-#' iseeSpatial: interactive exploration of imaging- and sequencing-based spatial transcriptomics
+#' iseeSpatial: interactive exploration of imaging- and sequencing-based
+#' spatial transcriptomics
 #'
 #' iSEE panels for spatial data at cellular resolution (CosMx, Xenium,
 #' Visium HD). Select a region on an overview map and every panel follows:

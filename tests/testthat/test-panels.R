@@ -15,7 +15,8 @@ test_that("panel constructors set their defaults", {
 })
 
 test_that("every panel reports a name and a valid hex colour", {
-    panels <- list(SpatialMapPanel(), SpatialPlotPanel(), FOVZoomPanel(), SpatialQCPanel(),
+    panels <- list(SpatialMapPanel(), SpatialPlotPanel(), FOVZoomPanel(),
+                   SpatialQCPanel(),
         FOVStatsPanel(), SpatialStatsPanel(), SVGPanel(), SpatialNichePanel())
     for (p in panels) {
         expect_type(.fullName(p), "character")
@@ -24,7 +25,8 @@ test_that("every panel reports a name and a valid hex colour", {
 })
 
 test_that("all selection-following panels share the Selection slot", {
-    for (p in list(SpatialPlotPanel(), FOVZoomPanel(), SpatialQCPanel(), FOVStatsPanel(),
+    for (p in list(SpatialPlotPanel(), FOVZoomPanel(), SpatialQCPanel(),
+                   FOVStatsPanel(),
         SpatialStatsPanel(), SVGPanel(), SpatialNichePanel()))
         expect_true(is(p, "SpatialPanelBase"))
     expect_false(is(SpatialMapPanel(), "SpatialPanelBase"))
@@ -43,11 +45,14 @@ test_that("default layouts adapt to the platform", {
 test_that("plot panels render on synthetic data without the app", {
     skip_if_not_installed("SpaceTrooper")
     spe <- .makeTestVisiumHDSPE()
-    expect_s3_class(.generateOutput(SpatialPlotPanel(ColorBy = "sum"), spe), "ggplot")
-    expect_s3_class(.generateOutput(SpatialPlotPanel(ColorBy = "GENE1"), spe), "ggplot")
+    expect_s3_class(.generateOutput(SpatialPlotPanel(ColorBy = "sum"), spe),
+                    "ggplot")
+    expect_s3_class(.generateOutput(SpatialPlotPanel(ColorBy = "GENE1"), spe),
+                    "ggplot")
     p <- .generateOutput(SpatialPlotPanel(UsePolygons = TRUE), spe)
     expect_s3_class(p, "ggplot")    # graceful message, no polygons loaded
-    expect_s3_class(.generateOutput(FOVZoomPanel(), spe), "ggplot")  # not a tile platform
+    # not a tile platform
+    expect_s3_class(.generateOutput(FOVZoomPanel(), spe), "ggplot")
 })
 
 test_that("stats degrade gracefully on too few cells and honour k", {
@@ -56,7 +61,8 @@ test_that("stats degrade gracefully on too few cells and honour k", {
     tbl <- .computeSVGRanking(spe)
     expect_equal(nrow(tbl), 0)
     expect_named(tbl, c("gene", "moran_i"))
-    expect_s3_class(.computeSpatialStat(.makeTestSPE(), "joincount_plot", group_col = NA), "ggplot")
+    expect_s3_class(.computeSpatialStat(.makeTestSPE(), "joincount_plot",
+                                        group_col = NA), "ggplot")
 })
 
 # ── Integration on real data, when present locally ──
@@ -80,7 +86,8 @@ test_that("Xenium test bundle: loader, k-NN graph and known top SVG", {
     expect_equal(ncol(spe), 36)
     expect_s3_class(.computeSpatialStat(spe, "graph_plot"), "ggplot")
     tbl <- .computeSVGRanking(spe, top_n = 50)
-    expect_identical(tbl$gene[1], "Defa5")   # verified on this bundle with k = 6
+    # verified on this bundle with k = 6
+    expect_identical(tbl$gene[1], "Defa5")
 })
 
 test_that("genes with a hyphen in their name can be plotted", {
@@ -102,9 +109,12 @@ test_that("SVG tables are kept per session, not shared", {
 })
 
 test_that("the launcher offers the spatial panels in 'Organize panels'", {
-    expect_s3_class(iseeSpatial(.makeTestVisiumHDSPE(), mode = "qc", cache = FALSE), "shiny.appobj")
-    expect_false(any(vapply(.extraPanels(.makeTestVisiumHDSPE()), is, logical(1), "FOVZoomPanel")))
-    expect_true(any(vapply(.extraPanels(.makeTestSPE()), is, logical(1), "FOVZoomPanel")))
+    expect_s3_class(iseeSpatial(.makeTestVisiumHDSPE(), mode = "qc",
+                                cache = FALSE), "shiny.appobj")
+    expect_false(any(vapply(.extraPanels(.makeTestVisiumHDSPE()), is,
+                            logical(1), "FOVZoomPanel")))
+    expect_true(any(vapply(.extraPanels(.makeTestSPE()), is, logical(1),
+                           "FOVZoomPanel")))
 })
 
 test_that("join counts use binary symmetric weights (F14)", {
@@ -127,20 +137,25 @@ test_that("local cluster significance level is a panel parameter (F7)", {
 
 test_that("QC histogram: readable names and flagged-cell count (F8)", {
     spe <- .makeTestSPE(n_cells = 200)
-    colData(spe)$total_outlier_mc <- scuttle::isOutlier(colData(spe)$total, nmads = 1)
+    colData(spe)$total_outlier_mc <- scuttle::isOutlier(colData(spe)$total,
+        nmads = 1)
     n <- sum(colData(spe)$total_outlier_mc)
-    p <- .generateOutput(SpatialQCPanel(Metric = "total", UseFences = TRUE), spe)
+    p <- .generateOutput(SpatialQCPanel(Metric = "total", UseFences = TRUE),
+                         spe)
     expect_s3_class(p, "ggplot")
     expect_identical(p$labels$colour, "Outlier fences (medcouple)")
     expect_match(p$labels$subtitle, sprintf("^%d of 200 cells flagged", n))
     expect_identical(.prettyMetric("transcript_counts"), "Transcript counts")
-    expect_identical(.flaggedText(c(TRUE, FALSE, NA, FALSE)), "1 of 4 cells flagged as outliers (25.0%)")
+    expect_identical(.flaggedText(c(TRUE, FALSE, NA, FALSE)),
+                     "1 of 4 cells flagged as outliers (25.0%)")
 })
 
 test_that("placeholders show their message in the panel (F9)", {
     p <- .generateOutput(FOVZoomPanel(), .makeTestSPE())
-    expect_identical(p$labels$title, "Select FOVs on the map, then press Validate.")
-    expect_true(any(vapply(p$layers, function(l) inherits(l$geom, "GeomText"), logical(1))))
+    expect_identical(p$labels$title,
+                     "Select FOVs on the map, then press Validate.")
+    expect_true(any(vapply(p$layers, function(l) inherits(l$geom, "GeomText"),
+                           logical(1))))
     f <- tempfile(fileext = ".png")
     grDevices::png(f, 500, 400)
     print(p)
@@ -157,7 +172,8 @@ test_that("FOV zoom explains a dataset without cell polygons", {
 })
 
 test_that("panel outputs turn on Shiny's busy indicators (F10)", {
-    for (x in list(SpatialPlotPanel(), SpatialMapPanel(), SVGPanel(), SpatialNichePanel())) {
+    for (x in list(SpatialPlotPanel(), SpatialMapPanel(), SVGPanel(),
+                   SpatialNichePanel())) {
         x@PanelId <- 1L
         html <- htmltools::renderTags(.defineOutput(x))$html
         expect_match(html, "shinyBusySpinners")
@@ -178,7 +194,8 @@ test_that("scale bar is turned off only when the technology is unknown", {
 
 test_that("an empty SVG table says why (F4)", {
     spe <- .makeTestSPE()
-    expect_match(attr(.generateOutput(SVGPanel(), spe), "reason"), "Press Compute")
+    expect_match(attr(.generateOutput(SVGPanel(), spe), "reason"),
+                 "Press Compute")
     few <- .computeSVGRanking(spe[, 1:4], k = 6L)
     expect_equal(nrow(few), 0L)
     expect_match(attr(few, "reason"), "Too few cells")

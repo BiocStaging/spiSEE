@@ -10,7 +10,8 @@ test_that("dataset fingerprint separates datasets and ignores metadata", {
     expect_false(identical(.datasetFingerprint(a), .datasetFingerprint(a3)))
 })
 
-test_that("disk cache: folder, size limit, survives a new cache object, clear", {
+test_that("disk cache: folder, size limit, survives a new cache object, clear",
+          {
     dir <- withr::local_tempdir()
     local_mocked_bindings(.isDevLoad = function() FALSE)
     c1 <- .configurePlotCache(dir, size = 5e6)
@@ -31,5 +32,6 @@ test_that("under load_all the cache stays in memory", {
 
 test_that("default image cache folder is separate from the map backgrounds", {
     expect_identical(basename(spatialCacheDir()), "plots")
-    expect_identical(dirname(spatialCacheDir()), tools::R_user_dir("iseeSpatial", "cache"))
+    expect_identical(dirname(spatialCacheDir()),
+                     tools::R_user_dir("iseeSpatial", "cache"))
 })

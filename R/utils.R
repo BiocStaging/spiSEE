@@ -8,7 +8,8 @@
 # singleton(): included once per page, whatever the number of panels.
 .withBusy <- function(output_tag) {
     htmltools::tagList(
-        htmltools::singleton(shiny::useBusyIndicators(spinners = TRUE, pulse = TRUE)),
+        htmltools::singleton(shiny::useBusyIndicators(spinners = TRUE,
+            pulse = TRUE)),
         output_tag)
 }
 
@@ -49,14 +50,16 @@
     coords$fov <- as.integer(as.character(colData(se)[["fov"]]))
     xcol <- colnames(coords)[1]
     ycol <- colnames(coords)[2]
-    ggplot2::ggplot(coords, ggplot2::aes(x = .data[[xcol]], y = .data[[ycol]], color = fov)) +
+    ggplot2::ggplot(coords, ggplot2::aes(x = .data[[xcol]], y = .data[[ycol]],
+    color = fov)) +
         ggplot2::geom_point(size = point_size, alpha = 0.6) +
         ggplot2::scale_color_gradientn(colors = pals::jet(), name = "FOV") +
         ggplot2::coord_fixed() + ggplot2::theme_void() + ggplot2::ggtitle("FOV overview")
 }
 
 .discretePalette <- function(n) {
-    if (n <= 32) pals::glasbey(32)[seq_len(n)] else grDevices::hcl.colors(n, "Dynamic")
+    if (n <= 32) pals::glasbey(32)[seq_len(n)] else grDevices::hcl.colors(n,
+        "Dynamic")
 }
 
 # pheatmap / gtable results must be drawn explicitly inside renderPlot.
@@ -111,13 +114,15 @@
     tryCatch(expr, error = function(e) {
         if (inherits(e, "shiny.silent.error")) stop(e)
         message("[iseeSpatial] ", panel, ": ", conditionMessage(e))
-        shiny::validate(shiny::need(FALSE, paste("Error:", conditionMessage(e))))
+        shiny::validate(shiny::need(FALSE,
+                                    paste("Error:", conditionMessage(e))))
     })
 }
 
 # Cached plot rendering shared by every plot panel; re-renders only when one
 # of key_slots changes (see .panelKey).
-.renderCachedSpatialPlot <- function(x, se, output, pObjects, rObjects, key_slots) {
+.renderCachedSpatialPlot <- function(x, se, output, pObjects, rObjects,
+                                     key_slots) {
     plot_name <- .getEncodedName(x)
     key <- .panelKey(plot_name, pObjects, rObjects,
         function(pn) lapply(key_slots, function(s) methods::slot(pn, s)))
@@ -126,7 +131,8 @@
     output[[plot_name]] <- shiny::renderCachedPlot(
         {
             key()
-            .safeOutput(.drawPlot(.generateOutput(pObjects$memory[[plot_name]], se)), plot_name)
+            .safeOutput(.drawPlot(.generateOutput(pObjects$memory[[plot_name]],
+                                  se)), plot_name)
         },
         cacheKeyExpr = list(fp, ver, plot_name, key()),
         cache = .plotCache())
@@ -135,7 +141,8 @@
 # One observer per simple input <-> slot pair.
 #   cast:     coerce the input value to the slot type
 #   redraw:   request a re-render (FALSE for parameters that only apply on Compute)
-#   multiple: NULL input means "nothing selected" (multi-select) instead of "ignore"
+# multiple: NULL input means "nothing selected" (multi-select) instead of
+# "ignore"
 .slotObserver <- function(enc, field, input, pObjects, rObjects,
                           cast = identity, redraw = TRUE, multiple = FALSE) {
     id <- paste0(enc, "_", field)
@@ -168,7 +175,8 @@
 }
 
 .computeButton <- function(enc, label = "Compute") {
-    shiny::actionButton(paste0(enc, "_Compute"), label, class = "btn btn-primary btn-sm", width = "100%")
+    shiny::actionButton(paste0(enc, "_Compute"), label,
+                        class = "btn btn-primary btn-sm", width = "100%")
 }
 
 .selectionHelp <- function(se) {

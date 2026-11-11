@@ -47,19 +47,30 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
     list(iSEE::collapseBox(
         id = paste0(enc, "_DataBoxOpen"), title = "Selection", open = TRUE,
         shiny::tags$p(
-            shiny::tags$b(sprintf("Click %s", what)), " or drag a rectangle to build a selection. ",
-            shiny::tags$span(style = "color:#3A86FF; font-weight:bold;", "Blue"), " = pending, ",
-            shiny::tags$span(style = "color:#FF6B35; font-weight:bold;", "orange"), " = applied, ",
-            shiny::tags$span(style = "color:#E63946; font-weight:bold;", "red"), " = pending removal. ",
-            shiny::tags$b("Validate"), " applies the pending set to all panels (it replaces the previous selection); ",
+            shiny::tags$b(sprintf("Click %s", what)),
+            " or drag a rectangle to build a selection. ",
+            shiny::tags$span(style = "color:#3A86FF; font-weight:bold;",
+                             "Blue"), " = pending, ",
+            shiny::tags$span(style = "color:#FF6B35; font-weight:bold;",
+                             "orange"), " = applied, ",
+            shiny::tags$span(style = "color:#E63946; font-weight:bold;",
+                             "red"), " = pending removal. ",
+            shiny::tags$b("Validate"),
+            " applies the pending set to all panels (it replaces the previous selection); ",
             shiny::tags$b("Clear"), " goes back to the whole dataset.",
             style = "font-size:12px; color:#555; margin-bottom:8px;"),
         shiny::fluidRow(
-            shiny::column(4, shiny::actionButton(paste0(enc, "_Validate"), "Validate",
+            shiny::column(4,
+                          shiny::actionButton(paste0(enc, "_Validate"),
+                                              "Validate",
                 class = "btn btn-primary btn-sm", width = "100%")),
-            shiny::column(4, shiny::actionButton(paste0(enc, "_ClearPending"), "Clear",
+            shiny::column(4,
+                          shiny::actionButton(paste0(enc, "_ClearPending"),
+                                              "Clear",
                 class = "btn btn-default btn-sm", width = "100%")),
-            shiny::column(4, shiny::actionButton(paste0(enc, "_SelectAll"), paste("All", what),
+            shiny::column(4,
+                          shiny::actionButton(paste0(enc, "_SelectAll"),
+                                              paste("All", what),
                 class = "btn btn-default btn-sm", width = "100%")))
     ))
 })
@@ -76,7 +87,8 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
     unit <- .selectionUnit(se)
     cache_dir <- tools::R_user_dir("iseeSpatial", "cache")
     dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
-    f <- file.path(cache_dir, sprintf("map_%s_%s.rds", unit, .mapCacheKey(se, unit)))
+    f <- file.path(cache_dir,
+                   sprintf("map_%s_%s.rds", unit, .mapCacheKey(se, unit)))
     if (file.exists(f)) return(readRDS(f))
     base <- if (unit == "fov") .buildTileMapBase(se) else .buildPointMapBase(se)
     base$unit <- unit
@@ -85,9 +97,12 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
 }
 
 .savePNG <- function(p, xr, yr) {
-    asp <- diff(yr) / diff(xr)              # image aspect must match the data's,
-    tmp <- tempfile(fileext = ".png")       # or overlaid shapes drift (letterboxing)
-    ggplot2::ggsave(tmp, p, width = 7, height = 7 * asp, dpi = 150, bg = "white")
+    # image aspect must match the data's,
+    asp <- diff(yr) / diff(xr)
+    # or overlaid shapes drift (letterboxing)
+    tmp <- tempfile(fileext = ".png")
+    ggplot2::ggsave(tmp, p, width = 7, height = 7 * asp, dpi = 150,
+                    bg = "white")
     on.exit(unlink(tmp))
     readBin(tmp, "raw", file.info(tmp)$size)
 }
@@ -108,14 +123,20 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
     l1 <- labs[1, ]
     bg <- ggplot2::ggplot() +
         ggplot2::geom_point(data = points, mapping = ggplot2::aes(x = x, y = y),
-            colour = pt$colour, alpha = pt$alpha, size = pt$size, shape = pt$shape, stroke = pt$stroke) +
+            colour = pt$colour, alpha = pt$alpha, size = pt$size,
+            shape = pt$shape, stroke = pt$stroke) +
         ggplot2::geom_rect(data = rects,
-            mapping = ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-            colour = r1$colour, fill = NA, linewidth = r1$linewidth, linetype = r1$linetype, alpha = r1$alpha) +
-        ggplot2::geom_text(data = labs, mapping = ggplot2::aes(x = x, y = y, label = label),
-            colour = l1$colour, size = l1$size, alpha = l1$alpha, fontface = l1$fontface,
+            mapping = ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin,
+                                   ymax = ymax),
+            colour = r1$colour, fill = NA, linewidth = r1$linewidth,
+            linetype = r1$linetype, alpha = r1$alpha) +
+        ggplot2::geom_text(data = labs,
+                           mapping = ggplot2::aes(x = x, y = y, label = label),
+            colour = l1$colour, size = l1$size, alpha = l1$alpha,
+            fontface = l1$fontface,
             family = l1$family, hjust = l1$hjust, vjust = l1$vjust) +
-        ggplot2::coord_fixed(xlim = xr, ylim = yr, expand = FALSE) + ggplot2::theme_void()
+        ggplot2::coord_fixed(xlim = xr, ylim = yr,
+                             expand = FALSE) + ggplot2::theme_void()
     list(png_raw = .savePNG(bg, xr, yr), xr = xr, yr = yr, rects = rects,
         ids = as.character(labs$label), px = labs$x, py = labs$y)
 }
@@ -130,7 +151,8 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
     size <- if (nrow(df) > 1e5) 0.3 else if (nrow(df) > 2e4) 0.6 else 1.2
     bg <- ggplot2::ggplot(df, ggplot2::aes(x = x, y = y)) +
         ggplot2::geom_point(size = size, alpha = 0.7, colour = "grey35") +
-        ggplot2::coord_fixed(xlim = xr, ylim = yr, expand = FALSE) + ggplot2::theme_void()
+        ggplot2::coord_fixed(xlim = xr, ylim = yr,
+                             expand = FALSE) + ggplot2::theme_void()
     list(png_raw = .savePNG(bg, xr, yr), xr = xr, yr = yr,
         ids = colnames(se), px = unname(xy[, 1]), py = unname(xy[, 2]))
 }
@@ -208,31 +230,41 @@ function(el, x, data) {
 
 .buildMapWidget <- function(base, enc) {
     img <- list(list(
-        source = paste0("data:image/png;base64,", base64enc::base64encode(base$png_raw)),
+        source = paste0("data:image/png;base64,",
+                        base64enc::base64encode(base$png_raw)),
         xref = "x", yref = "y", x = base$xr[1], y = base$yr[2],
-        sizex = diff(base$xr), sizey = diff(base$yr), sizing = "stretch", layer = "below"))
-    axes <- list(xaxis = list(range = base$xr, visible = FALSE, scaleanchor = "y", constrain = "domain"),
+        sizex = diff(base$xr), sizey = diff(base$yr), sizing = "stretch",
+        layer = "below"))
+    axes <- list(xaxis = list(range = base$xr, visible = FALSE,
+                              scaleanchor = "y", constrain = "domain"),
         yaxis = list(range = base$yr, visible = FALSE))
     if (base$unit == "fov") {
         shapes <- lapply(seq_along(base$ids), function(i) list(
             type = "rect", x0 = base$rects$xmin[i], x1 = base$rects$xmax[i],
             y0 = base$rects$ymin[i], y1 = base$rects$ymax[i],
-            line = list(color = "black", width = 1, dash = "solid"), fillcolor = "rgba(0,0,0,0)"))
-        p <- plotly::plot_ly(x = base$px, y = base$py, type = "scatter", mode = "markers",
+            line = list(color = "black", width = 1, dash = "solid"),
+            fillcolor = "rgba(0,0,0,0)"))
+        p <- plotly::plot_ly(x = base$px, y = base$py, type = "scatter",
+                             mode = "markers",
             marker = list(opacity = 0, size = 40), customdata = base$ids,
             hoverinfo = "text", text = base$ids, source = enc)
-        p <- plotly::layout(p, images = img, shapes = shapes, xaxis = axes$xaxis, yaxis = axes$yaxis,
+        p <- plotly::layout(p, images = img, shapes = shapes,
+                            xaxis = axes$xaxis, yaxis = axes$yaxis,
             margin = list(l = 0, r = 0, t = 0, b = 0), dragmode = "select")
     } else {
-        p <- plotly::plot_ly(x = base$px, y = base$py, type = "scattergl", mode = "markers",
+        p <- plotly::plot_ly(x = base$px, y = base$py, type = "scattergl",
+                             mode = "markers",
             marker = list(opacity = 0, size = 16), customdata = base$ids,
             hoverinfo = "skip", source = enc)
-        # Trace 1 holds the highlighted cells; seeded with one point, cleared on mount.
-        p <- plotly::add_trace(p, data = NULL, inherit = FALSE, x = base$px[1], y = base$py[1],
+        # Trace 1 holds the highlighted cells; seeded with one point, cleared
+        # on mount.
+        p <- plotly::add_trace(p, data = NULL, inherit = FALSE, x = base$px[1],
+                               y = base$py[1],
             type = "scattergl", mode = "markers",
             marker = list(size = 7, color = "#3A86FF"), hoverinfo = "skip",
             showlegend = FALSE, customdata = "__placeholder__")
-        p <- plotly::layout(p, images = img, xaxis = axes$xaxis, yaxis = axes$yaxis,
+        p <- plotly::layout(p, images = img, xaxis = axes$xaxis,
+                            yaxis = axes$yaxis,
             margin = list(l = 0, r = 0, t = 0, b = 0), dragmode = "select")
     }
     p <- plotly::config(p, displayModeBar = FALSE, scrollZoom = FALSE)
@@ -253,22 +285,26 @@ setMethod(".generateOutput", "SpatialMapPanel", function(x, se, ...) {
     ggplot2::ggplot() +
         ggplot2::annotation_raster(img, xmin = base$xr[1], xmax = base$xr[2],
             ymin = base$yr[1], ymax = base$yr[2]) +
-        ggplot2::coord_fixed(xlim = base$xr, ylim = base$yr, expand = FALSE) + ggplot2::theme_void()
+        ggplot2::coord_fixed(xlim = base$xr, ylim = base$yr,
+                             expand = FALSE) + ggplot2::theme_void()
 })
 
 #' @rdname SpatialMapPanel
 #' @export
-setMethod(".renderOutput", "SpatialMapPanel", function(x, se, output, pObjects, rObjects) {
+setMethod(".renderOutput", "SpatialMapPanel",
+          function(x, se, output, pObjects, rObjects) {
     plot_name <- .getEncodedName(x)
     base <- .cachedMapBase(se)
     # Built once; deliberately no dependency on rObjects$modified: all
     # interaction is client-side, so it never needs to re-render.
-    output[[plot_name]] <- plotly::renderPlotly(.buildMapWidget(base, plot_name))
+    output[[plot_name]] <- plotly::renderPlotly(.buildMapWidget(base,
+        plot_name))
 })
 
 #' @rdname SpatialMapPanel
 #' @export
-setMethod(".createObservers", "SpatialMapPanel", function(x, se, input, session, pObjects, rObjects) {
+setMethod(".createObservers", "SpatialMapPanel",
+          function(x, se, input, session, pObjects, rObjects) {
     callNextMethod()
     enc <- .getEncodedName(x)
     all_ids <- .allRegionIDs(se)
@@ -276,13 +312,15 @@ setMethod(".createObservers", "SpatialMapPanel", function(x, se, input, session,
     # Pending state mirrored from the browser: stored only, nothing re-renders.
     shiny::observeEvent(input[[paste0(enc, "_pendingSync")]],
         {
-            pObjects$memory[[enc]]@PendingIDs <- paste(input[[paste0(enc, "_pendingSync")]], collapse = ",")
+            pObjects$memory[[enc]]@PendingIDs <- paste(input[[paste0(enc,
+                "_pendingSync")]], collapse = ",")
         },
         ignoreNULL = FALSE,
         ignoreInit = TRUE)
     shiny::observeEvent(input[[paste0(enc, "_pendingRemoveSync")]],
         {
-            pObjects$memory[[enc]]@PendingRemoveIDs <- paste(input[[paste0(enc, "_pendingRemoveSync")]], collapse = ",")
+            pObjects$memory[[enc]]@PendingRemoveIDs <- paste(input[[paste0(enc,
+                "_pendingRemoveSync")]], collapse = ",")
         },
         ignoreNULL = FALSE,
         ignoreInit = TRUE)
@@ -304,10 +342,13 @@ setMethod(".createObservers", "SpatialMapPanel", function(x, se, input, session,
 
     shiny::observeEvent(input[[paste0(enc, "_Validate")]],
         {
-            # Previously committed tiles aren't re-sent by the browser on every click
+            # Previously committed tiles aren't re-sent by the browser on every
+            # click
             # (only the deltas are, via PendingIDs/PendingRemoveIDs), so the new
-            # committed set must be folded in from the panel's own CommittedIDs --
-            # otherwise a second Validate round wipes out everything from the first.
+            # committed set must be folded in from the panel's own CommittedIDs
+            # --
+            # otherwise a second Validate round wipes out everything from the
+            # first.
             committed <- .splitIDs(pObjects$memory[[enc]]@CommittedIDs)
             pending   <- .splitIDs(pObjects$memory[[enc]]@PendingIDs)
             removed   <- .splitIDs(pObjects$memory[[enc]]@PendingRemoveIDs)
@@ -315,7 +356,8 @@ setMethod(".createObservers", "SpatialMapPanel", function(x, se, input, session,
         },
         ignoreInit = TRUE)
 
-    shiny::observeEvent(input[[paste0(enc, "_ClearPending")]], .apply(character(0)), ignoreInit = TRUE)
+    shiny::observeEvent(input[[paste0(enc, "_ClearPending")]],
+    .apply(character(0)), ignoreInit = TRUE)
 
     shiny::observeEvent(input[[paste0(enc, "_SelectAll")]],
         {

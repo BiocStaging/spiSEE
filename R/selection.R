@@ -27,6 +27,7 @@
 .allRegionIDs <- function(se) {
     if (.selectionUnit(se) == "fov") {
         f <- unique(as.character(colData(se)[[.platformInfo(se)$region_col]]))
-        if (all(grepl("^-?[0-9]+(\\.[0-9]+)?$", f))) f[order(as.numeric(f))] else sort(f)
+        if (all(grepl("^-?[0-9]+(\\.[0-9]+)?$",
+                      f))) f[order(as.numeric(f))] else sort(f)
     } else colnames(se)
 }

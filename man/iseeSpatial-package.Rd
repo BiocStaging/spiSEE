@@ -3,7 +3,8 @@
 \docType{package}
 \name{iseeSpatial-package}
 \alias{iseeSpatial-package}
-\title{iseeSpatial: interactive exploration of imaging- and sequencing-based spatial transcriptomics}
+\title{iseeSpatial: interactive exploration of imaging- and sequencing-based
+spatial transcriptomics}
 \description{
 iSEE panels for spatial data at cellular resolution (CosMx, Xenium,
 Visium HD). Select a region on an overview map and every panel follows:
