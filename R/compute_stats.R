@@ -149,19 +149,23 @@ NULL
 
 # Moran's I scan over the most expressed genes (or metadata(se)$gene_ranks).
 .computeSVGRanking <- function(se, top_n = 200L, k = 6L) {
-  empty <- data.frame(gene = character(0), moran_i = numeric(0))
-  if (ncol(se) < max(5, k + 1)) return(empty)
+  # An empty table carries the reason, shown in the panel (F4).
+  empty <- function(why) structure(data.frame(gene = character(0), moran_i = numeric(0)), reason = why)
+  if (ncol(se) < max(5, k + 1))
+    return(empty(sprintf("Too few cells in this selection (%d) for k = %d.", ncol(se), k)))
   cand <- S4Vectors::metadata(se)$gene_ranks
   if (is.null(cand)) {
     a <- if ("counts" %in% SummarizedExperiment::assayNames(se)) "counts" else "logcounts"
     cand <- rownames(se)[order(Matrix::rowSums(SummarizedExperiment::assay(se, a)), decreasing = TRUE)]
   }
   cand <- intersect(utils::head(cand, top_n), rownames(se))
-  if (length(cand) == 0) return(empty)
+  if (length(cand) == 0) return(empty("No genes to rank in this dataset."))
   sfe <- .toSFEWithKNNNeighbors(se, k)
   m <- Voyager::calculateMoransI(sfe, features = cand, colGraphName = "knn",
                                  colGeometryName = 1, zero.policy = TRUE)
   tbl <- data.frame(gene = rownames(m), moran_i = m$moran, row.names = NULL)
   tbl <- tbl[!is.na(tbl$moran_i), , drop = FALSE]
+  if (nrow(tbl) == 0)
+    return(empty("Moran's I could not be computed for any gene (no variation in this selection?)."))
   tbl[order(-tbl$moran_i), , drop = FALSE]
 }

@@ -154,3 +154,11 @@ test_that("scale bar is turned off only when the technology is unknown", {
   S4Vectors::metadata(spe)$technology <- "10X_Xenium"
   expect_identical(.scaleBarArgs(f_new, spe), list())
 })
+
+test_that("an empty SVG table says why (F4)", {
+  spe <- .makeTestSPE()
+  expect_match(attr(.generateOutput(SVGPanel(), spe), "reason"), "Press Compute")
+  few <- .computeSVGRanking(spe[, 1:4], k = 6L)
+  expect_equal(nrow(few), 0L)
+  expect_match(attr(few, "reason"), "Too few cells")
+})

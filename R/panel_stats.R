@@ -158,7 +158,9 @@ setMethod(".defineInterface", "SVGPanel", function(x, se, select_info) {
 #' @rdname SVGPanel
 #' @export
 setMethod(".generateOutput", "SVGPanel", function(x, se, ...) {
-  if (!nzchar(x@ComputeTrigger)) return(data.frame(gene = character(0), moran_i = numeric(0)))
+  if (!nzchar(x@ComputeTrigger))
+    return(structure(data.frame(gene = character(0), moran_i = numeric(0)),
+                     reason = "Press Compute to rank genes in the current selection."))
   .computeSVGRanking(.subsetBySelection(se, x@Selection), top_n = x@TopN, k = x@K)
 })
 
@@ -173,9 +175,12 @@ setMethod(".renderOutput", "SVGPanel", function(x, se, output, pObjects, rObject
     key()
     tbl <- .safeOutput(.generateOutput(pObjects$memory[[enc]], se), enc)
     assign(enc, tbl, envir = .svgTables(pObjects))
+    why <- attr(tbl, "reason")
     names(tbl) <- c("Gene", "Moran's I")
     DT::formatRound(DT::datatable(tbl, selection = "single", rownames = FALSE,
-      options = list(pageLength = 15, order = list(list(1, "desc")))), "Moran's I", 3)
+      options = list(pageLength = 15, order = list(list(1, "desc")),
+                     language = list(emptyTable = if (is.null(why)) "No result." else why))),
+      "Moran's I", 3)
   })
 })
 
