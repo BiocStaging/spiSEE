@@ -96,7 +96,8 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
 # bytes are cached -- never a ggplot object, whose environments would drag
 # the whole dataset into the cache file.
 .buildTileMapBase <- function(se) {
-  built <- ggplot2::ggplot_build(SpaceTrooper::plotCellsFovs(se))
+  built <- ggplot2::ggplot_build(do.call(SpaceTrooper::plotCellsFovs,
+    c(list(se), .scaleBarArgs(SpaceTrooper::plotCellsFovs, se))))
   points <- built$data[[1]]; rects <- built$data[[2]]; labs <- built$data[[3]]
   xr <- built$layout$panel_params[[1]]$x.range
   yr <- built$layout$panel_params[[1]]$y.range

@@ -12,6 +12,17 @@
     output_tag)
 }
 
+# Arguments that turn SpaceTrooper's scale bar off when the dataset has no
+# metadata(se)$technology. SpaceTrooper >= 1.3 draws the bar by default and
+# takes its unit from that field (CosMx coordinates are pixels, the others
+# micrometres); without it the call fails, and we do not guess the unit.
+# Older SpaceTrooper versions have no such argument: nothing is added.
+.scaleBarArgs <- function(fun, se, arg = "scaleBar") {
+  if (arg %in% names(formals(fun)) && is.null(S4Vectors::metadata(se)$technology))
+    stats::setNames(list(FALSE), arg)
+  else list()
+}
+
 # Placeholder shown instead of a plot: the message centred in the panel, in
 # large grey text, so an empty panel reads as "waiting for you" rather than
 # broken (F9). The message is also the plot title, for tests and exports.

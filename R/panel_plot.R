@@ -126,7 +126,8 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
       return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
     .polygonPlot(se, colorby, args$palette) + ggplot2::labs(fill = label)
   } else {
-    p <- do.call(SpaceTrooper::plotCentroids, c(args, size = x@PointSize))
+    p <- do.call(SpaceTrooper::plotCentroids,
+                 c(args, size = x@PointSize, .scaleBarArgs(SpaceTrooper::plotCentroids, se)))
     if (!identical(label, colorby)) p <- p + ggplot2::labs(colour = label, fill = label)
     p
   }
@@ -217,7 +218,9 @@ setMethod(".generateOutput", "FOVZoomPanel", function(x, se, ...) {
   fovs <- fovs[!is.na(fovs)]
   if (length(fovs) == 0) return(.notAvailablePlot("Select FOVs on the map, then press Validate."))
   cb <- if (nzchar(x@ColorBy)) x@ColorBy else .qcMetrics(se)[1]
-  SpaceTrooper::plotZoomFovsMap(se, fovs = fovs, colourBy = cb)
+  do.call(SpaceTrooper::plotZoomFovsMap,
+          c(list(se, fovs = fovs, colourBy = cb),
+            .scaleBarArgs(SpaceTrooper::plotZoomFovsMap, se, "scaleBars")))
 })
 
 #' @rdname FOVZoomPanel

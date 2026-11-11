@@ -143,3 +143,14 @@ test_that("panel outputs turn on Shiny's busy indicators (F10)", {
     expect_match(html, .getEncodedName(x), fixed = TRUE)
   }
 })
+
+test_that("scale bar is turned off only when the technology is unknown", {
+  f_new <- function(spe, scaleBar = TRUE) NULL      # SpaceTrooper >= 1.3
+  f_old <- function(spe) NULL                       # SpaceTrooper 1.0
+  spe <- .makeTestSPE()
+  S4Vectors::metadata(spe)$technology <- NULL
+  expect_identical(.scaleBarArgs(f_new, spe), list(scaleBar = FALSE))
+  expect_identical(.scaleBarArgs(f_old, spe), list())
+  S4Vectors::metadata(spe)$technology <- "10X_Xenium"
+  expect_identical(.scaleBarArgs(f_new, spe), list())
+})
