@@ -14,4 +14,5 @@
 * One launcher, `iseeSpatial(spe, mode = c("analysis", "qc"))`. **Breaking:**
   `iseeSpatial(spe)` used to open the CosMx QC app; it now opens the analysis
   app (use `mode = "qc"`).
-* Old `CosMx*`/`Xenium*` constructors and launchers kept as deprecated wrappers.
+* The old platform-specific `CosMx*`/`Xenium*` panel constructors and
+  launchers are removed; use the classes above and `iseeSpatial()`.

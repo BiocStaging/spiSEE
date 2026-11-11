@@ -17,5 +17,10 @@ standard iSEE panel.
 \author{
 \strong{Maintainer}: Emile Danvin \email{emile.danvin@gmail.com}
 
+Authors:
+\itemize{
+  \item Dario Righelli [thesis advisor]
+}
+
 }
 \keyword{internal}

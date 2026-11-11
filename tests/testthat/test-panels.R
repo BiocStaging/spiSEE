@@ -23,15 +23,6 @@ test_that("all selection-following panels share the Selection slot", {
   expect_false(is(SpatialMapPanel(), "SpatialPanelBase"))
 })
 
-test_that("deprecated constructors return the new classes with the selection mapped", {
-  expect_s4_class(CosMxSpatialPanel(SelectedFOVs = "1,2"), "SpatialPlotPanel")
-  expect_identical(CosMxSpatialPanel(SelectedFOVs = "1,2")@Selection, "1,2")
-  expect_identical(CosMxGenePanel(Gene = "Gene1")@ColorBy, "Gene1")
-  expect_s4_class(XeniumQCPanel(), "SpatialQCPanel")
-  expect_identical(XeniumSVGPanel(LinkedPanel = "SpatialPlotPanel1")@LinkedPanel, "SpatialPlotPanel1")
-  expect_s4_class(CosMxFOVMapPanel(), "SpatialMapPanel")
-})
-
 test_that("default layouts adapt to the platform", {
   cos_qc <- .defaultPanels(.makeTestSPE(), "qc")
   expect_true(any(vapply(cos_qc, is, logical(1), "FOVZoomPanel")))
