@@ -20,7 +20,7 @@ standard iSEE panel.
 
 Authors:
 \itemize{
-  \item Dario Righelli [thesis advisor]
+  \item Dario Righelli \email{dario.righelli@gmail.com} (\href{https://orcid.org/0000-0003-1504-3583}{ORCID})
 }
 
 }
