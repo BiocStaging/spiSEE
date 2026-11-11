@@ -2,18 +2,19 @@ Package: iseeSpatial
 Title: Interactive Exploration of Cell-Resolution Spatial Transcriptomics with iSEE
 Version: 0.99.0
 Authors@R:
-    c(person("Emile", "Danvin", email = "emile.danvin@gmail.com",
-             role = c("aut", "cre")),
-      person("Dario", "Righelli", role = c("aut", "ths")))
-Description: Extends the iSEE interface with panels for spatial
-    transcriptomics at cellular resolution, from imaging-based (CosMx,
-    Xenium) and sequencing-based (Visium HD, cell-segmented) platforms. A
-    region selected on an overview map (fields of view or individual cells)
-    is applied to every panel: spatial plots, quality-control histograms,
-    spatial statistics (Moran's I, join-count, L-functions), spatially
-    variable genes, cellular niches and spatial domains. Heavy computations
-    run on demand on the selected region, and niches and domains can be
-    precomputed offline on the whole dataset.
+    c(person("Emile", "Danvin", email = "emile.danvin@gmail.com
+        role = c("aut", "cre")),
+    person("Dario", "Righelli", email = "dario.righelli@gmail.com", 
+        role = c("aut"),
+        comment = c(ORCID = "0000-0003-1504-3583"))
+    ))
+Description: Provides reusable iSEE panels for interactive exploration of
+    cell-resolution spatial transcriptomics data stored in SpatialExperiment
+    objects. Supports CosMx, Xenium and cell-segmented Visium HD data, with
+    coordinated region selection across spatial visualisations,
+    quality-control summaries and spatial analyses. Panels can be combined
+    with standard iSEE panels to explore gene expression, spatial statistics,
+    cellular neighbourhoods and spatial domains.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
