@@ -48,7 +48,9 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
   if (is.null(initial)) initial <- .defaultPanels(spe, mode, selection)
   args <- list(...)
   if (is.null(args$extra)) args$extra <- .extraPanels(spe)
-  do.call(iSEE::iSEE, c(list(spe, initial = initial), args))
+  # quote(spe): iSEE() runs deparse(substitute(se)) for its code export; with
+  # the object itself in the call, that deparsed the whole dataset at launch.
+  do.call(iSEE::iSEE, c(list(quote(spe), initial = initial), args))
 }
 
 # Panel types offered in "Organize panels" in addition to the initial ones.
