@@ -66,5 +66,5 @@ Suggests:
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 biocViews: Software, Spatial, Transcriptomics, SingleCell, Visualization,
-    GUI, ShinyApps, Clustering, QualityControl
+    GUI, ShinyApps, Clustering, QualityControl, GeneExpression, DataImport
 Config/testthat/edition: 3

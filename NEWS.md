@@ -16,3 +16,11 @@
   app (use `mode = "qc"`).
 * The old platform-specific `CosMx*`/`Xenium*` panel constructors and
   launchers are removed; use the classes above and `iseeSpatial()`.
+* Plot images are cached on disk (`spatialCacheDir()`, 1 GB, least recently
+  used removed first) so views already seen reopen instantly, also after a
+  restart; `cache = FALSE` keeps them in memory, `clearSpatialCache()` empties
+  the folder.
+* Niches, spatially variable genes and statistics are computed only when
+  *Compute* is pressed.
+* The vignette runs on a real CosMx dataset (SpaceTrooper's
+  `CosMx_DBKero_Tiny`).
