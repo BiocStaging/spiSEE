@@ -18,8 +18,9 @@
 #' Location of the iseeSpatial image cache
 #'
 #' Plot images are cached on disk by [iseeSpatial()] (argument `cache`).
-#' `spatialCacheDir()` gives the default folder; `clearSpatialCache()`
-#' deletes every cached image in a folder.
+#' `spatialCacheDir()` gives the default folder for the images (a `plots`
+#' subfolder of the package's user cache, next to the map backgrounds);
+#' `clearSpatialCache()` deletes every cached image in a folder.
 #'
 #' @param dir Cache folder.
 #' @return `spatialCacheDir()`: the folder path. `clearSpatialCache()`:
@@ -27,7 +28,7 @@
 #' @examples
 #' spatialCacheDir()
 #' @export
-spatialCacheDir <- function() tools::R_user_dir("iseeSpatial", which = "cache")
+spatialCacheDir <- function() file.path(tools::R_user_dir("iseeSpatial", which = "cache"), "plots")
 
 #' @rdname spatialCacheDir
 #' @export
@@ -45,6 +46,8 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
   .CACHE$cache <- if (isFALSE(cache)) {
     "app"   # shiny's default: memory, shared by the sessions of this R process
   } else {
+    # Own folder: cachem's size limit counts and evicts every .rds file in
+    # it, so it must not share one with the map backgrounds (map_*.rds).
     dir <- if (isTRUE(cache)) spatialCacheDir() else as.character(cache)
     dir.create(dir, recursive = TRUE, showWarnings = FALSE)
     cachem::cache_disk(dir, max_size = size, evict = "lru")

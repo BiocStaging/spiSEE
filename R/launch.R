@@ -18,7 +18,8 @@
 #'   Empty = whole dataset.
 #' @param initial Optional list of panels; replaces the default layout.
 #' @param cache Where plot images are cached: `TRUE` (default) on disk in
-#'   [spatialCacheDir()], kept across restarts; a folder path; or `FALSE`
+#'   [spatialCacheDir()], kept across restarts; a folder path (used only for
+#'   the images: do not share it with other files); or `FALSE`
 #'   for memory only (lost when R stops). Under `devtools::load_all()` the
 #'   cache is always in memory.
 #' @param cache_size Maximum size of the disk cache in bytes (default 1 GB);

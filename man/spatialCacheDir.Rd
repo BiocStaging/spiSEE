@@ -18,8 +18,9 @@ clearSpatialCache(dir = spatialCacheDir())
 }
 \description{
 Plot images are cached on disk by \code{\link[=iseeSpatial]{iseeSpatial()}} (argument \code{cache}).
-\code{spatialCacheDir()} gives the default folder; \code{clearSpatialCache()}
-deletes every cached image in a folder.
+\code{spatialCacheDir()} gives the default folder for the images (a \code{plots}
+subfolder of the package's user cache, next to the map backgrounds);
+\code{clearSpatialCache()} deletes every cached image in a folder.
 }
 \examples{
 spatialCacheDir()

@@ -26,3 +26,8 @@ test_that("under load_all the cache stays in memory", {
   local_mocked_bindings(.isDevLoad = function() TRUE)
   expect_identical(.configurePlotCache(TRUE), "app")
 })
+
+test_that("default image cache folder is separate from the map backgrounds", {
+  expect_identical(basename(spatialCacheDir()), "plots")
+  expect_identical(dirname(spatialCacheDir()), tools::R_user_dir("iseeSpatial", "cache"))
+})
