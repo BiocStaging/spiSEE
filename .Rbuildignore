@@ -8,3 +8,8 @@
 ^run_app\.R$
 ^run_.*\.command$
 ^\.github$
+^HANDOFF.*$
+^render_check$
+^.*\.tar\.gz$
+^.*\.Rcheck$
+^check$

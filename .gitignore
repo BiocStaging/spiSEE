@@ -6,3 +6,7 @@
 .DS_Store
 Rplots.pdf
 omnipathr-log/
+render_check/
+*.Rcheck/
+*.tar.gz
+check/
