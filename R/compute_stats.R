@@ -19,12 +19,12 @@ NULL
 # ============================================================
 
 .toSFEWithKNNNeighbors <- function(se, k = 6L) {
-  sfe <- as(se, "SpatialFeatureExperiment")
-  SpatialFeatureExperiment::colGraph(sfe, "knn") <-
-    SpatialFeatureExperiment::findSpatialNeighbors(
-      sfe, type = "spatialCoords", method = "knearneigh", k = as.integer(k),
-      style = "W", zero.policy = TRUE)
-  sfe
+    sfe <- as(se, "SpatialFeatureExperiment")
+    SpatialFeatureExperiment::colGraph(sfe, "knn") <-
+        SpatialFeatureExperiment::findSpatialNeighbors(
+            sfe, type = "spatialCoords", method = "knearneigh", k = as.integer(k),
+            style = "W", zero.policy = TRUE)
+    sfe
 }
 
 # Join counts need binary, symmetric weights: the test (Cliff and Ord 1981)
@@ -33,28 +33,28 @@ NULL
 # with it the variance can even be negative (?spdep::joincount.multi). Two
 # cells are joined if either is among the other's k nearest neighbours.
 .joincountWeights <- function(sfe) {
-  nb <- spdep::make.sym.nb(SpatialFeatureExperiment::colGraph(sfe, "knn")$neighbours)
-  spdep::nb2listw(nb, style = "B", zero.policy = TRUE)
+    nb <- spdep::make.sym.nb(SpatialFeatureExperiment::colGraph(sfe, "knn")$neighbours)
+    spdep::nb2listw(nb, style = "B", zero.policy = TRUE)
 }
 
 .joincountDF <- function(sfe, group_col) {
-  jc <- spdep::joincount.multi(factor(colData(sfe)[[group_col]]),
-                               .joincountWeights(sfe), zero.policy = TRUE)
-  df <- as.data.frame(jc)
-  colnames(df)[colnames(df) == "z-value"] <- "z_value"
-  df$pair <- rownames(jc)
-  df
+    jc <- spdep::joincount.multi(factor(colData(sfe)[[group_col]]),
+        .joincountWeights(sfe), zero.policy = TRUE)
+    df <- as.data.frame(jc)
+    colnames(df)[colnames(df) == "z-value"] <- "z_value"
+    df$pair <- rownames(jc)
+    df
 }
 
 .STATS_PLOTS <- c(
-  "Spatial neighbour graph (k-NN)"  = "graph_plot",
-  "Local Moran's I"                 = "localmoran_plot",
-  "Moran scatter plot"              = "moran_plot",
-  "Local cluster significance"      = "locclust_plot",
-  "Join-count statistics"           = "joincount_plot",
-  "Cell-type co-occurrence heatmap" = "joincount_heatmap_plot",
-  "L-function (Lest)"               = "lest_plot",
-  "L-cross function (Lcross)"       = "lcross_plot")
+    "Spatial neighbour graph (k-NN)"  = "graph_plot",
+    "Local Moran's I"                 = "localmoran_plot",
+    "Moran scatter plot"              = "moran_plot",
+    "Local cluster significance"      = "locclust_plot",
+    "Join-count statistics"           = "joincount_plot",
+    "Cell-type co-occurrence heatmap" = "joincount_heatmap_plot",
+    "L-function (Lest)"               = "lest_plot",
+    "L-cross function (Lcross)"       = "lcross_plot")
 
 .computeSpatialStat <- function(se, plot_type, genes = character(0),
                                 group_col = NA_character_, k = 6L,
@@ -68,7 +68,7 @@ NULL
             "Too few cells (%d) in this selection for k = %d", ncol(se), k)))
     }
     need_groups <- c("lest_plot", "lcross_plot", "locclust_plot",
-                     "joincount_plot", "joincount_heatmap_plot")
+        "joincount_plot", "joincount_heatmap_plot")
     if (plot_type %in% need_groups && !has_groups) {
         return(.notAvailablePlot(
             "No cell-type column chosen / available for this statistic"))
@@ -85,7 +85,7 @@ NULL
 
     switch(plot_type,
         graph_plot = Voyager::plotColGraph(sfe, colGraphName = "knn",
-                                           colGeometryName = 1) +
+            colGeometryName = 1) +
             ggplot2::theme_void(),
         localmoran_plot = .localMoranPlot(sfe, genes),
         moran_plot = .moranScatterPlot(sfe, genes[1]),
@@ -111,26 +111,26 @@ NULL
         selection = top[seq_len(n_needed)],
         rSeq = seq(0, 500, length.out = 100), by = "sample_id", ncores = 1)
     spatialFDA::plotMetricPerFov(res, theo = TRUE, correction = "iso",
-                                 x = "r", imageId = "sample_id")
+        x = "r", imageId = "sample_id")
 }
 
 .runLocalMoran <- function(sfe, genes) {
     Voyager::runUnivariate(sfe, features = genes, type = "localmoran",
-                           zero.policy = TRUE, colGraphName = "knn",
-                           colGeometryName = 1)
+        zero.policy = TRUE, colGraphName = "knn",
+        colGeometryName = 1)
 }
 
 .localMoranPlot <- function(sfe, genes) {
     sfe <- .runLocalMoran(sfe, genes)
     Voyager::plotLocalResult(sfe, name = "localmoran", features = genes,
-                             ncol = 2, colGeometryName = 1, divergent = TRUE,
-                             diverge_center = 0)
+        ncol = 2, colGeometryName = 1, divergent = TRUE,
+        diverge_center = 0)
 }
 
 .moranScatterPlot <- function(sfe, gene) {
     sfe <- Voyager::runUnivariate(sfe, feature = gene, zero.policy = TRUE,
-                                  type = "moran.plot", colGraphName = "knn",
-                                  colGeometryName = 1)
+        type = "moran.plot", colGraphName = "knn",
+        colGeometryName = 1)
     Voyager::moranPlot(sfe, feature = gene, graphName = "knn")
 }
 
@@ -144,10 +144,10 @@ NULL
     # inheritance, but errors at call time: "not an exported object").
     lm <- SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]]
     lm$locClust <- ifelse(lm[["-log10p_adj"]] > -log10(alpha),
-                          as.character(lm$mean), "non-significant")
+        as.character(lm$mean), "non-significant")
     SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]] <- lm
     Voyager::plotLocalResult(sfe, features = gene, name = "localmoran",
-                             attribute = "locClust", colGeometryName = 1) +
+        attribute = "locClust", colGeometryName = 1) +
         ggplot2::labs(caption = sprintf(
             "Significant: adjusted p < %g (local Moran's I, k = %d)",
             alpha, k))
@@ -158,7 +158,7 @@ NULL
     df <- df[order(-abs(df$z_value)), ]
     df$pair <- factor(df$pair, levels = rev(df$pair))
     ggplot2::ggplot(df, ggplot2::aes(x = pair, y = z_value,
-                                     fill = z_value > 0)) +
+        fill = z_value > 0)) +
         ggplot2::geom_col() +
         ggplot2::coord_flip() +
         ggplot2::scale_fill_manual(
@@ -195,23 +195,23 @@ NULL
 
 # Moran's I scan over the most expressed genes (or metadata(se)$gene_ranks).
 .computeSVGRanking <- function(se, top_n = 200L, k = 6L) {
-  # An empty table carries the reason, shown in the panel (F4).
-  empty <- function(why) structure(data.frame(gene = character(0), moran_i = numeric(0)), reason = why)
-  if (ncol(se) < max(5, k + 1))
-    return(empty(sprintf("Too few cells in this selection (%d) for k = %d.", ncol(se), k)))
-  cand <- S4Vectors::metadata(se)$gene_ranks
-  if (is.null(cand)) {
-    a <- if ("counts" %in% SummarizedExperiment::assayNames(se)) "counts" else "logcounts"
-    cand <- rownames(se)[order(Matrix::rowSums(SummarizedExperiment::assay(se, a)), decreasing = TRUE)]
-  }
-  cand <- intersect(utils::head(cand, top_n), rownames(se))
-  if (length(cand) == 0) return(empty("No genes to rank in this dataset."))
-  sfe <- .toSFEWithKNNNeighbors(se, k)
-  m <- Voyager::calculateMoransI(sfe, features = cand, colGraphName = "knn",
-                                 colGeometryName = 1, zero.policy = TRUE)
-  tbl <- data.frame(gene = rownames(m), moran_i = m$moran, row.names = NULL)
-  tbl <- tbl[!is.na(tbl$moran_i), , drop = FALSE]
-  if (nrow(tbl) == 0)
-    return(empty("Moran's I could not be computed for any gene (no variation in this selection?)."))
-  tbl[order(-tbl$moran_i), , drop = FALSE]
+    # An empty table carries the reason, shown in the panel (F4).
+    empty <- function(why) structure(data.frame(gene = character(0), moran_i = numeric(0)), reason = why)
+    if (ncol(se) < max(5, k + 1))
+        return(empty(sprintf("Too few cells in this selection (%d) for k = %d.", ncol(se), k)))
+    cand <- S4Vectors::metadata(se)$gene_ranks
+    if (is.null(cand)) {
+        a <- if ("counts" %in% SummarizedExperiment::assayNames(se)) "counts" else "logcounts"
+        cand <- rownames(se)[order(Matrix::rowSums(SummarizedExperiment::assay(se, a)), decreasing = TRUE)]
+    }
+    cand <- intersect(utils::head(cand, top_n), rownames(se))
+    if (length(cand) == 0) return(empty("No genes to rank in this dataset."))
+    sfe <- .toSFEWithKNNNeighbors(se, k)
+    m <- Voyager::calculateMoransI(sfe, features = cand, colGraphName = "knn",
+        colGeometryName = 1, zero.policy = TRUE)
+    tbl <- data.frame(gene = rownames(m), moran_i = m$moran, row.names = NULL)
+    tbl <- tbl[!is.na(tbl$moran_i), , drop = FALSE]
+    if (nrow(tbl) == 0)
+        return(empty("Moran's I could not be computed for any gene (no variation in this selection?)."))
+    tbl[order(-tbl$moran_i), , drop = FALSE]
 }

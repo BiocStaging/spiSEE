@@ -33,8 +33,8 @@ spatialCacheDir <- function() file.path(tools::R_user_dir("iseeSpatial", which =
 #' @rdname spatialCacheDir
 #' @export
 clearSpatialCache <- function(dir = spatialCacheDir()) {
-  if (dir.exists(dir)) unlink(list.files(dir, full.names = TRUE))
-  invisible(dir)
+    if (dir.exists(dir)) unlink(list.files(dir, full.names = TRUE))
+    invisible(dir)
 }
 
 .isDevLoad <- function() exists(".__DEVTOOLS__", envir = asNamespace("iseeSpatial"), inherits = FALSE)
@@ -42,17 +42,17 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
 # cache: TRUE (default folder), FALSE (memory only, lost when R stops) or a
 # folder path. size: maximum size on disk, in bytes.
 .configurePlotCache <- function(cache = TRUE, size = 1024^3) {
-  if (isTRUE(cache) && .isDevLoad()) cache <- FALSE
-  .CACHE$cache <- if (isFALSE(cache)) {
-    "app"   # shiny's default: memory, shared by the sessions of this R process
-  } else {
-    # Own folder: cachem's size limit counts and evicts every .rds file in
-    # it, so it must not share one with the map backgrounds (map_*.rds).
-    dir <- if (isTRUE(cache)) spatialCacheDir() else as.character(cache)
-    dir.create(dir, recursive = TRUE, showWarnings = FALSE)
-    cachem::cache_disk(dir, max_size = size, evict = "lru")
-  }
-  invisible(.CACHE$cache)
+    if (isTRUE(cache) && .isDevLoad()) cache <- FALSE
+    .CACHE$cache <- if (isFALSE(cache)) {
+        "app"   # shiny's default: memory, shared by the sessions of this R process
+    } else {
+        # Own folder: cachem's size limit counts and evicts every .rds file in
+        # it, so it must not share one with the map backgrounds (map_*.rds).
+        dir <- if (isTRUE(cache)) spatialCacheDir() else as.character(cache)
+        dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+        cachem::cache_disk(dir, max_size = size, evict = "lru")
+    }
+    invisible(.CACHE$cache)
 }
 
 .plotCache <- function() if (is.null(.CACHE$cache)) "app" else .CACHE$cache
@@ -61,14 +61,14 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
 # coordinates, cell annotations (without the polygon geometries) and the
 # per-cell sums of the expression assay.
 .datasetFingerprint <- function(se) {
-  cd <- as.data.frame(colData(se)[, setdiff(colnames(colData(se)), "polygons"), drop = FALSE])
-  a <- intersect(c("logcounts", "counts"), SummarizedExperiment::assayNames(se))
-  sums <- if (length(a)) Matrix::colSums(SummarizedExperiment::assay(se, a[1])) else NULL
-  digest::digest(list(dimnames(se), SpatialExperiment::spatialCoords(se), cd, sums,
-                      .selectionUnit(se)), algo = "xxhash64")
+    cd <- as.data.frame(colData(se)[, setdiff(colnames(colData(se)), "polygons"), drop = FALSE])
+    a <- intersect(c("logcounts", "counts"), SummarizedExperiment::assayNames(se))
+    sums <- if (length(a)) Matrix::colSums(SummarizedExperiment::assay(se, a[1])) else NULL
+    digest::digest(list(dimnames(se), SpatialExperiment::spatialCoords(se), cd, sums,
+        .selectionUnit(se)), algo = "xxhash64")
 }
 
 .fingerprintOf <- function(se) {
-  fp <- S4Vectors::metadata(se)$iseeSpatial_fingerprint
-  if (is.null(fp)) .datasetFingerprint(se) else fp
+    fp <- S4Vectors::metadata(se)$iseeSpatial_fingerprint
+    if (is.null(fp)) .datasetFingerprint(se) else fp
 }

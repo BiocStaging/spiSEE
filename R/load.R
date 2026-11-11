@@ -5,8 +5,8 @@
 # ============================================================
 
 .needs <- function(pkg) {
-  if (!requireNamespace(pkg, quietly = TRUE))
-    stop("Package '", pkg, "' is needed for this loader: BiocManager::install('", pkg, "')", call. = FALSE)
+    if (!requireNamespace(pkg, quietly = TRUE))
+        stop("Package '", pkg, "' is needed for this loader: BiocManager::install('", pkg, "')", call. = FALSE)
 }
 
 #' Load a prepared CosMx dataset
@@ -21,11 +21,11 @@
 #' if (file.exists(f)) spe <- load_cosmx(f)
 #' @export
 load_cosmx <- function(rds_path) {
-  spe <- readRDS(rds_path)
-  spe <- setPlatform(spe, "cosmx")
-  message(sprintf("CosMx: %d cells, %d genes, %d FOVs", ncol(spe), nrow(spe),
-                  length(unique(colData(spe)$fov))))
-  spe
+    spe <- readRDS(rds_path)
+    spe <- setPlatform(spe, "cosmx")
+    message(sprintf("CosMx: %d cells, %d genes, %d FOVs", ncol(spe), nrow(spe),
+        length(unique(colData(spe)$fov))))
+    spe
 }
 
 #' Load a 10x Xenium output directory
@@ -42,20 +42,23 @@ load_cosmx <- function(rds_path) {
 #' if (dir.exists(d)) spe <- load_xenium(d)
 #' @export
 load_xenium <- function(xenium_dir) {
-  .needs("SpatialExperimentIO")
-  spe <- SpatialExperimentIO::readXeniumSXE(xenium_dir)
-  SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
-  bnd <- file.path(xenium_dir, "cell_boundaries.parquet")
-  if (file.exists(bnd)) {
-    # readAndAddPolygonsToSPE() expects metadata set by SpaceTrooper's own
-    # readers, which readXeniumSXE() does not set: use the two steps directly.
-    pol <- tryCatch(SpaceTrooper::readPolygonsXenium(bnd, type = "parquet"),
-                    error = function(e) { message("  (cell boundaries not read: ", conditionMessage(e), ")"); NULL })
-    if (!is.null(pol)) spe <- SpaceTrooper::addPolygonsToSPE(spe, pol, polygonsCol = "polygons")
-  }
-  spe <- setPlatform(spe, "xenium")
-  message(sprintf("Xenium: %d cells, %d genes", ncol(spe), nrow(spe)))
-  spe
+    .needs("SpatialExperimentIO")
+    spe <- SpatialExperimentIO::readXeniumSXE(xenium_dir)
+    SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
+    bnd <- file.path(xenium_dir, "cell_boundaries.parquet")
+    if (file.exists(bnd)) {
+        # readAndAddPolygonsToSPE() expects metadata set by SpaceTrooper's own
+        # readers, which readXeniumSXE() does not set: use the two steps directly.
+        pol <- tryCatch(SpaceTrooper::readPolygonsXenium(bnd, type = "parquet"),
+            error = function(e) {
+                message("  (cell boundaries not read: ", conditionMessage(e), ")")
+                NULL
+            })
+        if (!is.null(pol)) spe <- SpaceTrooper::addPolygonsToSPE(spe, pol, polygonsCol = "polygons")
+    }
+    spe <- setPlatform(spe, "xenium")
+    message(sprintf("Xenium: %d cells, %d genes", ncol(spe), nrow(spe)))
+    spe
 }
 
 #' Load 10x Visium HD cell-segmented outputs
@@ -75,14 +78,14 @@ load_xenium <- function(xenium_dir) {
 #' if (dir.exists(d)) spe <- load_visiumhd(d)
 #' @export
 load_visiumhd <- function(segmented_outputs, images = "lowres") {
-  .needs("VisiumIO")
-  spe <- BiocIO::import(VisiumIO::TENxVisiumHD(format = "h5", images = images,
-                                               segmented_outputs = segmented_outputs))
-  rd <- SummarizedExperiment::rowData(spe)
-  if ("Symbol" %in% colnames(rd)) rownames(spe) <- make.unique(rd$Symbol)
-  if (!"logcounts" %in% SummarizedExperiment::assayNames(spe))
-    SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
-  spe <- setPlatform(spe, "visiumhd")
-  message(sprintf("Visium HD: %d cells, %d genes", ncol(spe), nrow(spe)))
-  spe
+    .needs("VisiumIO")
+    spe <- BiocIO::import(VisiumIO::TENxVisiumHD(format = "h5", images = images,
+        segmented_outputs = segmented_outputs))
+    rd <- SummarizedExperiment::rowData(spe)
+    if ("Symbol" %in% colnames(rd)) rownames(spe) <- make.unique(rd$Symbol)
+    if (!"logcounts" %in% SummarizedExperiment::assayNames(spe))
+        SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
+    spe <- setPlatform(spe, "visiumhd")
+    message(sprintf("Visium HD: %d cells, %d genes", ncol(spe), nrow(spe)))
+    spe
 }

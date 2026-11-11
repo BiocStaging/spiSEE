@@ -19,4 +19,4 @@
 "_PACKAGE"
 
 utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype", "fov",
-                         "name", "pair", "z_value", "xmin", "xmax", "ymin", "ymax", "label"))
+    "name", "pair", "z_value", "xmin", "xmax", "ymin", "ymax", "label"))

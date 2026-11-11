@@ -42,9 +42,9 @@ neighbourhood, bits). Stores the composition as \code{reducedDim(spe, "NicheComp
 # two zones of cell types on a 20 x 20 grid
 xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
 type <- ifelse(xy[, "x"] <= 10, c("Tumor", "T.cells")[(seq_len(400) \%\% 5 == 0) + 1],
-               c("Fibroblast", "T.cells")[(seq_len(400) \%\% 4 == 0) + 1])
+    c("Fibroblast", "T.cells")[(seq_len(400) \%\% 4 == 0) + 1])
 counts <- matrix(seq_len(400 * 10) \%\% 7, 10, 400,
-                 dimnames = list(paste0("g", 1:10), paste0("c", 1:400)))
+    dimnames = list(paste0("g", 1:10), paste0("c", 1:400)))
 spe <- SpatialExperiment::SpatialExperiment(
     assays = list(counts = counts, logcounts = log1p(counts)),
     colData = S4Vectors::DataFrame(Level1 = type), spatialCoords = xy)

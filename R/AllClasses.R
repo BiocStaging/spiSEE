@@ -27,12 +27,12 @@
 #' @aliases SpatialPanelBase-class
 #' @export
 setClass("SpatialPanelBase", contains = c("Panel", "VIRTUAL"),
-  slots = c(Selection = "character"))
+    slots = c(Selection = "character"))
 
 setMethod("initialize", "SpatialPanelBase", function(.Object, ...) {
-  .Object <- callNextMethod(.Object, ...)
-  if (length(.Object@Selection) == 0) .Object@Selection <- ""
-  .Object
+    .Object <- callNextMethod(.Object, ...)
+    if (length(.Object@Selection) == 0) .Object@Selection <- ""
+    .Object
 })
 
 #' @param x A panel instance (the class this page documents).
@@ -49,30 +49,30 @@ setMethod("initialize", "SpatialPanelBase", function(.Object, ...) {
 #' @rdname SpatialMapPanel
 #' @export
 setClass("SpatialMapPanel", contains = "Panel",
-  # CommittedIDs mirrors what was last sent to the panels (i.e. the browser's
-  # `committed` set) -- without it, Validate only ever knew about this round's
-  # PendingIDs/PendingRemoveIDs and silently dropped everything committed in
-  # earlier rounds (see panel_map.R's Validate observer).
-  slots = c(PendingIDs = "character", PendingRemoveIDs = "character",
-            CommittedIDs = "character"))
+    # CommittedIDs mirrors what was last sent to the panels (i.e. the browser's
+    # `committed` set) -- without it, Validate only ever knew about this round's
+    # PendingIDs/PendingRemoveIDs and silently dropped everything committed in
+    # earlier rounds (see panel_map.R's Validate observer).
+    slots = c(PendingIDs = "character", PendingRemoveIDs = "character",
+        CommittedIDs = "character"))
 
 #' @inheritParams SpatialMapPanel
 #' @rdname SpatialPlotPanel
 #' @export
 setClass("SpatialPlotPanel", contains = "SpatialPanelBase",
-  slots = c(ColorBy = "character", UsePolygons = "logical", PointSize = "numeric"))
+    slots = c(ColorBy = "character", UsePolygons = "logical", PointSize = "numeric"))
 
 #' @inheritParams SpatialMapPanel
 #' @rdname FOVZoomPanel
 #' @export
 setClass("FOVZoomPanel", contains = "SpatialPanelBase",
-  slots = c(ColorBy = "character"))
+    slots = c(ColorBy = "character"))
 
 #' @inheritParams SpatialMapPanel
 #' @rdname SpatialQCPanel
 #' @export
 setClass("SpatialQCPanel", contains = "SpatialPanelBase",
-  slots = c(Metric = "character", UseFences = "logical"))
+    slots = c(Metric = "character", UseFences = "logical"))
 
 #' @inheritParams SpatialMapPanel
 #' @rdname FOVStatsPanel
@@ -83,20 +83,20 @@ setClass("FOVStatsPanel", contains = "SpatialPanelBase")
 #' @rdname SpatialStatsPanel
 #' @export
 setClass("SpatialStatsPanel", contains = "SpatialPanelBase",
-  slots = c(PlotType = "character", Genes = "character", LabelCol = "character",
-            K = "integer", Alpha = "numeric", ComputeTrigger = "character"))
+    slots = c(PlotType = "character", Genes = "character", LabelCol = "character",
+        K = "integer", Alpha = "numeric", ComputeTrigger = "character"))
 
 #' @inheritParams SpatialMapPanel
 #' @rdname SVGPanel
 #' @export
 setClass("SVGPanel", contains = "SpatialPanelBase",
-  slots = c(TopN = "integer", K = "integer", LinkedPanel = "character",
-            ComputeTrigger = "character"))
+    slots = c(TopN = "integer", K = "integer", LinkedPanel = "character",
+        ComputeTrigger = "character"))
 
 #' @inheritParams SpatialMapPanel
 #' @rdname SpatialNichePanel
 #' @export
 setClass("SpatialNichePanel", contains = "SpatialPanelBase",
-  slots = c(PlotType = "character", LabelCol = "character",
-            K = "integer", NNiches = "integer", Lambda = "numeric",
-            ComputeTrigger = "character", UsePolygons = "logical"))
+    slots = c(PlotType = "character", LabelCol = "character",
+        K = "integer", NNiches = "integer", Lambda = "numeric",
+        ComputeTrigger = "character", UsePolygons = "logical"))
