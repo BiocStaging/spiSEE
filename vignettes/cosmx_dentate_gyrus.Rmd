@@ -14,10 +14,10 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
-# JPEG figures at screen resolution keep the built vignette small.
+# JPEG keeps the built vignette within Bioconductor's size limit.
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
                       fig.height = 5, message = FALSE, dev = "jpeg",
-                      dev.args = list(quality = 50), dpi = 60,
+                      dev.args = list(quality = 75), dpi = 100,
                       fig.retina = 1)
 ```
 
@@ -73,16 +73,16 @@ spe <- spatialPerCellQC(spe)
 summary(spe$Area_um)
 ```
 
-Outliers are flagged per metric with medcouple-adjusted fences (robust to
-skewed distributions), and the metrics are combined into one quality score
-per cell, `QScore`, between 0 and 1.
+The metrics are combined into one quality score per cell, `QScore`,
+between 0 and 1. Outliers of a single metric are flagged with
+medcouple-adjusted fences (robust to skewed distributions), here for the
+total counts, which the score does not use.
 
 ```{r qscore}
-spe <- computeSpatialOutlier(spe, computeBy = "Area_um", method = "mc")
-spe <- computeSpatialOutlier(spe, computeBy = "total", method = "mc")
 spe <- computeQScore(spe)
 spe <- computeQScoreFlags(spe, qsThreshold = 0.5)
 table(low_QScore = spe$low_QScore)
+spe <- computeSpatialOutlier(spe, computeBy = "total", method = "mc")
 ```
 
 The cell polygons are read once the score is computed:
@@ -91,12 +91,15 @@ The cell polygons are read once the score is computed:
 spe <- readAndAddPolygonsToSPE(spe)
 ```
 
-```{r qc-hist, fig.cap = "Cell area with the outlier fences.", fig.height = 3.5}
-plotMetricHist(spe, metric = "Area_um", useFences = "Area_um_outlier_mc")
+```{r qc-hist, fig.cap = "Total counts per cell with the outlier fences.", fig.height = 3.5}
+plotMetricHist(spe, metric = "total", useFences = "total_outlier_mc")
 ```
 
-```{r qc-map, fig.cap = "Quality score of every cell of the section.", fig.height = 6}
-plotCentroids(spe, colourBy = "QScore", size = 0.1)
+`plotSpatialCells()` draws the cells as their polygons, coloured by any
+annotation, QC metric or gene, as in the app:
+
+```{r qc-map, fig.cap = "Quality score of every cell of the section, on the cell polygons.", fig.height = 6.5}
+plotSpatialCells(spe, "QScore")
 ```
 
 The section has 130 FOVs. The dentate gyrus lies in nine of them (3 × 3):
@@ -170,14 +173,14 @@ The polygons show the granule cell layer of the dentate gyrus, the CA
 fields of the hippocampus, the habenula and the choroid plexus:
 
 ```{r polygons, fig.cap = "Cell polygons coloured by cell type.", fig.height = 7, fig.width = 9}
-plotPolygons(dg, colourBy = "cell_type_top", palette = pal)
+plotSpatialCells(dg, "cell_type_top", palette = pal)
 ```
 
 One FOV in detail, with cell borders:
 
 ```{r polygons-fov, fig.cap = "FOV 99, cell borders drawn.", fig.height = 6}
-plotPolygons(dg[, dg$fov == 99], colourBy = "cell_type_top",
-             palette = pal, borderCol = "black") +
+plotSpatialCells(dg[, dg$fov == 99], "cell_type_top", palette = pal,
+                 borders = TRUE) +
     theme(legend.position = "none")
 ```
 
@@ -193,18 +196,8 @@ dg <- scuttle::logNormCounts(dg)
 Three markers, one per structure: *Adcy1* (granule cells), *Pcp4*
 (habenula) and *Ttr* (choroid plexus).
 
-```{r markers, fig.cap = "Marker genes on the cell polygons.", fig.height = 3.8, fig.width = 10}
-markers <- c("Adcy1", "Pcp4", "Ttr")
-df <- data.frame(spatialCoords(dg))
-names(df) <- c("x", "y")
-df <- do.call(rbind, lapply(markers, function(g)
-    cbind(df, gene = g, logcounts = logcounts(dg)[g, ])))
-ggplot(df, aes(x, y, colour = logcounts)) +
-    geom_point(size = 0.2) +
-    facet_wrap(~gene) +
-    scale_colour_viridis_c() +
-    coord_fixed() +
-    theme_void()
+```{r markers, fig.cap = "Marker genes on the cell polygons (logcounts).", fig.height = 4, fig.width = 10}
+plotSpatialCells(dg, c("Adcy1", "Pcp4", "Ttr"), ncol = 3)
 ```
 
 # Niches and spatial domains
@@ -230,9 +223,8 @@ dg <- computeNiches(dg, label_col = "cell_type", k = 15, n_niches = 6)
 table(dg$niche)
 ```
 
-```{r niche-polygons, fig.cap = "Niches.", fig.height = 7, fig.width = 9}
-plotPolygons(dg, colourBy = "niche", palette = unname(pals::glasbey(6))) +
-    guides(fill = guide_legend(ncol = 1))
+```{r niche-polygons, fig.cap = "Niches.", fig.height = 8, fig.width = 8}
+plotSpatialCells(dg, "niche")
 ```
 
 Each cell's neighbourhood composition is stored as a reduced dimension.
@@ -251,7 +243,7 @@ pheatmap::pheatmap(mean_comp, cluster_rows = FALSE, cluster_cols = FALSE,
 cell type):
 
 ```{r entropy, fig.cap = "Neighbourhood entropy.", fig.height = 6}
-plotCentroids(dg, colourBy = "niche_entropy", size = 0.4)
+plotSpatialCells(dg, "niche_entropy")
 ```
 
 ## Spatial domains
@@ -269,18 +261,8 @@ dg <- computeSpatialDomains(dg, k_spatial = 15, lambda = 0.5,
 table(domain = dg$spatial_domain)
 ```
 
-```{r domain-plot, fig.cap = "Expression clusters (left) and spatial domains (right).", fig.height = 4.5, fig.width = 9}
-xy <- spatialCoords(dg)
-df <- data.frame(x = xy[, 1], y = xy[, 2],
-                 cluster = c(as.character(dg$expr_cluster),
-                             as.character(dg$spatial_domain)),
-                 type = rep(c("expression clusters", "spatial domains"),
-                            each = ncol(dg)))
-ggplot(df, aes(x, y, colour = cluster)) +
-    geom_point(size = 0.3) +
-    facet_wrap(~type) +
-    coord_fixed() +
-    theme_void() +
+```{r domain-plot, fig.cap = "Expression clusters (left) and spatial domains (right).", fig.height = 4.8, fig.width = 10}
+plotSpatialCells(dg, c("expr_cluster", "spatial_domain"), ncol = 2) +
     theme(legend.position = "none")
 ```
 
@@ -295,10 +277,6 @@ without recomputing, and recomputes them on a selected region on request.
 ```{r app}
 app <- iseeSpatial(dg, mode = "analysis", cache = FALSE)
 if (interactive()) shiny::runApp(app)
-```
-
-```{r shot-analysis, echo = FALSE, fig.cap = "Analysis app as it opens: FOV map, cell types and the most expressed gene on the polygons; statistics and gene ranking wait for Compute; niches as precomputed."}
-knitr::include_graphics("figures/cosmx_analysis.jpg")
 ```
 
 ## Selecting a region

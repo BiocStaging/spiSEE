@@ -63,9 +63,9 @@ plotSpatialCells <- function(spe, colour_by, polygons = TRUE, palette = NULL,
             ggplot2::coord_fixed()
         aes_name <- "colour"
     }
-    p <- p + ggplot2::theme_void() + ggplot2::labs(
-        fill = if (length(colour_by) == 1) colour_by else NULL,
-        colour = if (length(colour_by) == 1) colour_by else NULL)
+    lab <- list(if (length(colour_by) == 1) colour_by else NULL)
+    names(lab) <- aes_name
+    p <- p + ggplot2::theme_void() + do.call(ggplot2::labs, lab)
     if (length(colour_by) > 1)
         p <- p + ggplot2::facet_wrap(~panel, ncol = ncol)
     if (numeric) {
