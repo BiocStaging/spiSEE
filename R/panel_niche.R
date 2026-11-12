@@ -34,8 +34,9 @@ utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
             ggplot2::theme_void() + ggplot2::labs(title = title, fill = NULL)
         if (discrete) {
             lv <- levels(factor(values))
-            return(p + ggplot2::scale_fill_manual(values = stats::setNames(.discretePalette(length(lv)), lv),
-                na.value = "grey85"))
+            return(.compactLegend(p + ggplot2::scale_fill_manual(
+                values = stats::setNames(.discretePalette(length(lv)), lv),
+                na.value = "grey85"), values))
         }
         return(p + ggplot2::scale_fill_viridis_c(na.value = "grey85"))
     }
@@ -49,9 +50,12 @@ utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype"))
         ggplot2::labs(title = title, colour = NULL)
     if (discrete) {
         lv <- levels(factor(values))
-        p + ggplot2::scale_colour_manual(values = stats::setNames(.discretePalette(length(lv)), lv),
+        p <- p + ggplot2::scale_colour_manual(
+            values = stats::setNames(.discretePalette(length(lv)), lv),
             na.value = "grey85") +
-            ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(size = 3, shape = 16)))
+            ggplot2::guides(colour = ggplot2::guide_legend(
+                override.aes = list(size = 3, shape = 16)))
+        .compactLegend(p, values)
     } else {
         p + ggplot2::scale_colour_viridis_c(na.value = "grey85")
     }

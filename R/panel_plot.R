@@ -139,18 +139,23 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
     .compactLegend(p, colData(se)[[colorby]])
 })
 
-# Beyond ~15 categories a side legend squeezes the tissue to a thumbnail:
-# move it under the plot, in columns, with small keys.
-.compactLegend <- function(p, value, max_side = 15L) {
-    if (is.numeric(value) || length(unique(stats::na.omit(value))) <= max_side)
-        return(p)
+# A side legend squeezes the tissue to a thumbnail when there are many
+# categories (> 15) or long names (> 25 characters, e.g. niche names):
+# move it under the plot, with small keys.
+.compactLegend <- function(p, value, max_side = 15L, max_chars = 25L) {
+    lv <- unique(as.character(stats::na.omit(value)))
+    if (is.numeric(value) || !length(lv)) return(p)
+    many <- length(lv) > max_side
+    long <- max(nchar(lv)) > max_chars
+    if (!many && !long) return(p)
+    ncol <- if (many && max(nchar(lv)) <= 45) 2 else 1
     p + ggplot2::theme(legend.position = "bottom",
                        legend.text = ggplot2::element_text(size = 6),
                        legend.title = ggplot2::element_blank(),
                        legend.key.size = ggplot2::unit(3, "mm")) +
-        ggplot2::guides(colour = ggplot2::guide_legend(ncol = 2,
-                            override.aes = list(size = 2)),
-                        fill = ggplot2::guide_legend(ncol = 2))
+        ggplot2::guides(colour = ggplot2::guide_legend(ncol = ncol,
+                            override.aes = list(size = 2, shape = 16)),
+                        fill = ggplot2::guide_legend(ncol = ncol))
 }
 
 # A server-side selectize reports "" while its choices load: ignore it.
