@@ -10,3 +10,8 @@ render_check/
 *.Rcheck/
 *.tar.gz
 check/
+
+# local notes, never committed
+CLAUDE.md
+.claude/
+HANDOFF*
