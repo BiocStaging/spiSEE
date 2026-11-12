@@ -66,12 +66,10 @@ length(unique(spe$fov))
 
 `spatialPerCellQC()` adds per-cell metrics: total counts, detected genes,
 cell area in µm², aspect ratio, distance to the FOV border, and the ratio
-of negative-control counts. Cells with no counts are removed. The cell
-polygons are then read for all cells.
+of negative-control counts. Cells with no counts are removed.
 
 ```{r qc}
 spe <- spatialPerCellQC(spe)
-spe <- readAndAddPolygonsToSPE(spe)
 summary(spe$Area_um)
 ```
 
@@ -85,6 +83,12 @@ spe <- computeSpatialOutlier(spe, computeBy = "total", method = "mc")
 spe <- computeQScore(spe)
 spe <- computeQScoreFlags(spe, qsThreshold = 0.5)
 table(low_QScore = spe$low_QScore)
+```
+
+The cell polygons are read once the score is computed:
+
+```{r polygons-read}
+spe <- readAndAddPolygonsToSPE(spe)
 ```
 
 ```{r qc-hist, fig.cap = "Cell area with the outlier fences.", fig.height = 3.5}
