@@ -141,7 +141,8 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
 
 # A side legend squeezes the tissue to a thumbnail when there are many
 # categories (> 15) or long names (> 25 characters, e.g. niche names):
-# move it under the plot, with small keys.
+# move it under the plot, with small keys. Text below 8 pt is dropped by
+# the ragg device that Shiny uses at screen resolution.
 .compactLegend <- function(p, value, max_side = 15L, max_chars = 25L) {
     lv <- unique(as.character(stats::na.omit(value)))
     if (is.numeric(value) || !length(lv)) return(p)
@@ -150,7 +151,7 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
     if (!many && !long) return(p)
     ncol <- if (many && max(nchar(lv)) <= 45) 2 else 1
     p + ggplot2::theme(legend.position = "bottom",
-                       legend.text = ggplot2::element_text(size = 6),
+                       legend.text = ggplot2::element_text(size = 8),
                        legend.title = ggplot2::element_blank(),
                        legend.key.size = ggplot2::unit(3, "mm")) +
         ggplot2::guides(colour = ggplot2::guide_legend(ncol = ncol,
