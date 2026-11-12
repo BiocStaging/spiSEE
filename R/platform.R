@@ -110,8 +110,11 @@ getPlatform <- function(spe) {
 }
 
 # Genes ordered for menus: precomputed ranking if present, else alphabetical.
+# Gene menus: metadata(se)$gene_ranks first if given, otherwise by mean
+# expression (computed once by iseeSpatial()), otherwise alphabetical.
 .geneChoices <- function(se) {
     r <- S4Vectors::metadata(se)$gene_ranks
+    if (is.null(r)) r <- S4Vectors::metadata(se)$iseeSpatial_gene_order
     if (!is.null(r)) c(intersect(r, rownames(se)),
                        setdiff(sort(rownames(se)), r)) else sort(rownames(se))
 }

@@ -46,6 +46,7 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
         "counts" %in% SummarizedExperiment::assayNames(spe))
         SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
     .configurePlotCache(cache, cache_size)
+    S4Vectors::metadata(spe)$iseeSpatial_gene_order <- .geneOrder(spe)
     S4Vectors::metadata(spe)$iseeSpatial_fingerprint <- .datasetFingerprint(spe)
     if (is.null(initial)) initial <- .defaultPanels(spe, mode, selection)
     args <- list(...)
@@ -94,4 +95,12 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
         SpatialStatsPanel(Genes = gene, LabelCol = lab, Selection = selection),
         SVGPanel(LinkedPanel = "SpatialPlotPanel2", Selection = selection),
         SpatialNichePanel(LabelCol = lab, Selection = selection))
+}
+
+# Most expressed first, so the default gene of a panel shows something.
+.geneOrder <- function(spe) {
+    if (!"logcounts" %in% SummarizedExperiment::assayNames(spe) ||
+        nrow(spe) == 0) return(NULL)
+    m <- Matrix::rowMeans(SingleCellExperiment::logcounts(spe))
+    rownames(spe)[order(m, decreasing = TRUE)]
 }

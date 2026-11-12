@@ -211,3 +211,11 @@ test_that("an initial selection is shown on the map", {
     expect_identical(panels[[1]]@CommittedIDs, "1,2")
     expect_match(.MAP_JS, "new Set(data.committed", fixed = TRUE)
 })
+
+test_that("gene menus put the most expressed genes first", {
+    spe <- .makeTestSPE()
+    S4Vectors::metadata(spe)$gene_ranks <- NULL
+    top <- rownames(spe)[which.max(Matrix::rowMeans(logcounts(spe)))]
+    S4Vectors::metadata(spe)$iseeSpatial_gene_order <- .geneOrder(spe)
+    expect_identical(.geneChoices(spe)[1], top)
+})
