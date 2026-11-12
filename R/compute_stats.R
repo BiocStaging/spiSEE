@@ -139,8 +139,10 @@ NULL
               `non-significant` = "grey85")
     p <- Voyager::plotLocalResult(sfe, features = gene, name = "localmoran",
         attribute = "locClust", colGeometryName = 1)
-    suppressMessages(p + ggplot2::scale_colour_manual(values = cols,
-            na.value = "grey85")) +
+    # Replace Voyager's colour scale (adding a second one prints a message).
+    p$scales$scales <- Filter(function(s) !"colour" %in% s$aesthetics,
+                              p$scales$scales)
+    p + ggplot2::scale_colour_manual(values = cols, na.value = "grey85") +
         ggplot2::guides(colour = ggplot2::guide_legend(
             override.aes = list(size = 3))) +
         ggplot2::labs(caption = sprintf(

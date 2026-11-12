@@ -43,26 +43,8 @@ plotSpatialCells <- function(spe, colour_by, polygons = TRUE, palette = NULL,
     else factor(unlist(lapply(vals, as.character), use.names = FALSE),
                 levels = levels(vals[[1]]))
     use_poly <- polygons && "polygons" %in% colnames(colData(spe))
-    if (use_poly) {
-        geo <- sf::st_geometry(colData(spe)[["polygons"]])
-        df <- sf::st_sf(panel = panel, value = value,
-                        geometry = rep(geo, length(colour_by)))
-        p <- ggplot2::ggplot(df) +
-            ggplot2::geom_sf(ggplot2::aes(fill = value),
-                             colour = if (borders) "grey20" else NA,
-                             linewidth = 0.05)
-        aes_name <- "fill"
-    } else {
-        xy <- SpatialExperiment::spatialCoords(spe)
-        df <- data.frame(x = rep(xy[, 1], length(colour_by)),
-                         y = rep(xy[, 2], length(colour_by)),
-                         panel = panel, value = value)
-        p <- ggplot2::ggplot(df, ggplot2::aes(x = x, y = y,
-                                              colour = value)) +
-            ggplot2::geom_point(size = point_size) +
-            ggplot2::coord_fixed()
-        aes_name <- "colour"
-    }
+    p <- .cellsBase(spe, panel, value, use_poly, borders, point_size)
+    aes_name <- if (use_poly) "fill" else "colour"
     lab <- list(if (length(colour_by) == 1) colour_by else NULL)
     names(lab) <- aes_name
     p <- p + ggplot2::theme_void() + do.call(ggplot2::labs, lab)
@@ -95,4 +77,23 @@ plotSpatialCells <- function(spe, colour_by, polygons = TRUE, palette = NULL,
         return(as.numeric(SummarizedExperiment::assay(spe, a[1])[v, ]))
     }
     stop("'", v, "' is neither a colData column nor a gene")
+}
+
+# The cells as polygons (fill) or points (colour), one copy per panel.
+.cellsBase <- function(spe, panel, value, use_poly, borders, point_size) {
+    n <- nlevels(panel)
+    if (use_poly) {
+        geo <- sf::st_geometry(colData(spe)[["polygons"]])
+        df <- sf::st_sf(panel = panel, value = value, geometry = rep(geo, n))
+        return(ggplot2::ggplot(df) +
+            ggplot2::geom_sf(ggplot2::aes(fill = value),
+                             colour = if (borders) "grey20" else NA,
+                             linewidth = 0.05))
+    }
+    xy <- SpatialExperiment::spatialCoords(spe)
+    df <- data.frame(x = rep(xy[, 1], n), y = rep(xy[, 2], n),
+                     panel = panel, value = value)
+    ggplot2::ggplot(df, ggplot2::aes(x = x, y = y, colour = value)) +
+        ggplot2::geom_point(size = point_size) +
+        ggplot2::coord_fixed()
 }

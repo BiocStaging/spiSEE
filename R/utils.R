@@ -134,15 +134,16 @@
 .slotObserver <- function(enc, field, input, pObjects, rObjects,
                           cast = identity, redraw = TRUE, multiple = FALSE) {
     id <- paste0(enc, "_", field)
-    loading <- multiple
+    state <- new.env(parent = emptyenv())
+    state$loading <- multiple
     shiny::observeEvent(input[[id]],
         {
             v <- input[[id]]
             if (is.null(v)) {
-                if (!multiple || loading) return()
+                if (!multiple || state$loading) return()
                 v <- character(0)
             }
-            loading <<- FALSE
+            state$loading <- FALSE
             v <- cast(v)
             if (!multiple && (length(v) != 1 || is.na(v))) return()
             if (!identical(v, methods::slot(pObjects$memory[[enc]], field))) {
