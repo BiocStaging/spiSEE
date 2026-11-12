@@ -1,0 +1,376 @@
+---
+title: "CosMx workflow: the mouse dentate gyrus"
+author:
+- name: Emile Danvin
+- name: Dario Righelli
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc_float: true
+vignette: >
+  %\VignetteIndexEntry{2. CosMx workflow: the mouse dentate gyrus}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+# JPEG figures at screen resolution keep the built vignette small.
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 5, message = FALSE, dev = "jpeg",
+                      dev.args = list(quality = 65), dpi = 72,
+                      fig.retina = 1)
+```
+
+# Overview
+
+This vignette goes from the CosMx flat files of a mouse brain section to
+an interactive app on the dentate gyrus:
+
+1. read the data and compute per-cell quality metrics on the whole section;
+2. flag low-quality cells and look at them in the QC app;
+3. keep the nine fields of view (FOVs) around the dentate gyrus, with cell
+   polygons and cell types;
+4. compute niches and spatial domains;
+5. explore everything in the analysis app: FOV selection, polygons,
+   spatial statistics, spatially variable genes.
+
+The data are a CosMx 1,000-plex section of mouse brain (Bruker), used in
+the [OSTA book](https://lmweber.org/OSTA/) and distributed by
+`r BiocStyle::Biocpkg("OSTA.data")` (about 40 MB, downloaded once and then
+cached).
+
+# Reading the data
+
+```{r download}
+library(iseeSpatial)
+library(SpaceTrooper)
+library(ggplot2)
+
+zip <- OSTA.data::OSTA.data_load("CosMx1k_MouseBrain2", mol = FALSE)
+dir <- tempfile()
+unzip(zip, exdir = dir)
+list.files(dir)
+```
+
+`readCosmxSPE()` from `r BiocStyle::Biocpkg("SpaceTrooper")` reads the
+counts, the cell metadata and the FOV positions into a
+`SpatialExperiment`:
+
+```{r read}
+spe <- readCosmxSPE(dirName = dir, sampleName = "MouseBrain")
+spe
+length(unique(spe$fov))
+```
+
+# Quality control of the whole section
+
+`spatialPerCellQC()` adds per-cell metrics: total counts, detected genes,
+cell area in µm², aspect ratio, distance to the FOV border, and the ratio
+of negative-control counts. Cells with no counts are removed. The cell
+polygons are then read for all cells.
+
+```{r qc}
+spe <- spatialPerCellQC(spe)
+spe <- readAndAddPolygonsToSPE(spe)
+summary(spe$Area_um)
+```
+
+Outliers are flagged per metric with medcouple-adjusted fences (robust to
+skewed distributions), and the metrics are combined into one quality score
+per cell, `QScore`, between 0 and 1.
+
+```{r qscore}
+spe <- computeSpatialOutlier(spe, computeBy = "Area_um", method = "mc")
+spe <- computeSpatialOutlier(spe, computeBy = "total", method = "mc")
+spe <- computeQScore(spe)
+spe <- computeQScoreFlags(spe, qsThreshold = 0.5)
+table(low_QScore = spe$low_QScore)
+```
+
+```{r qc-hist, fig.cap = "Cell area with the outlier fences.", fig.height = 3.5}
+plotMetricHist(spe, metric = "Area_um", useFences = "Area_um_outlier_mc")
+```
+
+```{r qc-map, fig.cap = "Quality score of every cell of the section.", fig.height = 6}
+plotCentroids(spe, colourBy = "QScore", size = 0.1)
+```
+
+The section has 130 FOVs. The dentate gyrus lies in nine of them (3 × 3):
+
+```{r fov-map, fig.cap = "FOV layout (left) and the nine dentate gyrus FOVs (right).", fig.height = 5, fig.width = 9}
+dg_fovs <- c(98:100, 113:115, 122:124)
+plotZoomFovsMap(spe, fovs = dg_fovs, colourBy = "QScore")
+```
+
+## The QC app
+
+The QC app shows the same metrics interactively. Each FOV is a tile on the
+overview map: clicking tiles (or brushing several) and pressing *Validate*
+restricts every other panel to them; *Clear* goes back to the whole
+section. A selection can also be given at launch with `selection =`, as
+here for the nine dentate gyrus FOVs. The QC histograms count the cells
+outside the outlier fences in the selection, and the FOV zoom panel shows
+where the selected FOVs lie and their cells coloured by the quality
+score.
+
+```{r app-qc}
+spe <- setPlatform(spe, "cosmx")
+app <- iseeSpatial(spe, mode = "qc", cache = FALSE,
+                   selection = paste(dg_fovs, collapse = ","))
+if (interactive()) shiny::runApp(app)
+```
+
+```{r shot-qc, echo = FALSE, fig.cap = "QC app on the whole section with the nine dentate gyrus FOVs selected (orange): total counts, QC histograms with outlier fences, and the FOV zoom coloured by quality score."}
+knitr::include_graphics("figures/cosmx_qc.jpg")
+```
+
+Low-quality cells (dark in the FOV zoom) concentrate at FOV borders and
+along a few tissue edges; these patterns are easy to miss in a table and
+obvious on the map.
+
+# The dentate gyrus
+
+We keep the nine FOVs and the cells that pass QC.
+
+```{r subset}
+dg <- spe[, spe$fov %in% dg_fovs & !spe$low_QScore]
+dg
+```
+
+## Cell types
+
+The annotation distributed with the data gives one cell type per cell;
+the few unannotated cells are removed.
+
+```{r labels}
+ann <- read.csv(file.path(dir, "annotation.csv"))
+key <- match(paste(dg$fov, dg$cellID), paste(ann$fov, ann$cell_ID))
+dg$cell_type <- ann$Annotation[key]
+dg <- dg[, !is.na(dg$cell_type)]
+dg$cell_type <- factor(dg$cell_type)
+head(sort(table(dg$cell_type), decreasing = TRUE), 12)
+```
+
+For the static figures, the twelve most frequent types are kept and the
+rest grouped as "other":
+
+```{r top-types}
+top <- names(sort(table(dg$cell_type), decreasing = TRUE))[1:12]
+dg$cell_type_top <- factor(ifelse(dg$cell_type %in% top,
+                                  as.character(dg$cell_type), "other"),
+                           levels = c(top, "other"))
+pal <- c(setNames(unname(pals::glasbey(12)), top), other = "grey85")
+```
+
+The polygons show the granule cell layer of the dentate gyrus, the CA
+fields of the hippocampus, the habenula and the choroid plexus:
+
+```{r polygons, fig.cap = "Cell polygons coloured by cell type.", fig.height = 7, fig.width = 9}
+plotPolygons(dg, colourBy = "cell_type_top", palette = pal)
+```
+
+One FOV in detail, with cell borders:
+
+```{r polygons-fov, fig.cap = "FOV 99, cell borders drawn.", fig.height = 6}
+plotPolygons(dg[, dg$fov == 99], colourBy = "cell_type_top",
+             palette = pal, borderCol = "black") +
+    theme(legend.position = "none")
+```
+
+## Normalisation and marker genes
+
+Negative-control probes are removed before normalisation.
+
+```{r norm}
+dg <- dg[!grepl("^NegPrb|^Negative|^SystemControl", rownames(dg)), ]
+dg <- scuttle::logNormCounts(dg)
+```
+
+Three markers, one per structure: *Adcy1* (granule cells), *Pcp4*
+(habenula) and *Ttr* (choroid plexus).
+
+```{r markers, fig.cap = "Marker genes on the cell polygons.", fig.height = 3.8, fig.width = 10}
+markers <- c("Adcy1", "Pcp4", "Ttr")
+df <- data.frame(spatialCoords(dg))
+names(df) <- c("x", "y")
+df <- do.call(rbind, lapply(markers, function(g)
+    cbind(df, gene = g, logcounts = logcounts(dg)[g, ])))
+ggplot(df, aes(x, y, colour = logcounts)) +
+    geom_point(size = 0.2) +
+    facet_wrap(~gene) +
+    scale_colour_viridis_c() +
+    coord_fixed() +
+    theme_void()
+```
+
+# Niches and spatial domains
+
+The spatial neighbour graph is built once (k nearest cells) and stored on
+the object. k sets the scale: a small k describes direct contacts, a large
+k a wider region.
+
+```{r graph}
+dg <- setPlatform(dg, "cosmx")
+dg <- buildSpatialGraph(dg, k = 15)
+```
+
+## Niches
+
+A niche groups cells whose neighbourhoods have a similar cell-type
+composition. Niches are named after their two most frequent cell types.
+
+```{r niches}
+dg <- computeNiches(dg, label_col = "cell_type", k = 15, n_niches = 6)
+table(dg$niche)
+```
+
+```{r niche-polygons, fig.cap = "Niches.", fig.height = 7, fig.width = 9}
+plotPolygons(dg, colourBy = "niche", palette = unname(pals::glasbey(6))) +
+    guides(fill = guide_legend(ncol = 1))
+```
+
+Each cell's neighbourhood composition is stored as a reduced dimension.
+Averaged per niche, it shows what each niche is made of:
+
+```{r niche-heatmap, fig.cap = "Mean neighbourhood composition per niche (twelve most frequent cell types).", fig.height = 6, fig.width = 8}
+comp <- reducedDim(dg, "NicheComposition")
+mean_comp <- apply(comp[, top], 2, function(x) tapply(x, dg$niche, mean))
+rownames(mean_comp) <- sub(":.*", "", rownames(mean_comp))
+pheatmap::pheatmap(mean_comp, cluster_rows = FALSE, cluster_cols = FALSE,
+                   angle_col = 315, fontsize_col = 8,
+                   color = pals::brewer.blues(50))
+```
+
+`niche_entropy` measures how mixed each neighbourhood is (0 = a single
+cell type):
+
+```{r entropy, fig.cap = "Neighbourhood entropy.", fig.height = 6}
+plotCentroids(dg, colourBy = "niche_entropy", size = 0.4)
+```
+
+## Spatial domains
+
+Spatial domains cluster expression combined with the neighbourhood average
+(`lambda` = weight of the neighbourhood; `lambda = 0` gives plain
+expression clusters, also returned as `expr_cluster` for comparison). A
+PCA is needed first.
+
+```{r domains}
+pca <- prcomp(t(as.matrix(logcounts(dg))), rank. = 20)
+reducedDim(dg, "PCA") <- pca$x
+dg <- computeSpatialDomains(dg, k_spatial = 15, lambda = 0.5,
+                            resolution = 0.5)
+table(domain = dg$spatial_domain)
+```
+
+```{r domain-plot, fig.cap = "Expression clusters (left) and spatial domains (right).", fig.height = 4.5, fig.width = 9}
+xy <- spatialCoords(dg)
+df <- data.frame(x = xy[, 1], y = xy[, 2],
+                 cluster = c(as.character(dg$expr_cluster),
+                             as.character(dg$spatial_domain)),
+                 type = rep(c("expression clusters", "spatial domains"),
+                            each = ncol(dg)))
+ggplot(df, aes(x, y, colour = cluster)) +
+    geom_point(size = 0.3) +
+    facet_wrap(~type) +
+    coord_fixed() +
+    theme_void() +
+    theme(legend.position = "none")
+```
+
+Domains are smoother than expression clusters: neighbouring cells of
+different types are grouped when they form one structure.
+
+The niches and domains are now stored in the object. The app shows them
+without recomputing, and recomputes them on a selected region on request.
+
+# The analysis app
+
+```{r app}
+app <- iseeSpatial(dg, mode = "analysis", cache = FALSE)
+if (interactive()) shiny::runApp(app)
+```
+
+```{r shot-analysis, echo = FALSE, fig.cap = "Analysis app as it opens: FOV map, cell types and the most expressed gene on the polygons; statistics and gene ranking wait for Compute; niches as precomputed."}
+knitr::include_graphics("figures/cosmx_analysis.jpg")
+```
+
+## Selecting a region
+
+Clicking FOV tiles on the overview map, then *Validate*, restricts every
+panel to these FOVs: spatial plots zoom in, and statistics, gene rankings
+and niches are recomputed on the region when *Compute* is pressed. A
+second click on a validated tile removes it; *Clear* returns to the whole
+dataset.
+
+## Spatial statistics
+
+The statistics panel offers, for a gene or for the cell types:
+
+* the spatial neighbour graph used (k nearest cells);
+* global and local Moran's I and the Moran scatter plot
+  (`r BiocStyle::Biocpkg("Voyager")`);
+* local cluster significance (high-high, low-low, ...) at a level set in
+  the panel;
+* join-count statistics and a cell-type co-occurrence heatmap;
+* L-function and L-cross function
+  (`r BiocStyle::Biocpkg("spatialFDA")`).
+
+```{r shot-stats, echo = FALSE, fig.cap = "Local Moran's I of Adcy1 (left) and cell-type co-occurrence of the twelve most frequent types (right), k = 15."}
+knitr::include_graphics("figures/cosmx_stats.jpg")
+```
+
+The granule cell layer stands out as two bands of high local Moran's I
+for *Adcy1*. The co-occurrence heatmap (join-count z-scores) shows that
+each structure is mostly made of one cell type (the strong diagonal), and
+which types are neighbours more often than expected, e.g. habenula
+inhibitory neurons with thalamic astrocytes. Any categorical column can be
+used, here the grouping into twelve types plus "other".
+
+## Spatially variable genes and niches
+
+The SVG panel ranks genes by spatial autocorrelation on the selected
+region; clicking a gene shows it in the linked spatial plot. On these FOVs
+the top genes mark the structures seen above: *Ttr* (choroid plexus),
+*Nrgn*, *Camk2a* and *Adcy1* (neurons, granule cells), *Mbp* (white
+matter). The niche
+panel switches between niches, their composition, entropy, domains and
+expression clusters, drawn on the polygons.
+
+```{r shot-svg, echo = FALSE, fig.cap = "Spatially variable genes linked to a spatial plot (left) and niches on the polygons (right)."}
+knitr::include_graphics("figures/cosmx_svg_niches.jpg")
+```
+
+## A custom layout
+
+Any combination of panels, including standard iSEE panels, can be opened
+with `initial =`. Here: the map, polygons by cell type, the PCA coloured
+by niche, and the local Moran's I of *Adcy1* computed at launch (any
+non-empty `ComputeTrigger` computes the panel when the app opens):
+
+```{r custom}
+panels <- list(
+    SpatialMapPanel(),
+    SpatialPlotPanel(ColorBy = "cell_type", UsePolygons = TRUE),
+    iSEE::ReducedDimensionPlot(Type = "PCA", ColorBy = "Column data",
+                               ColorByColumnData = "niche"),
+    SpatialStatsPanel(PlotType = "localmoran_plot", Genes = "Adcy1",
+                      K = 15L, ComputeTrigger = "launch"))
+app <- iseeSpatial(dg, initial = panels, cache = FALSE)
+```
+
+## Saving the prepared object
+
+The object can be saved and reopened directly in the app later
+(`load_cosmx()` sets the platform):
+
+```{r save, eval = FALSE}
+saveRDS(dg, "dentate_gyrus.rds")
+app <- iseeSpatial(load_cosmx("dentate_gyrus.rds"))
+```
+
+# Session information
+
+```{r session-info}
+sessionInfo()
+```
