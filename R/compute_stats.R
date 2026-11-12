@@ -133,8 +133,16 @@ NULL
     lm$locClust <- ifelse(lm[["-log10p_adj"]] > -log10(alpha),
         as.character(lm$mean), "non-significant")
     SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]] <- lm
-    Voyager::plotLocalResult(sfe, features = gene, name = "localmoran",
-        attribute = "locClust", colGeometryName = 1) +
+    # The usual LISA colours: hot spots red, cold spots blue, the rest grey.
+    cols <- c(`High-High` = "#D7191C", `Low-Low` = "#2C7BB6",
+              `High-Low` = "#FDAE61", `Low-High` = "#ABD9E9",
+              `non-significant` = "grey85")
+    p <- Voyager::plotLocalResult(sfe, features = gene, name = "localmoran",
+        attribute = "locClust", colGeometryName = 1)
+    suppressMessages(p + ggplot2::scale_colour_manual(values = cols,
+            na.value = "grey85")) +
+        ggplot2::guides(colour = ggplot2::guide_legend(
+            override.aes = list(size = 3))) +
         ggplot2::labs(caption = sprintf(
             "Significant: adjusted p < %g (local Moran's I, k = %d)",
             alpha, k))
