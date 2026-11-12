@@ -154,11 +154,13 @@
         ignoreNULL = !multiple)
 }
 
-# Compute button: stamps a trigger slot, which is part of the cache key.
+# Compute button: sets the trigger slot to the key of the analysis asked for
+# (.computeKey), which is part of the cache key.
 .computeObserver <- function(enc, input, pObjects, rObjects) {
     shiny::observeEvent(input[[paste0(enc, "_Compute")]],
         {
-            pObjects$memory[[enc]]@ComputeTrigger <- as.character(Sys.time())
+            pObjects$memory[[enc]]@ComputeTrigger <-
+                .computeKey(pObjects$memory[[enc]])
             .spatialUpdate(enc, rObjects)
         },
         ignoreInit = TRUE)

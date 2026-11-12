@@ -8,6 +8,7 @@
 \alias{.defineOutput,SVGPanel-method}
 \alias{.defineInterface,SVGPanel-method}
 \alias{.generateOutput,SVGPanel-method}
+\alias{.refineParameters,SVGPanel-method}
 \alias{.renderOutput,SVGPanel-method}
 \alias{.createObservers,SVGPanel-method}
 \alias{SVGPanel}
@@ -22,6 +23,8 @@
 \S4method{.defineInterface}{SVGPanel}(x, se, select_info)
 
 \S4method{.generateOutput}{SVGPanel}(x, se, ..., all_memory, all_contents)
+
+\S4method{.refineParameters}{SVGPanel}(x, se)
 
 \S4method{.renderOutput}{SVGPanel}(x, se, output, pObjects, rObjects)
 

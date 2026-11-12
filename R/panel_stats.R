@@ -70,6 +70,14 @@ setMethod(".generateOutput", "SpatialStatsPanel", function(x, se, ...) {
 
 #' @rdname SpatialStatsPanel
 #' @export
+setMethod(".refineParameters", "SpatialStatsPanel", function(x, se) {
+    x <- callNextMethod()
+    if (is.null(x)) return(x)
+    .keyComputeTrigger(x)
+})
+
+#' @rdname SpatialStatsPanel
+#' @export
 setMethod(".renderOutput", "SpatialStatsPanel",
           function(x, se, output, pObjects, rObjects)
     .renderCachedSpatialPlot(x, se, output, pObjects, rObjects,
@@ -187,15 +195,30 @@ setMethod(".generateOutput", "SVGPanel", function(x, se, ...) {
 
 #' @rdname SVGPanel
 #' @export
+setMethod(".refineParameters", "SVGPanel", function(x, se) {
+    x <- callNextMethod()
+    if (is.null(x)) return(x)
+    .keyComputeTrigger(x)
+})
+
+#' @rdname SVGPanel
+#' @export
 setMethod(".renderOutput", "SVGPanel",
           function(x, se, output, pObjects, rObjects) {
     enc <- .getEncodedName(x)
     # Rebuilt only on Compute: re-sending the table resets its page, order and
     # selected row.
     key <- .panelKey(enc, pObjects, rObjects, function(pn) pn@ComputeTrigger)
+    fp <- .fingerprintOf(se)
+    ver <- as.character(utils::packageVersion("iseeSpatial"))
     output[[enc]] <- DT::renderDataTable({
-        key()
-        tbl <- .safeOutput(.generateOutput(pObjects$memory[[enc]], se), enc)
+        trig <- key()
+        x <- pObjects$memory[[enc]]
+        tbl <- .safeOutput(if (nzchar(trig))
+            .cachedResult(digest::digest(list(fp, ver, "svg", trig),
+                                         algo = "xxhash64"),
+                          .generateOutput(x, se))
+        else .generateOutput(x, se), enc)
         assign(enc, tbl, envir = .svgTables(pObjects))
         why <- attr(tbl, "reason")
         names(tbl) <- c("Gene", "Moran's I")

@@ -95,7 +95,7 @@ setMethod(".refineParameters", "SpatialNichePanel", function(x, se) {
     if (is.null(x)) return(x)
     if (isTRUE(is.na(x@UsePolygons)))
         x@UsePolygons <- "polygons" %in% colnames(colData(se)) && ncol(se) <= .POLYGON_AUTO_MAX
-    .storedNicheDefaults(x, se)
+    .keyComputeTrigger(.storedNicheDefaults(x, se))
 })
 
 .storedNicheDefaults <- function(x, se) {
@@ -281,28 +281,44 @@ setMethod(".renderOutput", "SpatialNichePanel",
     # Selection and parameters are not in the key: they apply on Compute only.
     key <- .panelKey(plot_name, pObjects, rObjects,
         function(pn) list(pn@PlotType, pn@UsePolygons, pn@ComputeTrigger))
-    last <- new.env()   # this session's last Compute: panel snapshot + results
-    output[[plot_name]] <- shiny::renderPlot({
+    fp <- .fingerprintOf(se)
+    ver <- as.character(utils::packageVersion("iseeSpatial"))
+    last <- new.env()   # results of the last Compute, reused across plot types
+    output[[plot_name]] <- shiny::renderCachedPlot({
         key()
         x <- pObjects$memory[[plot_name]]
-        if (!identical(last$trigger, x@ComputeTrigger)) {
-            snap <- x
-            if (!nzchar(x@ComputeTrigger)) snap@Selection <- ""
-            last$trigger <- x@ComputeTrigger
-            last$snap <- snap
+        trig <- x@ComputeTrigger
+        # The panel as it was at its Compute (the key encodes it), not the
+        # current map selection or parameters.
+        snap <- if (!nzchar(trig)) {
+            s <- x
+            s@Selection <- ""
+            s
+        } else get0(trig, envir = .nicheSnapshots(pObjects),
+                    inherits = FALSE, ifnotfound = x)
+        if (!identical(last$trigger, trig)) {
+            last$trigger <- trig
             last$cache <- new.env()
         }
-        snap <- last$snap
         snap@PlotType <- x@PlotType
         snap@UsePolygons <- x@UsePolygons
         n <- ncol(.subsetBySelection(se, snap@Selection))
-        note <- if (!nzchar(snap@ComputeTrigger))
+        note <- if (!nzchar(trig))
             "All cells (full-data result). Press Compute to run on the map selection."
         else sprintf("Computed on %d cells (map selection at last Compute).", n)
         .safeOutput(.drawPlot(.nicheOutput(snap, se, last$cache, note)),
                     plot_name)
-    })
+    },
+    cacheKeyExpr = list(fp, ver, plot_name, key()),
+    cache = .plotCache())
 })
+
+# Panel state at each Compute, by key, for this session.
+.nicheSnapshots <- function(pObjects) {
+    if (is.null(pObjects$iseeSpatial_niche_snapshots))
+        pObjects$iseeSpatial_niche_snapshots <- new.env(parent = emptyenv())
+    pObjects$iseeSpatial_niche_snapshots
+}
 
 #' @rdname SpatialNichePanel
 #' @export
@@ -335,9 +351,14 @@ setMethod(".createObservers", "SpatialNichePanel",
             },
             ignoreInit = TRUE)
     })
+    if (nzchar(x@ComputeTrigger))     # computed at launch
+        assign(x@ComputeTrigger, x, envir = .nicheSnapshots(pObjects))
     shiny::observeEvent(input[[paste0(enc, "_Compute")]],
         {
-            pObjects$memory[[enc]]@ComputeTrigger <- as.character(Sys.time())
+            pn <- pObjects$memory[[enc]]
+            pn@ComputeTrigger <- .computeKey(pn)
+            assign(pn@ComputeTrigger, pn, envir = .nicheSnapshots(pObjects))
+            pObjects$memory[[enc]] <- pn
             .spatialUpdate(enc, rObjects)
         },
         ignoreInit = TRUE)

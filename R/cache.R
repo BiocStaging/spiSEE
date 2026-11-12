@@ -71,3 +71,44 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
     fp <- S4Vectors::metadata(se)$iseeSpatial_fingerprint
     if (is.null(fp)) .datasetFingerprint(se) else fp
 }
+
+# Heavy analyses (statistics, gene ranking, niches) are identified by what
+# they compute, not by when Compute was pressed: the same analysis on the
+# same region gets the same key, so it is served from the cache, also after
+# a restart, instead of being recomputed and stored again.
+.COMPUTE_SLOTS <- list(
+    SpatialStatsPanel = c("PlotType", "Genes", "LabelCol", "K", "Alpha",
+                          "Selection"),
+    SVGPanel          = c("TopN", "K", "Selection"),
+    SpatialNichePanel = c("LabelCol", "K", "NNiches", "Lambda", "Selection"))
+
+.computeKey <- function(x) {
+    cl <- class(x)[1]
+    vals <- lapply(.COMPUTE_SLOTS[[cl]], function(s) methods::slot(x, s))
+    paste0("k", digest::digest(list(cl, vals), algo = "xxhash64"))
+}
+
+# A trigger set by hand (e.g. ComputeTrigger = "launch" in a layout) becomes
+# the key of the panel's parameters, so two layouts never share a result.
+.keyComputeTrigger <- function(x) {
+    if (nzchar(x@ComputeTrigger)) x@ComputeTrigger <- .computeKey(x)
+    x
+}
+
+# Computed results that are not plots (the gene ranking table): in the disk
+# cache when there is one, else in memory for this R session.
+.resultCache <- function() {
+    if (inherits(.CACHE$cache, "cachem")) return(.CACHE$cache)
+    if (is.null(.CACHE$mem))
+        .CACHE$mem <- cachem::cache_mem(max_size = 256 * 1024^2)
+    .CACHE$mem
+}
+
+.cachedResult <- function(key, expr) {
+    cc <- .resultCache()
+    hit <- cc$get(key)
+    if (!cachem::is.key_missing(hit)) return(hit)
+    val <- force(expr)
+    cc$set(key, val)
+    val
+}

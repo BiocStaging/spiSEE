@@ -35,3 +35,45 @@ test_that("default image cache folder is separate from the map backgrounds", {
     expect_identical(dirname(spatialCacheDir()),
                      tools::R_user_dir("iseeSpatial", "cache"))
 })
+
+test_that("Compute keys depend on what is computed, not on when", {
+    a <- SpatialStatsPanel(PlotType = "localmoran_plot", Genes = "Gene1",
+                           K = 6L, Selection = "1,2")
+    b <- a
+    expect_identical(.computeKey(a), .computeKey(b))
+    b@K <- 10L
+    expect_false(identical(.computeKey(a), .computeKey(b)))
+    c <- a
+    c@Selection <- "1,3"
+    expect_false(identical(.computeKey(a), .computeKey(c)))
+    # display-only slots do not change the key
+    d <- a
+    d@PanelWidth <- 6L
+    expect_identical(.computeKey(a), .computeKey(d))
+    expect_match(.computeKey(SVGPanel()), "^k[0-9a-f]+$")
+})
+
+test_that("a trigger set in a layout becomes the key of its parameters", {
+    spe <- .makeTestSPE()
+    x <- .refineParameters(SpatialStatsPanel(Genes = "Gene1",
+                                             ComputeTrigger = "launch"), spe)
+    y <- .refineParameters(SpatialStatsPanel(Genes = "Gene2",
+                                             ComputeTrigger = "launch"), spe)
+    expect_false(identical(x@ComputeTrigger, y@ComputeTrigger))
+    expect_identical(x@ComputeTrigger, .computeKey(x))
+    z <- .refineParameters(SpatialStatsPanel(), spe)
+    expect_identical(z@ComputeTrigger, "")
+})
+
+test_that("computed results are reused from the cache", {
+    old <- .CACHE$cache
+    on.exit(.CACHE$cache <- old)
+    .configurePlotCache(withr::local_tempdir())
+    n <- 0
+    f <- function() { n <<- n + 1; data.frame(gene = "A", moran_i = 0.5) }
+    key <- paste0("test", as.integer(Sys.time()))
+    r1 <- .cachedResult(key, f())
+    r2 <- .cachedResult(key, f())
+    expect_identical(r1, r2)
+    expect_identical(n, 1)
+})

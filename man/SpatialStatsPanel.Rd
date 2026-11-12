@@ -8,6 +8,7 @@
 \alias{.defineOutput,SpatialStatsPanel-method}
 \alias{.defineInterface,SpatialStatsPanel-method}
 \alias{.generateOutput,SpatialStatsPanel-method}
+\alias{.refineParameters,SpatialStatsPanel-method}
 \alias{.renderOutput,SpatialStatsPanel-method}
 \alias{.createObservers,SpatialStatsPanel-method}
 \alias{SpatialStatsPanel}
@@ -22,6 +23,8 @@
 \S4method{.defineInterface}{SpatialStatsPanel}(x, se, select_info)
 
 \S4method{.generateOutput}{SpatialStatsPanel}(x, se, ..., all_memory, all_contents)
+
+\S4method{.refineParameters}{SpatialStatsPanel}(x, se)
 
 \S4method{.renderOutput}{SpatialStatsPanel}(x, se, output, pObjects, rObjects)
 
