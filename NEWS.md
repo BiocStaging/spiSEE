@@ -22,5 +22,10 @@
   the folder.
 * Niches, spatially variable genes and statistics are computed only when
   *Compute* is pressed.
-* The vignette runs on a real CosMx dataset (SpaceTrooper's
-  `CosMx_DBKero_Tiny`).
+* Statistics, gene rankings and niches are cached by what they compute
+  (panel, parameters, region, dataset): a repeated analysis reopens from the
+  cache, also after a restart.
+* `plotSpatialCells()`: static maps of the cells as polygons, coloured by
+  annotations, QC metrics or genes, with the colours of the app.
+* Vignettes: *Get started* (SpaceTrooper's small CosMx example) and a
+  complete CosMx workflow on the mouse dentate gyrus (OSTA.data).

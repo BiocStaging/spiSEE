@@ -14,3 +14,4 @@
 ^.*\.Rcheck$
 ^check$
 ^.*\.[Rr][Dd][Ss]$
+^vignettes/articles$

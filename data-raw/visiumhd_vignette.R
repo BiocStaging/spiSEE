@@ -1,4 +1,4 @@
-# Visium HD vignette: the code of vignettes/visiumhd_colorectal.Rmd, run
+# Visium HD vignette: the code of vignettes/articles/visiumhd_colorectal.Rmd, run
 # locally (the dataset is 885 MB, too large for the Bioconductor builders),
 # with the static figures saved to vignettes/figures/.
 # Run from the package root:  Rscript data-raw/visiumhd_vignette.R
@@ -9,7 +9,7 @@ library(SpaceTrooper)
 library(SingleR)
 library(ggplot2)
 set.seed(1)
-figdir <- "vignettes/figures"
+figdir <- "vignettes/articles/figures"
 fig <- function(p, name, w = 7, h = 5) {
     ggsave(file.path(figdir, paste0(name, ".jpg")), p, width = w, height = h,
            dpi = 72, quality = 45)

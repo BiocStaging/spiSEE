@@ -17,7 +17,7 @@ vignette: >
 # JPEG keeps the built vignette within Bioconductor's size limit.
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
                       fig.height = 5, message = FALSE, dev = "jpeg",
-                      dev.args = list(quality = 75), dpi = 100,
+                      dev.args = list(jpeg = list(quality = 75)), dpi = 100,
                       fig.retina = 1)
 ```
 
@@ -91,7 +91,7 @@ The cell polygons are read once the score is computed:
 spe <- readAndAddPolygonsToSPE(spe)
 ```
 
-```{r qc-hist, fig.cap = "Total counts per cell with the outlier fences.", fig.height = 3.5}
+```{r qc-hist, dev = "svglite", fig.cap = "Total counts per cell with the outlier fences.", fig.height = 3.5}
 plotMetricHist(spe, metric = "total", useFences = "total_outlier_mc")
 ```
 
@@ -178,7 +178,7 @@ plotSpatialCells(dg, "cell_type_top", palette = pal)
 
 One FOV in detail, with cell borders:
 
-```{r polygons-fov, fig.cap = "FOV 99, cell borders drawn.", fig.height = 6}
+```{r polygons-fov, dev = "svglite", fig.cap = "FOV 99, cell borders drawn.", fig.height = 6}
 plotSpatialCells(dg[, dg$fov == 99], "cell_type_top", palette = pal,
                  borders = TRUE) +
     theme(legend.position = "none")
@@ -230,7 +230,7 @@ plotSpatialCells(dg, "niche")
 Each cell's neighbourhood composition is stored as a reduced dimension.
 Averaged per niche, it shows what each niche is made of:
 
-```{r niche-heatmap, fig.cap = "Mean neighbourhood composition per niche (twelve most frequent cell types).", fig.height = 6, fig.width = 8}
+```{r niche-heatmap, dev = "svglite", fig.cap = "Mean neighbourhood composition per niche (twelve most frequent cell types).", fig.height = 6, fig.width = 8}
 comp <- reducedDim(dg, "NicheComposition")
 mean_comp <- apply(comp[, top], 2, function(x) tapply(x, dg$niche, mean))
 rownames(mean_comp) <- sub(":.*", "", rownames(mean_comp))
@@ -286,6 +286,13 @@ panel to these FOVs: spatial plots zoom in, and statistics, gene rankings
 and niches are recomputed on the region when *Compute* is pressed. A
 second click on a validated tile removes it; *Clear* returns to the whole
 dataset.
+
+The same selection works cell by cell for platforms without fields of
+view. For Xenium and Visium HD data (`load_xenium()`, `load_visiumhd()`),
+or any `SpatialExperiment` whose platform is not CosMx, the overview map
+shows every cell as a point: clicking adds or removes a cell, and the box
+tool selects all the cells in a rectangle, also on sections of more than
+100,000 cells. The rest of the app is unchanged.
 
 ## Spatial statistics
 

@@ -57,9 +57,6 @@ Imports:
     withr
 Suggests:
     OSTA.data,
-    SingleR,
-    DropletUtils,
-    jsonlite,
     SpatialExperimentIO,
     VisiumIO,
     BiocIO,
@@ -67,6 +64,7 @@ Suggests:
     knitr,
     rmarkdown,
     scuttle,
+    svglite,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 biocViews: Software, Spatial, Transcriptomics, SingleCell, Visualization,

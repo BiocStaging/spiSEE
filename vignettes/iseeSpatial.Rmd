@@ -16,7 +16,7 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
                       fig.height = 4.5, message = FALSE, dev = "jpeg",
-                      dev.args = list(quality = 50), dpi = 60,
+                      dev.args = list(jpeg = list(quality = 75)), dpi = 100,
                       fig.retina = 1)
 ```
 
@@ -35,15 +35,10 @@ cellular niches and spatial domains. Heavy analyses run only when the
 user presses *Compute*, on the selected region.
 
 This vignette installs the package, runs it on a small CosMx example and
-lists every panel. Three workflow vignettes then go through real
-datasets, one per platform:
-
-* *CosMx workflow: the mouse dentate gyrus* (QC of a whole brain section,
-  polygons, niches, statistics);
-* *Xenium workflow: breast cancer* (cell-level selection on 168,000 cells,
-  DCIS and invasive tumour, co-localisation);
-* *Visium HD workflow: colorectal cancer* (whole-transcriptome data at
-  cellular resolution, annotation with a single-cell reference).
+lists every panel. The vignette *CosMx workflow: the mouse dentate gyrus*
+then goes through a complete analysis of a real dataset: quality control
+of a whole brain section, cell polygons, niches, spatial domains,
+statistics and the apps.
 
 # Installation
 
@@ -94,10 +89,12 @@ getPlatform(spe)
 
 ## How the app works
 
-* **Select a region** on the overview map: click FOV tiles or cells, or
+* **Select a region** on the overview map: click FOV tiles (CosMx) or
+  single cells (Xenium, Visium HD and any other `SpatialExperiment`), or
   drag a box, then press *Validate*. Every spatial panel follows. *Clear*
-  goes back to the whole dataset; a second click on a selected tile
-  removes it. A selection can also be given at launch with `selection =`.
+  goes back to the whole dataset; a second click on a selected tile or
+  cell removes it. A selection can also be given at launch with
+  `selection =`.
 * **Compute when ready**: statistics, gene rankings and niches recompute
   only when *Compute* is pressed, on the current region and parameters.
   Results computed beforehand and stored in the object (niches, domains)
@@ -203,7 +200,7 @@ app <- iseeSpatial(spe, initial = panels, cache = FALSE)
 
 Each panel also renders as a static plot, useful for reports:
 
-```{r static, fig.cap = "The join-count heatmap of the custom layout, rendered outside the app."}
+```{r static, dev = "svglite", fig.cap = "The join-count heatmap of the custom layout, rendered outside the app."}
 p <- iSEE::.generateOutput(
     SpatialStatsPanel(PlotType = "joincount_heatmap_plot",
                       LabelCol = "cell_type", K = 15L,
