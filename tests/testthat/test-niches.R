@@ -91,8 +91,9 @@ test_that("buildSpatialGraph/computeNiches work on a SpatialExperiment and survi
 test_that("SpatialNichePanel constructor defaults", {
     p <- SpatialNichePanel()
     expect_identical(p@PlotType, "niche_map")
-    expect_identical(p@K, 20L)
-    expect_identical(p@NNiches, 6L)
+    # NA until resolved against the data (stored niches, else 20 / 6)
+    expect_identical(p@K, NA_integer_)
+    expect_identical(p@NNiches, NA_integer_)
     expect_identical(p@Selection, "")
 })
 
@@ -129,4 +130,18 @@ test_that("niche clustering is reproducible and leaves the user's random state a
     a <- .safeKmeans(x, 2, seed = 7)
     expect_identical(.Random.seed, state)
     expect_identical(a, .safeKmeans(x, 2, seed = 7))
+})
+
+test_that("the niche panel opens on the stored niches' parameters", {
+    spe <- .makeTestSPE(n_cells = 300)
+    spe$cell_type <- sample(c("A", "B", "C"), ncol(spe), replace = TRUE)
+    spe <- computeNiches(spe, label_col = "cell_type", k = 7, n_niches = 3)
+    x <- .refineParameters(SpatialNichePanel(), spe)
+    expect_identical(x@K, 7L)
+    expect_identical(x@NNiches, 3L)
+    expect_identical(x@LabelCol, "cell_type")
+    y <- .refineParameters(SpatialNichePanel(K = 10L), spe)
+    expect_identical(y@K, 10L)
+    z <- .refineParameters(SpatialNichePanel(), .makeTestSPE())
+    expect_identical(c(z@K, z@NNiches), c(20L, 6L))
 })

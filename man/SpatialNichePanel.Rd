@@ -33,9 +33,9 @@
 SpatialNichePanel(
   PlotType = "niche_map",
   LabelCol = NA_character_,
-  K = 20L,
-  NNiches = 6L,
-  Lambda = 0.2,
+  K = NA,
+  NNiches = NA,
+  Lambda = NA,
   UsePolygons = NA,
   ...
 )
@@ -66,7 +66,9 @@ method.}
 \code{NA}).}
 
 \item{K, NNiches, Lambda}{Neighbours per cell, number of niches, spatial
-weight for domains.}
+weight for domains. \code{NA} (the default) takes the values used for the
+niches and domains stored in the object, so they are shown without
+recomputing, or 20, 6 and 0.2 if none are stored.}
 
 \item{UsePolygons}{Draw real cell-shape polygons instead of a centroid
 scatter on the "on tissue" plot types (needs a \code{polygons} column, as

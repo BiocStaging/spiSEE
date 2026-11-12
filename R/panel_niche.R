@@ -76,9 +76,11 @@ setMethod("initialize", "SpatialNichePanel", function(.Object, ...) {
     .Object <- callNextMethod(.Object, ...)
     if (length(.Object@PlotType)       == 0) .Object@PlotType       <- "niche_map"
     if (length(.Object@LabelCol)       == 0) .Object@LabelCol       <- NA_character_
-    if (length(.Object@K)              == 0) .Object@K              <- 20L
-    if (length(.Object@NNiches)        == 0) .Object@NNiches        <- 6L
-    if (length(.Object@Lambda)         == 0) .Object@Lambda         <- 0.2
+    # NA = taken from the stored niches/domains if any, else 20 / 6 / 0.2
+    # (.refineParameters), so a precomputed result is shown as it is.
+    if (length(.Object@K)              == 0) .Object@K              <- NA_integer_
+    if (length(.Object@NNiches)        == 0) .Object@NNiches        <- NA_integer_
+    if (length(.Object@Lambda)         == 0) .Object@Lambda         <- NA_real_
     if (length(.Object@ComputeTrigger) == 0) .Object@ComputeTrigger <- ""
     # NA = resolved by .refineParameters() against the dataset, same
     # pattern as SpatialPlotPanel's UsePolygons (see panel_plot.R).
@@ -90,10 +92,31 @@ setMethod("initialize", "SpatialNichePanel", function(.Object, ...) {
 #' @export
 setMethod(".refineParameters", "SpatialNichePanel", function(x, se) {
     x <- callNextMethod()
-    if (!is.null(x) && isTRUE(is.na(x@UsePolygons)))
+    if (is.null(x)) return(x)
+    if (isTRUE(is.na(x@UsePolygons)))
         x@UsePolygons <- "polygons" %in% colnames(colData(se)) && ncol(se) <= .POLYGON_AUTO_MAX
-    x
+    .storedNicheDefaults(x, se)
 })
+
+.storedNicheDefaults <- function(x, se) {
+    nm <- S4Vectors::metadata(se)$iseeSpatial_niches
+    dm <- S4Vectors::metadata(se)$iseeSpatial_domains
+    if (!is.null(nm) && "niche" %in% colnames(colData(se))) {
+        if (is.na(x@K) && length(nm$k)) x@K <- as.integer(nm$k)
+        if (is.na(x@NNiches) && length(nm$n_niches))
+            x@NNiches <- as.integer(nm$n_niches)
+        if (is.na(x@LabelCol) && length(nm$label_col))
+            x@LabelCol <- nm$label_col
+    }
+    if (!is.null(dm) && "spatial_domain" %in% colnames(colData(se))) {
+        if (is.na(x@K) && length(dm$k_spatial)) x@K <- as.integer(dm$k_spatial)
+        if (is.na(x@Lambda) && length(dm$lambda)) x@Lambda <- dm$lambda
+    }
+    if (is.na(x@K)) x@K <- 20L
+    if (is.na(x@NNiches)) x@NNiches <- 6L
+    if (is.na(x@Lambda)) x@Lambda <- 0.2
+    x
+}
 
 #' @rdname SpatialNichePanel
 #' @export
@@ -149,6 +172,7 @@ setMethod(".defineInterface", "SpatialNichePanel",
 
 # Run (or reuse) the analysis needed by the requested plot.
 .nicheData <- function(x, se) {
+    x <- .storedNicheDefaults(x, se)   # panels not refined by iSEE (tests)
     se <- .subsetBySelection(se, x@Selection)
     lab <- if (!is.na(x@LabelCol)) x@LabelCol else .defaultLabelCol(se)
     wants_domains <- x@PlotType %in% c("domain_map", "cluster_map",
@@ -332,7 +356,9 @@ setMethod(".createObservers", "SpatialNichePanel",
 #' @param LabelCol `colData` column with cell-type labels (auto-detected if
 #'   `NA`).
 #' @param K,NNiches,Lambda Neighbours per cell, number of niches, spatial
-#'   weight for domains.
+#'   weight for domains. `NA` (the default) takes the values used for the
+#'   niches and domains stored in the object, so they are shown without
+#'   recomputing, or 20, 6 and 0.2 if none are stored.
 #' @param UsePolygons Draw real cell-shape polygons instead of a centroid
 #'   scatter on the "on tissue" plot types (needs a `polygons` column, as
 #'   created by SpaceTrooper). `NA` (the default) follows the dataset: on
@@ -343,8 +369,9 @@ setMethod(".createObservers", "SpatialNichePanel",
 #' SpatialNichePanel(K = 30, NNiches = 8)
 #' @export
 SpatialNichePanel <- function(PlotType = "niche_map", LabelCol = NA_character_,
-                              K = 20L, NNiches = 6L, Lambda = 0.2,
+                              K = NA, NNiches = NA, Lambda = NA,
                               UsePolygons = NA, ...)
     new("SpatialNichePanel", PlotType = PlotType, LabelCol = LabelCol,
-        K = as.integer(K), NNiches = as.integer(NNiches), Lambda = Lambda,
+        K = as.integer(K), NNiches = as.integer(NNiches),
+        Lambda = as.numeric(Lambda),
         UsePolygons = UsePolygons, ...)
