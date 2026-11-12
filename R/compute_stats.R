@@ -175,7 +175,9 @@ NULL
     pal <- grDevices::colorRampPalette(c("#4ECDC4", "white", "#F7A11A"))
     pheatmap::pheatmap(z, cluster_rows = FALSE, cluster_cols = FALSE,
         color = pal(101), breaks = seq(-zl, zl, length.out = 102),
-        display_numbers = TRUE, number_format = "%.1f", na_col = "grey90",
+        # Values are unreadable beyond ~15 types; the colours remain.
+        display_numbers = nrow(z) <= 15, number_format = "%.1f",
+        na_col = "grey90",
         main = sprintf("Cell-type co-occurrence (join-count z, k = %d)", k),
         silent = TRUE)
 }

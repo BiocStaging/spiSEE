@@ -125,17 +125,21 @@
 #   cast:     coerce the input value to the slot type
 #   redraw:   request a re-render (FALSE for parameters that only apply on Compute)
 #   multiple: NULL input means "nothing selected" (multi-select) instead
-#             of "ignore"
+#             of "ignore". A server-side selectize sends one empty value
+#             while its choices load; that one is skipped, otherwise it
+#             would wipe the initial selection before a launch-time Compute.
 .slotObserver <- function(enc, field, input, pObjects, rObjects,
                           cast = identity, redraw = TRUE, multiple = FALSE) {
     id <- paste0(enc, "_", field)
+    loading <- multiple
     shiny::observeEvent(input[[id]],
         {
             v <- input[[id]]
             if (is.null(v)) {
-                if (!multiple) return()
+                if (!multiple || loading) return()
                 v <- character(0)
             }
+            loading <<- FALSE
             v <- cast(v)
             if (!multiple && (length(v) != 1 || is.na(v))) return()
             if (!identical(v, methods::slot(pObjects$memory[[enc]], field))) {
