@@ -43,7 +43,11 @@ load_cosmx <- function(rds_path) {
 #' @export
 load_xenium <- function(xenium_dir) {
     .needs("SpatialExperimentIO")
-    spe <- SpatialExperimentIO::readXeniumSXE(xenium_dir)
+    # Bundles shared without transcripts.parquet (the largest file) are
+    # common; readXeniumSXE() fails on them unless parquet paths are off.
+    tx <- file.exists(file.path(xenium_dir, "transcripts.parquet"))
+    spe <- SpatialExperimentIO::readXeniumSXE(xenium_dir,
+                                              addParquetPaths = tx)
     SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
     bnd <- file.path(xenium_dir, "cell_boundaries.parquet")
     if (file.exists(bnd)) {

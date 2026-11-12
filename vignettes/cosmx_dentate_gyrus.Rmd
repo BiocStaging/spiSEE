@@ -217,7 +217,9 @@ dg <- buildSpatialGraph(dg, k = 15)
 ## Niches
 
 A niche groups cells whose neighbourhoods have a similar cell-type
-composition. Niches are named after their two most frequent cell types.
+composition. Each niche is named after the two cell types most
+over-represented in it compared with the whole region, so a rare type can
+appear in a name when it is concentrated in that niche.
 
 ```{r niches}
 dg <- computeNiches(dg, label_col = "cell_type", k = 15, n_niches = 6)
