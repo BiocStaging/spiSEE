@@ -200,7 +200,7 @@ app <- iseeSpatial(spe, initial = panels, cache = FALSE)
 
 Each panel also renders as a static plot, useful for reports:
 
-```{r static, dev = "svglite", fig.cap = "The join-count heatmap of the custom layout, rendered outside the app."}
+```{r static, dev = "svglite", crop = NULL, fig.cap = "The join-count heatmap of the custom layout, rendered outside the app."}
 p <- iSEE::.generateOutput(
     SpatialStatsPanel(PlotType = "joincount_heatmap_plot",
                       LabelCol = "cell_type", K = 15L,

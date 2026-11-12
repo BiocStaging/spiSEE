@@ -91,7 +91,7 @@ The cell polygons are read once the score is computed:
 spe <- readAndAddPolygonsToSPE(spe)
 ```
 
-```{r qc-hist, dev = "svglite", fig.cap = "Total counts per cell with the outlier fences.", fig.height = 3.5}
+```{r qc-hist, dev = "svglite", crop = NULL, fig.cap = "Total counts per cell with the outlier fences.", fig.height = 3.5}
 plotMetricHist(spe, metric = "total", useFences = "total_outlier_mc")
 ```
 
@@ -178,7 +178,7 @@ plotSpatialCells(dg, "cell_type_top", palette = pal)
 
 One FOV in detail, with cell borders:
 
-```{r polygons-fov, dev = "svglite", fig.cap = "FOV 99, cell borders drawn.", fig.height = 6}
+```{r polygons-fov, dev = "svglite", crop = NULL, fig.cap = "FOV 99, cell borders drawn.", fig.height = 6}
 plotSpatialCells(dg[, dg$fov == 99], "cell_type_top", palette = pal,
                  borders = TRUE) +
     theme(legend.position = "none")
@@ -230,7 +230,7 @@ plotSpatialCells(dg, "niche")
 Each cell's neighbourhood composition is stored as a reduced dimension.
 Averaged per niche, it shows what each niche is made of:
 
-```{r niche-heatmap, dev = "svglite", fig.cap = "Mean neighbourhood composition per niche (twelve most frequent cell types).", fig.height = 6, fig.width = 8}
+```{r niche-heatmap, dev = "svglite", crop = NULL, fig.cap = "Mean neighbourhood composition per niche (twelve most frequent cell types).", fig.height = 6, fig.width = 8}
 comp <- reducedDim(dg, "NicheComposition")
 mean_comp <- apply(comp[, top], 2, function(x) tapply(x, dg$niche, mean))
 rownames(mean_comp) <- sub(":.*", "", rownames(mean_comp))
