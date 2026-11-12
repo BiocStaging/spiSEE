@@ -219,3 +219,24 @@ test_that("gene menus put the most expressed genes first", {
     S4Vectors::metadata(spe)$iseeSpatial_gene_order <- .geneOrder(spe)
     expect_identical(.geneChoices(spe)[1], top)
 })
+
+test_that("plotSpatialCells draws polygons, points, genes and panels", {
+    spe <- .makeTestSPE(n_cells = 60)
+    spe$grp <- rep(c("a", "b", "c"), 20)
+    p <- plotSpatialCells(spe, "grp")
+    expect_s3_class(p, "ggplot")
+    expect_true(inherits(p$layers[[1]]$geom, "GeomPoint"))   # no polygons
+    g <- rownames(spe)[1]
+    p2 <- plotSpatialCells(spe, c(g, rownames(spe)[2]), ncol = 2)
+    expect_s3_class(p2$facet, "FacetWrap")
+    expect_error(plotSpatialCells(spe, c("grp", g)), "mixes")
+    expect_error(plotSpatialCells(spe, "nope"), "neither")
+    sq <- function(x, y) sf::st_polygon(list(rbind(c(x, y), c(x + 1, y),
+        c(x + 1, y + 1), c(x, y + 1), c(x, y))))
+    xy <- SpatialExperiment::spatialCoords(spe)
+    spe$polygons <- sf::st_sf(cell_id = seq_len(ncol(spe)),
+        global = sf::st_sfc(lapply(seq_len(ncol(spe)),
+                                   function(i) sq(xy[i, 1], xy[i, 2]))))
+    p3 <- plotSpatialCells(spe, "grp", borders = TRUE)
+    expect_true(inherits(p3$layers[[1]]$geom, "GeomSf"))
+})

@@ -19,5 +19,5 @@
 #' @keywords internal
 "_PACKAGE"
 
-utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype", "fov",
+utils::globalVariables(c("x", "y", "value", "niche", "prop", "celltype", "fov", "panel",
     "name", "pair", "z_value", "xmin", "xmax", "ymin", "ymax", "label"))
