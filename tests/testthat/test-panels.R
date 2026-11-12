@@ -146,6 +146,10 @@ test_that("QC histogram: readable names and flagged-cell count", {
     expect_identical(p$labels$colour, "Outlier fences (medcouple)")
     expect_match(p$labels$subtitle, sprintf("^%d of 200 cells flagged", n))
     expect_identical(.prettyMetric("transcript_counts"), "Transcript counts")
+    mc <- structure(c("NO", "HIGH", "LOW", "NO"),
+                    class = c("outlier.filter", "logical"))
+    expect_identical(.isFlagged(mc), c(FALSE, TRUE, TRUE, FALSE))
+    expect_identical(.isFlagged(c(TRUE, FALSE)), c(TRUE, FALSE))
     expect_identical(.flaggedText(c(TRUE, FALSE, NA, FALSE)),
                      "1 of 4 cells flagged as outliers (25.0%)")
 })
@@ -199,4 +203,11 @@ test_that("an empty SVG table says why", {
     few <- .computeSVGRanking(spe[, 1:4], k = 6L)
     expect_equal(nrow(few), 0L)
     expect_match(attr(few, "reason"), "Too few cells")
+})
+
+test_that("an initial selection is shown on the map", {
+    spe <- .makeTestSPE()
+    panels <- .defaultPanels(spe, "qc", selection = "1,2")
+    expect_identical(panels[[1]]@CommittedIDs, "1,2")
+    expect_match(.MAP_JS, "new Set(data.committed", fixed = TRUE)
 })

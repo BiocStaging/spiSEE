@@ -70,7 +70,7 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
     area <- intersect(c("Area_um", "cell_area", "um2"), qc)
     lab <- .defaultLabelCol(spe)
     if (mode == "qc") {
-        panels <- list(SpatialMapPanel(),
+        panels <- list(SpatialMapPanel(CommittedIDs = selection),
             SpatialPlotPanel(ColorBy = if (length(qc)) qc[1] else "",
                              Selection = selection),
             SpatialQCPanel(Metric = if (length(qc)) qc[1] else "",
@@ -87,7 +87,7 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
         return(panels)
     }
     gene <- .geneChoices(spe)[1]
-    list(SpatialMapPanel(),
+    list(SpatialMapPanel(CommittedIDs = selection),
         SpatialPlotPanel(ColorBy = if (!is.na(lab)) lab else "",
                          Selection = selection),
         SpatialPlotPanel(ColorBy = gene, Selection = selection),

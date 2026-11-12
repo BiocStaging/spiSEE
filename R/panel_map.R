@@ -148,7 +148,7 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
 .MAP_JS <- "
 function(el, x, data) {
   var enc = data.enc, ids = data.ids, unit = data.unit;
-  var pending = new Set(), pendingRemove = new Set(), committed = new Set();
+  var pending = new Set(), pendingRemove = new Set(), committed = new Set(data.committed || []);
   var idToXY = {};
   if (unit === 'cell') ids.forEach(function(id, i) { idToXY[id] = [data.px[i], data.py[i]]; });
 
@@ -187,7 +187,8 @@ function(el, x, data) {
     else                   { if (pending.has(id)) pending.delete(id); else pending.add(id); }
     redraw(); sync();
   }
-  if (unit === 'cell') redraw();   // clears the seeded placeholder point
+  // cells: clears the seeded placeholder point; tiles: shows an initial selection
+  if (unit === 'cell' || committed.size > 0) redraw();
   el.on('plotly_click', function(evt) {
     var pt = evt.points && evt.points[0];
     if (!pt || pt.customdata === undefined || pt.customdata === '__placeholder__') return;
@@ -212,7 +213,7 @@ function(el, x, data) {
   });
 }"
 
-.buildMapWidget <- function(base, enc) {
+.buildMapWidget <- function(base, enc, committed = character(0)) {
     img <- list(list(
         source = paste0("data:image/png;base64,",
                         base64enc::base64encode(base$png_raw)),
@@ -252,7 +253,8 @@ function(el, x, data) {
             margin = list(l = 0, r = 0, t = 0, b = 0), dragmode = "select")
     }
     p <- plotly::config(p, displayModeBar = FALSE, scrollZoom = FALSE)
-    data <- list(enc = enc, unit = base$unit, ids = as.list(base$ids))
+    data <- list(enc = enc, unit = base$unit, ids = as.list(base$ids),
+                 committed = as.list(committed))
     if (base$unit == "cell") {
         data$px <- as.list(base$px)
         data$py <- as.list(base$py)
@@ -282,7 +284,7 @@ setMethod(".renderOutput", "SpatialMapPanel",
     # Built once; deliberately no dependency on rObjects$modified: all
     # interaction is client-side, so it never needs to re-render.
     output[[plot_name]] <- plotly::renderPlotly(.buildMapWidget(base,
-        plot_name))
+        plot_name, .splitIDs(pObjects$memory[[plot_name]]@CommittedIDs)))
 })
 
 #' @rdname SpatialMapPanel

@@ -55,7 +55,7 @@ setMethod(".generateOutput", "SpatialQCPanel", function(x, se, ...) {
     if (is.null(fences)) return(p)
     # SpaceTrooper names the legend after the internal column
     # ("Fences transcript_counts_outlier_mc") and shows no counts.
-    flagged <- as.logical(colData(se)[[fences]])
+    flagged <- .isFlagged(colData(se)[[fences]])
     p + ggplot2::labs(colour = "Outlier fences (medcouple)",
         subtitle = .flaggedText(flagged))
 })
@@ -65,6 +65,15 @@ setMethod(".generateOutput", "SpatialQCPanel", function(x, se, ...) {
     if (!grepl("_", m)) return(m)
     s <- gsub("_", " ", m)
     paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
+}
+
+# SpaceTrooper stores medcouple outliers as "HIGH"/"LOW"/"NO" (class
+# outlier.filter); scuttle::isOutlier() gives a logical.
+.isFlagged <- function(x) {
+    v <- unclass(x)
+    attributes(v) <- NULL
+    if (is.character(v) || is.factor(x)) return(as.character(v) != "NO")
+    as.logical(v)
 }
 
 .flaggedText <- function(flagged) {
