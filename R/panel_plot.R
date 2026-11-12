@@ -127,16 +127,31 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
         # than hang the panel silently.
         if (!"polygons" %in% colnames(colData(se)))
             return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
-        .polygonPlot(se, colorby, args$palette) + ggplot2::labs(fill = label)
+        p <- .polygonPlot(se, colorby, args$palette) +
+            ggplot2::labs(fill = label)
     } else {
         p <- do.call(SpaceTrooper::plotCentroids,
             c(args, size = x@PointSize,
               .scaleBarArgs(SpaceTrooper::plotCentroids, se)))
         if (!identical(label, colorby)) p <- p + ggplot2::labs(colour = label,
             fill = label)
-        p
     }
+    .compactLegend(p, colData(se)[[colorby]])
 })
+
+# Beyond ~15 categories a side legend squeezes the tissue to a thumbnail:
+# move it under the plot, in columns, with small keys.
+.compactLegend <- function(p, value, max_side = 15L) {
+    if (is.numeric(value) || length(unique(stats::na.omit(value))) <= max_side)
+        return(p)
+    p + ggplot2::theme(legend.position = "bottom",
+                       legend.text = ggplot2::element_text(size = 6),
+                       legend.title = ggplot2::element_blank(),
+                       legend.key.size = ggplot2::unit(3, "mm")) +
+        ggplot2::guides(colour = ggplot2::guide_legend(ncol = 2,
+                            override.aes = list(size = 2)),
+                        fill = ggplot2::guide_legend(ncol = 2))
+}
 
 # A server-side selectize reports "" while its choices load: ignore it.
 .castColorBy <- function(v) {

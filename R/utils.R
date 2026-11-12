@@ -52,9 +52,12 @@
         ggplot2::coord_fixed() + ggplot2::theme_void() + ggplot2::ggtitle("FOV overview")
 }
 
+# Distinct colours: glasbey, then polychrome (~66 in all); a hue ramp only
+# beyond that, where neighbouring colours can no longer be told apart.
 .discretePalette <- function(n) {
-    if (n <= 32) pals::glasbey(32)[seq_len(n)] else grDevices::hcl.colors(n,
-        "Dynamic")
+    cols <- unique(toupper(c(pals::glasbey(32), pals::polychrome(36))))
+    if (n <= length(cols)) unname(cols[seq_len(n)])
+    else grDevices::hcl.colors(n, "Dynamic")
 }
 
 # pheatmap / gtable results must be drawn explicitly inside renderPlot.
