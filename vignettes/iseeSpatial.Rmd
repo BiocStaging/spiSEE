@@ -16,7 +16,7 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
                       fig.height = 4.5, message = FALSE, dev = "jpeg",
-                      dev.args = list(quality = 65), dpi = 72,
+                      dev.args = list(quality = 50), dpi = 60,
                       fig.retina = 1)
 ```
 

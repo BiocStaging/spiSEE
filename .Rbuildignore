@@ -13,3 +13,4 @@
 ^.*\.tar\.gz$
 ^.*\.Rcheck$
 ^check$
+^.*\.[Rr][Dd][Ss]$

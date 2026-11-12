@@ -57,6 +57,9 @@ Imports:
     withr
 Suggests:
     OSTA.data,
+    SingleR,
+    DropletUtils,
+    jsonlite,
     SpatialExperimentIO,
     VisiumIO,
     BiocIO,

@@ -17,7 +17,7 @@ vignette: >
 # JPEG figures at screen resolution keep the built vignette small.
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
                       fig.height = 5, message = FALSE, dev = "jpeg",
-                      dev.args = list(quality = 65), dpi = 72,
+                      dev.args = list(quality = 50), dpi = 60,
                       fig.retina = 1)
 ```
 
