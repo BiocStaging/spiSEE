@@ -77,3 +77,29 @@ test_that("computed results are reused from the cache", {
     expect_identical(r1, r2)
     expect_identical(n, 1)
 })
+
+test_that("fingerprint sees every expression value, not per-cell sums", {
+    a <- .makeTestSPE(n_cells = 40, seed = 1)
+    b <- a
+    # swap two different values of one cell, in both assays: same per-cell
+    # sums, different expression
+    j <- which(SummarizedExperiment::assay(a, "counts")[1, ] !=
+               SummarizedExperiment::assay(a, "counts")[2, ])[1]
+    for (an in c("counts", "logcounts")) {
+        m <- SummarizedExperiment::assay(b, an)
+        m[1:2, j] <- m[2:1, j]
+        SummarizedExperiment::assay(b, an) <- m
+    }
+    expect_equal(Matrix::colSums(SummarizedExperiment::assay(a, "counts")),
+                 Matrix::colSums(SummarizedExperiment::assay(b, "counts")))
+    expect_false(identical(.datasetFingerprint(a), .datasetFingerprint(b)))
+    expect_false(identical(.mapCacheKey(a, "cell"), .mapCacheKey(b, "cell")))
+})
+
+test_that("map background key changes with the coordinates", {
+    a <- .makeTestSPE(n_cells = 40, seed = 1)
+    b <- a
+    SpatialExperiment::spatialCoords(b)[5, 1] <- 1
+    expect_false(identical(.mapCacheKey(a, "cell"), .mapCacheKey(b, "cell")))
+    expect_identical(.mapCacheKey(a, "cell"), .mapCacheKey(a, "cell"))
+})

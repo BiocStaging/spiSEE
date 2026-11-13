@@ -145,3 +145,21 @@ test_that("the niche panel opens on the stored niches' parameters", {
     z <- .refineParameters(SpatialNichePanel(), .makeTestSPE())
     expect_identical(c(z@K, z@NNiches), c(20L, 6L))
 })
+
+test_that("without a stored result, nothing is computed before Compute", {
+    spe <- .makeTestSPE(n_cells = 300)
+    calls <- 0
+    local_mocked_bindings(
+        computeNiches = function(...) { calls <<- calls + 1; stop("called") },
+        computeSpatialDomains = function(...) {
+            calls <<- calls + 1
+            stop("called")
+        })
+    p <- SpatialNichePanel(LabelCol = "SingleR_label", K = 10L, NNiches = 3L)
+    out <- .nicheOutput(p, spe)
+    p@PlotType <- "domain_map"
+    out2 <- .nicheOutput(p, spe)
+    expect_equal(calls, 0)
+    expect_identical(out$labels$title, .PRESS_COMPUTE)
+    expect_identical(out2$labels$title, .PRESS_COMPUTE)
+})

@@ -29,6 +29,7 @@ Imports:
     grDevices,
     grid,
     tools,
+    BiocGenerics,
     S4Vectors,
     SummarizedExperiment,
     SingleCellExperiment,

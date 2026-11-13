@@ -173,6 +173,11 @@ setMethod(".defineInterface", "SpatialNichePanel",
     ))
 })
 
+# Nothing is computed before Compute is pressed: without a stored result
+# made with the panel's parameters, the panel says so instead.
+.PRESS_COMPUTE <- paste("No precomputed result for these parameters:",
+    "press Compute to run it on the map selection.")
+
 # Run (or reuse) the analysis needed by the requested plot.
 .nicheData <- function(x, se) {
     x <- .storedNicheDefaults(x, se)   # panels not refined by iSEE (tests)
@@ -187,6 +192,7 @@ setMethod(".defineInterface", "SpatialNichePanel",
             !is.null(md) &&
             identical(as.integer(md$k_spatial),
                         x@K) && isTRUE(all.equal(md$lambda, x@Lambda))
+        if (!recompute && !stored_ok) stop(.PRESS_COMPUTE)
         if (recompute || !stored_ok)
             se <- computeSpatialDomains(se, k_spatial = x@K, lambda = x@Lambda)
     } else {
@@ -196,6 +202,7 @@ setMethod(".defineInterface", "SpatialNichePanel",
         stored_ok <- "niche" %in% colnames(colData(se)) && !is.null(md) &&
             identical(md$label_col, lab) && identical(as.integer(md$k), x@K) &&
             identical(as.integer(md$n_niches), x@NNiches)
+        if (!recompute && !stored_ok) stop(.PRESS_COMPUTE)
         if (recompute || !stored_ok)
             se <- computeNiches(se, label_col = lab, k = x@K,
                                 n_niches = x@NNiches)

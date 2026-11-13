@@ -51,20 +51,31 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
 
 .plotCache <- function() if (is.null(.CACHE$cache)) "app" else .CACHE$cache
 
-# Cheap identity of the data a plot is drawn from: cell and gene names,
-# coordinates, cell annotations (without the polygon geometries) and the
-# per-cell sums of the expression assay.
+# Identity of the data the plots and analyses are made from: names,
+# coordinates, cell annotations and polygons, reduced dimensions and the
+# full content of every assay (not a summary such as per-cell sums, which
+# two different matrices can share). Computed once, at launch.
+# Not included: metadata(), which only holds this fingerprint and helper
+# tables derived from the data. Assays kept on disk (DelayedArray, e.g.
+# HDF5) are identified by their file and its size and modification time.
 .datasetFingerprint <- function(se) {
-    cd <- as.data.frame(colData(se)[,
-                                    setdiff(colnames(colData(se)), "polygons"),
-                                    drop = FALSE])
-    a <- intersect(c("logcounts", "counts"),
-                    SummarizedExperiment::assayNames(se))
-    sums <- if (length(a)) Matrix::colSums(SummarizedExperiment::assay(se,
-        a[1])) else NULL
-    digest::digest(list(dimnames(se), SpatialExperiment::spatialCoords(se), cd,
-                        sums,
+    cd <- colData(se)
+    poly <- if ("polygons" %in% colnames(cd))
+        sf::st_as_binary(sf::st_geometry(cd[["polygons"]]))
+    cd <- as.data.frame(cd[, setdiff(colnames(cd), "polygons"), drop = FALSE])
+    assays <- lapply(SummarizedExperiment::assays(se), .assayIdentity)
+    digest::digest(list(dimnames(se), SpatialExperiment::spatialCoords(se),
+        cd, poly, assays, as.list(SingleCellExperiment::reducedDims(se)),
         .selectionUnit(se)), algo = "xxhash64")
+}
+
+# A DelayedArray serialises as its seed (file path, dataset) and delayed
+# operations, without reading the data: the file's size and modification
+# time stand for its content.
+.assayIdentity <- function(a) {
+    if (!methods::is(a, "DelayedArray")) return(a)
+    f <- tryCatch(unlist(BiocGenerics::path(a)), error = function(e) NULL)
+    list(a, if (length(f)) file.info(f)[, c("size", "mtime")])
 }
 
 .fingerprintOf <- function(se) {

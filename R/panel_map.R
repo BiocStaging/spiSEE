@@ -61,10 +61,10 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
 
 # Background images (built once, cached on disk)
 
+# The background depends on the cells, their coordinates and (tiles) the
+# FOVs: the dataset fingerprint covers them all.
 .mapCacheKey <- function(se, unit) {
-    xy <- SpatialExperiment::spatialCoords(se)
-    digest::digest(list(unit, dim(se), range(xy[, 1]), range(xy[, 2]),
-        utils::head(colnames(se), 50)), algo = "xxhash32")
+    digest::digest(list(unit, .fingerprintOf(se)), algo = "xxhash64")
 }
 
 .cachedMapBase <- function(se) {

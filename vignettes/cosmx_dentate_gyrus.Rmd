@@ -46,7 +46,11 @@ library(iseeSpatial)
 library(SpaceTrooper)
 library(ggplot2)
 
+# OSTA.data_load() changes the working directory on first download:
+# put it back.
+owd <- getwd()
 zip <- OSTA.data::OSTA.data_load("CosMx1k_MouseBrain2", mol = FALSE)
+setwd(owd)
 dir <- tempfile()
 unzip(zip, exdir = dir)
 list.files(dir)
