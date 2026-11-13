@@ -15,7 +15,8 @@
 # micrometres); without it the call fails, and we do not guess the unit.
 # Older SpaceTrooper versions have no such argument: nothing is added.
 .scaleBarArgs <- function(fun, se, arg = "scaleBar") {
-    if (arg %in% names(formals(fun)) && is.null(S4Vectors::metadata(se)$technology))
+    if (arg %in% names(formals(fun)) &&
+        is.null(S4Vectors::metadata(se)$technology))
         stats::setNames(list(FALSE), arg)
     else list()
 }
@@ -49,7 +50,8 @@
     color = fov)) +
         ggplot2::geom_point(size = point_size, alpha = 0.6) +
         ggplot2::scale_color_gradientn(colors = pals::jet(), name = "FOV") +
-        ggplot2::coord_fixed() + ggplot2::theme_void() + ggplot2::ggtitle("FOV overview")
+        ggplot2::coord_fixed() + ggplot2::theme_void() +
+        ggplot2::ggtitle("FOV overview")
 }
 
 # Distinct colours: glasbey, then polychrome (~66 in all); a hue ramp only
@@ -108,7 +110,7 @@
 # Cached plot rendering shared by every plot panel; re-renders only when one
 # of key_slots changes (see .panelKey).
 .renderCachedSpatialPlot <- function(x, se, output, pObjects, rObjects,
-                                     key_slots) {
+                                    key_slots) {
     plot_name <- .getEncodedName(x)
     key <- .panelKey(plot_name, pObjects, rObjects,
         function(pn) lapply(key_slots, function(s) methods::slot(pn, s)))
@@ -118,7 +120,7 @@
         {
             key()
             .safeOutput(.drawPlot(.generateOutput(pObjects$memory[[plot_name]],
-                                  se)), plot_name)
+                                    se)), plot_name)
         },
         cacheKeyExpr = list(fp, ver, plot_name, key()),
         cache = .plotCache())
@@ -126,13 +128,14 @@
 
 # One observer per simple input <-> slot pair.
 #   cast:     coerce the input value to the slot type
-#   redraw:   request a re-render (FALSE for parameters that only apply on Compute)
+#   redraw:   request a re-render (FALSE for parameters that only apply on
+#             Compute)
 #   multiple: NULL input means "nothing selected" (multi-select) instead
 #             of "ignore". A server-side selectize sends one empty value
 #             while its choices load; that one is skipped, otherwise it
 #             would wipe the initial selection before a launch-time Compute.
 .slotObserver <- function(enc, field, input, pObjects, rObjects,
-                          cast = identity, redraw = TRUE, multiple = FALSE) {
+                            cast = identity, redraw = TRUE, multiple = FALSE) {
     id <- paste0(enc, "_", field)
     state <- new.env(parent = emptyenv())
     state$loading <- multiple
@@ -174,11 +177,32 @@
 
 .selectionHelp <- function(se) {
     what <- if (.selectionUnit(se) == "fov") "FOVs" else "cells"
-    shiny::helpText(sprintf("Region: %s selected on the overview map (press Validate there). Empty = whole dataset.", what))
+    shiny::helpText(sprintf(paste("Region: %s selected on the overview map",
+        "(press Validate there). Empty = whole dataset."), what))
 }
 
 # Gene menus can hold >18,000 entries (Visium HD): fill them server-side.
 .serverSelectize <- function(session, enc, field, choices, selected) {
     shiny::updateSelectizeInput(session, paste0(enc, "_", field),
         choices = choices, selected = selected, server = TRUE)
+}
+
+# log1p(counts) as logcounts, if missing (or always, with `replace`).
+.addLogcounts <- function(spe, replace = FALSE) {
+    if (replace ||
+        !"logcounts" %in% SummarizedExperiment::assayNames(spe))
+        SingleCellExperiment::logcounts(spe) <-
+            log1p(SingleCellExperiment::counts(spe))
+    spe
+}
+
+# Draw polygons by default only when present and the region is small enough.
+.autoPolygons <- function(se) {
+    "polygons" %in% colnames(colData(se)) && ncol(se) <= .POLYGON_AUTO_MAX
+}
+
+# The panel's label column if valid, else the default one.
+.chosenLabel <- function(x, se, labs) {
+    if (!is.na(x@LabelCol) && x@LabelCol %in% labs) x@LabelCol
+    else .defaultLabelCol(se)
 }

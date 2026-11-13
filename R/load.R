@@ -5,8 +5,8 @@
 .needs <- function(pkg) {
     if (!requireNamespace(pkg, quietly = TRUE))
         stop("Package '", pkg,
-             "' is needed for this loader: BiocManager::install('", pkg, "')",
-             call. = FALSE)
+            "' is needed for this loader: BiocManager::install('", pkg, "')",
+            call. = FALSE)
 }
 
 #' Load a prepared CosMx dataset
@@ -47,8 +47,8 @@ load_xenium <- function(xenium_dir) {
     # common; readXeniumSXE() fails on them unless parquet paths are off.
     tx <- file.exists(file.path(xenium_dir, "transcripts.parquet"))
     spe <- SpatialExperimentIO::readXeniumSXE(xenium_dir,
-                                              addParquetPaths = tx)
-    SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
+                                                addParquetPaths = tx)
+    spe <- .addLogcounts(spe, replace = TRUE)
     bnd <- file.path(xenium_dir, "cell_boundaries.parquet")
     if (file.exists(bnd)) {
         # readAndAddPolygonsToSPE() needs metadata that readXeniumSXE()
@@ -90,8 +90,7 @@ load_visiumhd <- function(segmented_outputs, images = "lowres") {
         segmented_outputs = segmented_outputs))
     rd <- SummarizedExperiment::rowData(spe)
     if ("Symbol" %in% colnames(rd)) rownames(spe) <- make.unique(rd$Symbol)
-    if (!"logcounts" %in% SummarizedExperiment::assayNames(spe))
-        SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
+    spe <- .addLogcounts(spe)
     spe <- setPlatform(spe, "visiumhd")
     message(sprintf("Visium HD: %d cells, %d genes", ncol(spe), nrow(spe)))
     spe

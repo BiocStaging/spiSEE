@@ -2,18 +2,20 @@
 
 setMethod("initialize", "SpatialStatsPanel", function(.Object, ...) {
     .Object <- callNextMethod(.Object, ...)
-    if (length(.Object@PlotType)       == 0) .Object@PlotType       <- "graph_plot"
-    if (length(.Object@Genes)          == 0) .Object@Genes          <- character(0)
-    if (length(.Object@LabelCol)       == 0) .Object@LabelCol       <- NA_character_
-    if (length(.Object@K)              == 0) .Object@K              <- 6L
-    if (length(.Object@Alpha)          == 0) .Object@Alpha          <- 0.05
+    if (length(.Object@PlotType) == 0) .Object@PlotType <- "graph_plot"
+    if (length(.Object@Genes) == 0) .Object@Genes <- character(0)
+    if (length(.Object@LabelCol) == 0) .Object@LabelCol <- NA_character_
+    if (length(.Object@K) == 0) .Object@K <- 6L
+    if (length(.Object@Alpha) == 0) .Object@Alpha <- 0.05
     if (length(.Object@ComputeTrigger) == 0) .Object@ComputeTrigger <- ""
     .Object
 })
 
 setValidity("SpatialStatsPanel", function(object) {
     a <- object@Alpha
-    if (length(a) != 1 || is.na(a) || a <= 0 || a >= 1) "'Alpha' must be a single number in (0, 1)" else TRUE
+    if (length(a) != 1 || is.na(a) || a <= 0 || a >= 1)
+        "'Alpha' must be a single number in (0, 1)"
+    else TRUE
 })
 
 #' @rdname SpatialStatsPanel
@@ -34,22 +36,23 @@ setMethod(".defineOutput", "SpatialStatsPanel", function(x)
 #' @rdname SpatialStatsPanel
 #' @export
 setMethod(".defineInterface", "SpatialStatsPanel",
-          function(x, se, select_info) {
+            function(x, se, select_info) {
     enc <- .getEncodedName(x)
     labs <- .labelColumns(se)
-    lab <- if (!is.na(x@LabelCol) && x@LabelCol %in% labs) x@LabelCol else .defaultLabelCol(se)
+    lab <- .chosenLabel(x, se, labs)
     list(iSEE::collapseBox(
         id = paste0(enc, "_DataBoxOpen"), title = "Parameters", open = TRUE,
         shiny::selectInput(paste0(enc, "_PlotType"), "Statistic:",
-                           choices = .STATS_PLOTS, selected = x@PlotType),
+                            choices = .STATS_PLOTS, selected = x@PlotType),
         shiny::selectizeInput(paste0(enc, "_Genes"),
-                              "Gene(s) (Moran's I, local clusters):",
+                                "Gene(s) (Moran's I, local clusters):",
             choices = x@Genes, selected = x@Genes, multiple = TRUE),
         shiny::selectInput(paste0(enc, "_LabelCol"),
-                           "Cell-type column (join-count, L-functions):",
+                            "Cell-type column (join-count, L-functions):",
             choices = labs, selected = lab),
         .kInput(enc, x@K),
-        shiny::helpText("k sets the spatial scale: small k = immediate neighbours, large k = wider region."),
+        shiny::helpText("k sets the spatial scale: small k = immediate",
+                        "neighbours, large k = wider region."),
         shiny::numericInput(paste0(enc, "_Alpha"),
                             "Significance level (local clusters, adjusted p):",
             value = x@Alpha, min = 0.001, max = 0.5, step = 0.01),
@@ -62,7 +65,8 @@ setMethod(".defineInterface", "SpatialStatsPanel",
 #' @export
 setMethod(".generateOutput", "SpatialStatsPanel", function(x, se, ...) {
     if (!nzchar(x@ComputeTrigger))
-        return(.notAvailablePlot("Choose a statistic and a region, then press Compute."))
+        return(.notAvailablePlot(
+            "Choose a statistic and a region, then press Compute."))
     lab <- if (!is.na(x@LabelCol)) x@LabelCol else .defaultLabelCol(se)
     .computeSpatialStat(.subsetBySelection(se, x@Selection), x@PlotType,
         genes = x@Genes, group_col = lab, k = x@K, alpha = x@Alpha)
@@ -79,14 +83,14 @@ setMethod(".refineParameters", "SpatialStatsPanel", function(x, se) {
 #' @rdname SpatialStatsPanel
 #' @export
 setMethod(".renderOutput", "SpatialStatsPanel",
-          function(x, se, output, pObjects, rObjects)
+            function(x, se, output, pObjects, rObjects)
     .renderCachedSpatialPlot(x, se, output, pObjects, rObjects,
-                             "ComputeTrigger"))
+                            "ComputeTrigger"))
 
 #' @rdname SpatialStatsPanel
 #' @export
 setMethod(".createObservers", "SpatialStatsPanel",
-          function(x, se, input, session, pObjects, rObjects) {
+            function(x, se, input, session, pObjects, rObjects) {
     callNextMethod()
     enc <- .getEncodedName(x)
     genes <- .geneChoices(se)
@@ -95,13 +99,13 @@ setMethod(".createObservers", "SpatialStatsPanel",
     .serverSelectize(session, enc, "Genes", genes, sel)
     # Parameters only take effect on Compute (the cache key is ComputeTrigger).
     .slotObserver(enc, "PlotType", input, pObjects, rObjects,
-                  cast = as.character, redraw = FALSE)
+                    cast = as.character, redraw = FALSE)
     .slotObserver(enc, "Genes", input, pObjects, rObjects, cast = as.character,
-                  redraw = FALSE, multiple = TRUE)
+                    redraw = FALSE, multiple = TRUE)
     .slotObserver(enc, "LabelCol", input, pObjects, rObjects,
-                  cast = as.character, redraw = FALSE)
+                    cast = as.character, redraw = FALSE)
     .slotObserver(enc, "K", input, pObjects, rObjects, cast = as.integer,
-                  redraw = FALSE)
+                    redraw = FALSE)
     .slotObserver(enc, "Alpha", input, pObjects, rObjects, redraw = FALSE,
         cast = function(v) {
             v <- as.numeric(v)
@@ -131,8 +135,8 @@ setMethod(".createObservers", "SpatialStatsPanel",
 #' SpatialStatsPanel(PlotType = "joincount_plot", K = 10)
 #' @export
 SpatialStatsPanel <- function(PlotType = "graph_plot", Genes = character(0),
-                              LabelCol = NA_character_, K = 6L, Alpha = 0.05,
-                              ...)
+                                LabelCol = NA_character_, K = 6L, Alpha = 0.05,
+                                ...)
     new("SpatialStatsPanel", PlotType = PlotType, Genes = Genes,
         LabelCol = LabelCol,
         K = as.integer(K), Alpha = as.numeric(Alpha), ...)
@@ -141,9 +145,9 @@ SpatialStatsPanel <- function(PlotType = "graph_plot", Genes = character(0),
 
 setMethod("initialize", "SVGPanel", function(.Object, ...) {
     .Object <- callNextMethod(.Object, ...)
-    if (length(.Object@TopN)           == 0) .Object@TopN           <- 200L
-    if (length(.Object@K)              == 0) .Object@K              <- 6L
-    if (length(.Object@LinkedPanel)    == 0) .Object@LinkedPanel    <- ""
+    if (length(.Object@TopN) == 0) .Object@TopN <- 200L
+    if (length(.Object@K) == 0) .Object@K <- 6L
+    if (length(.Object@LinkedPanel) == 0) .Object@LinkedPanel <- ""
     if (length(.Object@ComputeTrigger) == 0) .Object@ComputeTrigger <- ""
     .Object
 })
@@ -166,7 +170,7 @@ setMethod(".panelColor", "SVGPanel", function(x) "#F7A11A")
 #' @rdname SVGPanel
 #' @export
 setMethod(".defineOutput", "SVGPanel",
-          function(x) .withBusy(DT::dataTableOutput(.getEncodedName(x))))
+            function(x) .withBusy(DT::dataTableOutput(.getEncodedName(x))))
 
 #' @rdname SVGPanel
 #' @export
@@ -180,7 +184,8 @@ setMethod(".defineInterface", "SVGPanel", function(x, se, select_info) {
         .kInput(enc, x@K),
         .selectionHelp(se),
         .computeButton(enc),
-        shiny::helpText("Click a row to show that gene in the linked Spatial Plot panel.")))
+        shiny::helpText("Click a row to show that gene in the linked",
+                        "Spatial Plot panel.")))
 })
 
 #' @rdname SVGPanel
@@ -190,7 +195,7 @@ setMethod(".generateOutput", "SVGPanel", function(x, se, ...) {
         return(structure(data.frame(gene = character(0), moran_i = numeric(0)),
             reason = "Press Compute to rank genes in the current selection."))
     .computeSVGRanking(.subsetBySelection(se, x@Selection), top_n = x@TopN,
-                       k = x@K)
+                        k = x@K)
 })
 
 #' @rdname SVGPanel
@@ -204,7 +209,7 @@ setMethod(".refineParameters", "SVGPanel", function(x, se) {
 #' @rdname SVGPanel
 #' @export
 setMethod(".renderOutput", "SVGPanel",
-          function(x, se, output, pObjects, rObjects) {
+            function(x, se, output, pObjects, rObjects) {
     enc <- .getEncodedName(x)
     # Rebuilt only on Compute: re-sending the table resets its page, order and
     # selected row.
@@ -216,16 +221,17 @@ setMethod(".renderOutput", "SVGPanel",
         x <- pObjects$memory[[enc]]
         tbl <- .safeOutput(if (nzchar(trig))
             .cachedResult(digest::digest(list(fp, ver, "svg", trig),
-                                         algo = "xxhash64"),
-                          .generateOutput(x, se))
+                                        algo = "xxhash64"),
+                            .generateOutput(x, se))
         else .generateOutput(x, se), enc)
         assign(enc, tbl, envir = .svgTables(pObjects))
         why <- attr(tbl, "reason")
         names(tbl) <- c("Gene", "Moran's I")
         DT::formatRound(DT::datatable(tbl, selection = "single",
-                                      rownames = FALSE,
+                                        rownames = FALSE,
             options = list(pageLength = 15, order = list(list(1, "desc")),
-                language = list(emptyTable = if (is.null(why)) "No result." else why))),
+                language = list(
+                    emptyTable = if (is.null(why)) "No result." else why))),
         "Moran's I", 3)
     })
 })
@@ -233,13 +239,13 @@ setMethod(".renderOutput", "SVGPanel",
 #' @rdname SVGPanel
 #' @export
 setMethod(".createObservers", "SVGPanel",
-          function(x, se, input, session, pObjects, rObjects) {
+            function(x, se, input, session, pObjects, rObjects) {
     callNextMethod()
     enc <- .getEncodedName(x)
     .slotObserver(enc, "TopN", input, pObjects, rObjects, cast = as.integer,
-                  redraw = FALSE)
+                    redraw = FALSE)
     .slotObserver(enc, "K", input, pObjects, rObjects, cast = as.integer,
-                  redraw = FALSE)
+                    redraw = FALSE)
     .computeObserver(enc, input, pObjects, rObjects)
     shiny::observeEvent(input[[paste0(enc, "_rows_selected")]],
         {

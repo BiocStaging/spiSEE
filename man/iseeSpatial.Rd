@@ -60,7 +60,8 @@ spatial statistics, spatially variable genes, niches and domains.
 spe <- SpatialExperiment::SpatialExperiment(
     assays = list(counts = matrix(rpois(200, 3), 10, 20,
         dimnames = list(paste0("g", 1:10), paste0("c", 1:20)))),
-    spatialCoords = matrix(runif(40), 20, 2, dimnames = list(NULL, c("x", "y"))))
+    spatialCoords = matrix(runif(40), 20, 2,
+        dimnames = list(NULL, c("x", "y"))))
 app <- iseeSpatial(spe, mode = "qc", cache = FALSE)
 if (interactive()) shiny::runApp(app)
 }

@@ -40,7 +40,7 @@ setMethod(".refineParameters", "SpatialPlotPanel", function(x, se) {
     # Default on only when polygons exist and the dataset is small enough to
     # draw them: thousands of polygons per panel freeze the browser.
     if (!is.null(x) && isTRUE(is.na(x@UsePolygons)))
-        x@UsePolygons <- "polygons" %in% colnames(colData(se)) && ncol(se) <= .POLYGON_AUTO_MAX
+        x@UsePolygons <- .autoPolygons(se)
     x
 })
 
@@ -58,13 +58,14 @@ setMethod(".defineOutput", "SpatialPlotPanel", function(x)
 # Menu content: annotations, then QC metrics, then genes.
 .colorByChoices <- function(se) {
     c(.labelColumns(se), grep("^PC", colnames(colData(se)), value = TRUE),
-      .qcMetrics(se), .geneChoices(se))
+        .qcMetrics(se), .geneChoices(se))
 }
 
 # "" means: first label column, else first QC metric, else first gene.
 .resolveColorBy <- function(x, se) {
     cb <- x@ColorBy
-    if (nzchar(cb) && (cb %in% colnames(colData(se)) || cb %in% rownames(se))) return(cb)
+    if (nzchar(cb) && cb %in% c(colnames(colData(se)), rownames(se)))
+        return(cb)
     cand <- c(.defaultLabelCol(se), .qcMetrics(se), .geneChoices(se))
     cand[!is.na(cand)][1]
 }
@@ -78,14 +79,14 @@ setMethod(".defineInterface", "SpatialPlotPanel", function(x, se, select_info) {
         open = TRUE,
         # filled server-side in .createObservers (gene lists can be very long)
         shiny::selectizeInput(paste0(enc, "_ColorBy"),
-                              "Colour by (annotation, QC metric or gene):",
+                                "Colour by (annotation, QC metric or gene):",
             choices = .resolveColorBy(x, se),
             selected = .resolveColorBy(x, se)),
         shiny::checkboxInput(paste0(enc, "_UsePolygons"),
-                             "Draw cell polygons (slow on large regions)",
+                            "Draw cell polygons (slow on large regions)",
             value = isTRUE(x@UsePolygons)),
         shiny::sliderInput(paste0(enc, "_PointSize"), "Point size:", min = 0.1,
-                           max = 3,
+                            max = 3,
             value = x@PointSize, step = 0.1),
         .selectionHelp(se)
     ))
@@ -97,13 +98,14 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
     colorby <- .resolveColorBy(x, se)
     se <- .subsetBySelection(se, x@Selection)
     if (ncol(se) == 0) return(.notAvailablePlot("No cells in this selection"))
-    if (identical(colorby,
-                  "fov") && "fov" %in% colnames(colData(se))) return(.plotFOVOverview(se))
+    if (identical(colorby, "fov") && "fov" %in% colnames(colData(se)))
+        return(.plotFOVOverview(se))
     se <- .forceCategorical(se, colorby)
     label <- colorby
     pal_col <- paste0(label, "_colors")
     if (!colorby %in% colnames(colData(se)) && colorby %in% rownames(se))
-        colData(se)[[colorby]] <- as.numeric(SingleCellExperiment::logcounts(se)[colorby, ])
+        colData(se)[[colorby]] <-
+            as.numeric(SingleCellExperiment::logcounts(se)[colorby, ])
     # SpaceTrooper rebuilds a data.frame from colData, which renames "MT-ATP6"
     # to "MT.ATP6" and breaks the lookup: plot a copy under a safe name.
     if (!identical(colorby, make.names(colorby))) {
@@ -126,13 +128,15 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
         # Without a "polygons" column there is nothing to draw: say so rather
         # than hang the panel silently.
         if (!"polygons" %in% colnames(colData(se)))
-            return(.notAvailablePlot("No cell polygons loaded for this dataset: untick 'Draw cell polygons'"))
+            return(.notAvailablePlot(paste(
+                "No cell polygons loaded for this dataset:",
+                "untick 'Draw cell polygons'")))
         p <- .polygonPlot(se, colorby, args$palette) +
             ggplot2::labs(fill = label)
     } else {
         p <- do.call(SpaceTrooper::plotCentroids,
             c(args, size = x@PointSize,
-              .scaleBarArgs(SpaceTrooper::plotCentroids, se)))
+                .scaleBarArgs(SpaceTrooper::plotCentroids, se)))
         if (!identical(label, colorby)) p <- p + ggplot2::labs(colour = label,
             fill = label)
     }
@@ -151,9 +155,9 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
     if (!many && !long) return(p)
     ncol <- if (many && max(nchar(lv)) <= 45) 2 else 1
     p + ggplot2::theme(legend.position = "bottom",
-                       legend.text = ggplot2::element_text(size = 8),
-                       legend.title = ggplot2::element_blank(),
-                       legend.key.size = ggplot2::unit(3, "mm")) +
+                        legend.text = ggplot2::element_text(size = 8),
+                        legend.title = ggplot2::element_blank(),
+                        legend.key.size = ggplot2::unit(3, "mm")) +
         ggplot2::guides(colour = ggplot2::guide_legend(ncol = ncol,
                             override.aes = list(size = 2, shape = 16)),
                         fill = ggplot2::guide_legend(ncol = ncol))
@@ -168,7 +172,7 @@ setMethod(".generateOutput", "SpatialPlotPanel", function(x, se, ...) {
 #' @rdname SpatialPlotPanel
 #' @export
 setMethod(".renderOutput", "SpatialPlotPanel",
-          function(x, se, output, pObjects, rObjects) {
+            function(x, se, output, pObjects, rObjects) {
     .renderCachedSpatialPlot(x, se, output, pObjects, rObjects,
         c("ColorBy", "UsePolygons", "PointSize", "Selection"))
 })
@@ -176,17 +180,17 @@ setMethod(".renderOutput", "SpatialPlotPanel",
 #' @rdname SpatialPlotPanel
 #' @export
 setMethod(".createObservers", "SpatialPlotPanel",
-          function(x, se, input, session, pObjects, rObjects) {
+            function(x, se, input, session, pObjects, rObjects) {
     callNextMethod()
     enc <- .getEncodedName(x)
     .serverSelectize(session, enc, "ColorBy", .colorByChoices(se),
-                     .resolveColorBy(x, se))
+                    .resolveColorBy(x, se))
     .slotObserver(enc, "ColorBy", input, pObjects, rObjects,
-                  cast = .castColorBy)
+                    cast = .castColorBy)
     .slotObserver(enc, "UsePolygons", input, pObjects, rObjects,
-                  cast = as.logical)
+                    cast = as.logical)
     .slotObserver(enc, "PointSize", input, pObjects, rObjects,
-                  cast = as.numeric)
+                    cast = as.numeric)
 })
 
 #' Spatial plot of cells coloured by annotation, QC metric or gene
@@ -204,7 +208,7 @@ setMethod(".createObservers", "SpatialPlotPanel",
 #' SpatialPlotPanel(ColorBy = "total")
 #' @export
 SpatialPlotPanel <- function(ColorBy = "", UsePolygons = NA, PointSize = 0.5,
-                             ...)
+                            ...)
     new("SpatialPlotPanel", ColorBy = ColorBy, UsePolygons = UsePolygons,
         PointSize = PointSize, ...)
 
@@ -236,7 +240,7 @@ setMethod(".defineInterface", "FOVZoomPanel", function(x, se, select_info) {
         id = paste0(enc, "_DataBoxOpen"), title = "Data parameters",
         open = TRUE,
         shiny::selectInput(paste0(enc, "_ColorBy"), "Colour polygons by:",
-                           choices = m,
+                            choices = m,
             selected = if (x@ColorBy %in% m) x@ColorBy else m[1]),
         .selectionHelp(se)))
 })
@@ -248,9 +252,12 @@ setMethod(".generateOutput", "FOVZoomPanel", function(x, se, ...) {
         return(.notAvailablePlot("FOV zoom needs FOV-based data (CosMx)"))
     ids <- .splitIDs(x@Selection)
     fovs <- as.integer(ids[grepl("^[0-9]+$", ids)])
-    if (length(fovs) == 0) return(.notAvailablePlot("Select FOVs on the map, then press Validate."))
+    if (length(fovs) == 0)
+        return(.notAvailablePlot(
+            "Select FOVs on the map, then press Validate."))
     if (!"polygons" %in% colnames(colData(se)))
-        return(.notAvailablePlot("FOV zoom draws cell polygons; this dataset has none."))
+        return(.notAvailablePlot(
+            "FOV zoom draws cell polygons; this dataset has none."))
     cb <- if (nzchar(x@ColorBy)) x@ColorBy else .qcMetrics(se)[1]
     do.call(SpaceTrooper::plotZoomFovsMap,
         c(list(se, fovs = fovs, colourBy = cb),
@@ -260,18 +267,18 @@ setMethod(".generateOutput", "FOVZoomPanel", function(x, se, ...) {
 #' @rdname FOVZoomPanel
 #' @export
 setMethod(".renderOutput", "FOVZoomPanel",
-          function(x, se, output, pObjects, rObjects)
+            function(x, se, output, pObjects, rObjects)
     .renderCachedSpatialPlot(x, se, output, pObjects, rObjects,
-                             c("ColorBy", "Selection")))
+                            c("ColorBy", "Selection")))
 
 #' @rdname FOVZoomPanel
 #' @export
 setMethod(".createObservers", "FOVZoomPanel",
-          function(x, se, input, session, pObjects, rObjects) {
+            function(x, se, input, session, pObjects, rObjects) {
     callNextMethod()
     enc <- .getEncodedName(x)
     .slotObserver(enc, "ColorBy", input, pObjects, rObjects,
-                  cast = as.character)
+                    cast = as.character)
 })
 
 #' Zoom on selected FOVs (CosMx)

@@ -27,7 +27,7 @@
 #' }
 #' @export
 plotSpatialCells <- function(spe, colour_by, polygons = TRUE, palette = NULL,
-                             ncol = NULL, borders = FALSE, point_size = 0.3) {
+                            ncol = NULL, borders = FALSE, point_size = 0.3) {
     stopifnot(methods::is(spe, "SpatialExperiment"), length(colour_by) >= 1)
     vals <- lapply(colour_by, function(v) .cellValues(spe, v))
     num <- vapply(vals, is.numeric, logical(1))
@@ -72,7 +72,7 @@ plotSpatialCells <- function(spe, colour_by, polygons = TRUE, palette = NULL,
     }
     if (v %in% rownames(spe)) {
         a <- intersect(c("logcounts", "counts"),
-                       SummarizedExperiment::assayNames(spe))
+                        SummarizedExperiment::assayNames(spe))
         if (!length(a)) stop("no logcounts or counts assay for gene ", v)
         return(as.numeric(SummarizedExperiment::assay(spe, a[1])[v, ]))
     }
@@ -87,12 +87,12 @@ plotSpatialCells <- function(spe, colour_by, polygons = TRUE, palette = NULL,
         df <- sf::st_sf(panel = panel, value = value, geometry = rep(geo, n))
         return(ggplot2::ggplot(df) +
             ggplot2::geom_sf(ggplot2::aes(fill = value),
-                             colour = if (borders) "grey20" else NA,
-                             linewidth = 0.05))
+                            colour = if (borders) "grey20" else NA,
+                            linewidth = 0.05))
     }
     xy <- SpatialExperiment::spatialCoords(spe)
     df <- data.frame(x = rep(xy[, 1], n), y = rep(xy[, 2], n),
-                     panel = panel, value = value)
+                    panel = panel, value = value)
     ggplot2::ggplot(df, ggplot2::aes(x = x, y = y, colour = value)) +
         ggplot2::geom_point(size = point_size) +
         ggplot2::coord_fixed()

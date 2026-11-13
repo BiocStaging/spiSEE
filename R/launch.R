@@ -30,7 +30,8 @@
 #' spe <- SpatialExperiment::SpatialExperiment(
 #'     assays = list(counts = matrix(rpois(200, 3), 10, 20,
 #'         dimnames = list(paste0("g", 1:10), paste0("c", 1:20)))),
-#'     spatialCoords = matrix(runif(40), 20, 2, dimnames = list(NULL, c("x", "y"))))
+#'     spatialCoords = matrix(runif(40), 20, 2,
+#'         dimnames = list(NULL, c("x", "y"))))
 #' app <- iseeSpatial(spe, mode = "qc", cache = FALSE)
 #' if (interactive()) shiny::runApp(app)
 #' @export
@@ -38,13 +39,12 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
                         selection = "", initial = NULL,
                         cache = getOption("iseeSpatial.cache", TRUE),
                         cache_size = getOption("iseeSpatial.cache_size",
-                                               1024^3), ...) {
+                                                1024^3), ...) {
     stopifnot(methods::is(spe, "SpatialExperiment"))
     mode <- match.arg(mode)
     if (!is.null(platform)) spe <- setPlatform(spe, platform)
-    if (!"logcounts" %in% SummarizedExperiment::assayNames(spe) &&
-        "counts" %in% SummarizedExperiment::assayNames(spe))
-        SingleCellExperiment::logcounts(spe) <- log1p(SingleCellExperiment::counts(spe))
+    if ("counts" %in% SummarizedExperiment::assayNames(spe))
+        spe <- .addLogcounts(spe)
     .configurePlotCache(cache, cache_size)
     S4Vectors::metadata(spe)$iseeSpatial_gene_order <- .geneOrder(spe)
     S4Vectors::metadata(spe)$iseeSpatial_fingerprint <- .datasetFingerprint(spe)
@@ -73,11 +73,12 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
     if (mode == "qc") {
         panels <- list(SpatialMapPanel(CommittedIDs = selection),
             SpatialPlotPanel(ColorBy = if (length(qc)) qc[1] else "",
-                             Selection = selection),
+                            Selection = selection),
             SpatialQCPanel(Metric = if (length(qc)) qc[1] else "",
-                           Selection = selection))
-        if (length(area)) panels <- append(panels,
-                                           list(SpatialQCPanel(Metric = area[1], Selection = selection)))
+                            Selection = selection))
+        if (length(area))
+            panels <- append(panels, list(
+                SpatialQCPanel(Metric = area[1], Selection = selection)))
         # SpaceTrooper's quality score: QScore (devel) or QC_score (older).
         score <- intersect(c("QScore", "QC_score"), qc)
         if (tiles) panels <- append(panels, list(FOVZoomPanel(
@@ -90,7 +91,7 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
     gene <- .geneChoices(spe)[1]
     list(SpatialMapPanel(CommittedIDs = selection),
         SpatialPlotPanel(ColorBy = if (!is.na(lab)) lab else "",
-                         Selection = selection),
+                        Selection = selection),
         SpatialPlotPanel(ColorBy = gene, Selection = selection),
         SpatialStatsPanel(Genes = gene, LabelCol = lab, Selection = selection),
         SVGPanel(LinkedPanel = "SpatialPlotPanel2", Selection = selection),

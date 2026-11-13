@@ -71,7 +71,8 @@ NULL
     genes <- intersect(genes, rownames(sfe))
     gene_plots <- c("localmoran_plot", "moran_plot", "locclust_plot")
     if (plot_type %in% gene_plots && length(genes) == 0)
-        return(.notAvailablePlot("Choose at least one gene present in the data"))
+        return(.notAvailablePlot(
+            "Choose at least one gene present in the data"))
 
     switch(plot_type,
         graph_plot = Voyager::plotColGraph(sfe, colGraphName = "knn",
@@ -135,13 +136,13 @@ NULL
     SpatialFeatureExperiment::localResults(sfe)[["localmoran"]][[1]] <- lm
     # The usual LISA colours: hot spots red, cold spots blue, the rest grey.
     cols <- c(`High-High` = "#D7191C", `Low-Low` = "#2C7BB6",
-              `High-Low` = "#FDAE61", `Low-High` = "#ABD9E9",
-              `non-significant` = "grey85")
+                `High-Low` = "#FDAE61", `Low-High` = "#ABD9E9",
+                `non-significant` = "grey85")
     p <- Voyager::plotLocalResult(sfe, features = gene, name = "localmoran",
         attribute = "locClust", colGeometryName = 1)
     # Replace Voyager's colour scale (adding a second one prints a message).
     p$scales$scales <- Filter(function(s) !"colour" %in% s$aesthetics,
-                              p$scales$scales)
+                                p$scales$scales)
     p + ggplot2::scale_colour_manual(values = cols, na.value = "grey85") +
         ggplot2::guides(colour = ggplot2::guide_legend(
             override.aes = list(size = 3))) +
@@ -199,11 +200,14 @@ NULL
                                                 moran_i = numeric(0)),
                                                 reason = why)
     if (ncol(se) < max(5, k + 1))
-        return(empty(sprintf("Too few cells in this selection (%d) for k = %d.", ncol(se), k)))
+        return(empty(sprintf(
+            "Too few cells in this selection (%d) for k = %d.", ncol(se), k)))
     cand <- S4Vectors::metadata(se)$gene_ranks
     if (is.null(cand)) {
-        a <- if ("counts" %in% SummarizedExperiment::assayNames(se)) "counts" else "logcounts"
-        cand <- rownames(se)[order(Matrix::rowSums(SummarizedExperiment::assay(se, a)), decreasing = TRUE)]
+        a <- if ("counts" %in% SummarizedExperiment::assayNames(se))
+            "counts" else "logcounts"
+        tot <- Matrix::rowSums(SummarizedExperiment::assay(se, a))
+        cand <- rownames(se)[order(tot, decreasing = TRUE)]
     }
     cand <- intersect(utils::head(cand, top_n), rownames(se))
     if (length(cand) == 0) return(empty("No genes to rank in this dataset."))
@@ -213,6 +217,7 @@ NULL
     tbl <- data.frame(gene = rownames(m), moran_i = m$moran, row.names = NULL)
     tbl <- tbl[!is.na(tbl$moran_i), , drop = FALSE]
     if (nrow(tbl) == 0)
-        return(empty("Moran's I could not be computed for any gene (no variation in this selection?)."))
+        return(empty(paste("Moran's I could not be computed for any gene",
+            "(no variation in this selection?).")))
     tbl[order(-tbl$moran_i), , drop = FALSE]
 }

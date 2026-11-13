@@ -53,7 +53,7 @@ setClass("SpatialMapPanel", contains = "Panel",
 #' @export
 setClass("SpatialPlotPanel", contains = "SpatialPanelBase",
     slots = c(ColorBy = "character", UsePolygons = "logical",
-              PointSize = "numeric"))
+                PointSize = "numeric"))
 
 #' @inheritParams SpatialMapPanel
 #' @rdname FOVZoomPanel
@@ -77,7 +77,7 @@ setClass("FOVStatsPanel", contains = "SpatialPanelBase")
 #' @export
 setClass("SpatialStatsPanel", contains = "SpatialPanelBase",
     slots = c(PlotType = "character", Genes = "character",
-              LabelCol = "character",
+                LabelCol = "character",
         K = "integer", Alpha = "numeric", ComputeTrigger = "character"))
 
 #' @inheritParams SpatialMapPanel

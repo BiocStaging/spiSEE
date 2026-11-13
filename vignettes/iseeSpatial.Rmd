@@ -5,19 +5,19 @@ author:
 - name: Dario Righelli
 date: "`r Sys.Date()`"
 output:
-  BiocStyle::html_document:
-    toc_float: true
+    BiocStyle::html_document:
+        toc_float: true
 vignette: >
-  %\VignetteIndexEntry{1. Get started with iseeSpatial}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+    %\VignetteIndexEntry{1. Get started with iseeSpatial}
+    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
-                      fig.height = 4.5, message = FALSE, dev = "jpeg",
-                      dev.args = list(jpeg = list(quality = 75)), dpi = 100,
-                      fig.retina = 1)
+                        fig.height = 4.5, message = FALSE, dev = "jpeg",
+                        dev.args = list(jpeg = list(quality = 75)), dpi = 100,
+                        fig.retina = 1)
 ```
 
 # Introduction
@@ -90,31 +90,45 @@ getPlatform(spe)
 ## How the app works
 
 * **Select a region** on the overview map: click FOV tiles (CosMx) or
-  single cells (Xenium, Visium HD and any other `SpatialExperiment`), or
-  drag a box, then press *Validate*. Every spatial panel follows. *Clear*
-  goes back to the whole dataset; a second click on a selected tile or
-  cell removes it. A selection can also be given at launch with
-  `selection =`.
+    single cells (Xenium, Visium HD and any other `SpatialExperiment`), or
+    drag a box, then press *Validate*. Every spatial panel follows. *Clear*
+    goes back to the whole dataset; a second click on a selected tile or
+    cell removes it. A selection can also be given at launch with
+    `selection =`.
 * **Compute when ready**: statistics, gene rankings and niches recompute
-  only when *Compute* is pressed, on the current region and parameters.
-  Results computed beforehand and stored in the object (niches, domains)
-  are shown at once.
+    only when *Compute* is pressed, on the current region and parameters.
+    Results computed beforehand and stored in the object (niches, domains)
+    are shown at once.
 * **Combine freely**: the spatial panels work next to any iSEE panel
-  (reduced dimensions, feature assays, tables), and *Organize panels* adds
-  or removes panels while the app runs.
+    (reduced dimensions, feature assays, tables), and *Organize panels* adds
+    or removes panels while the app runs.
 
 # The panels
 
-| Panel | Shows | Main parameters |
-|---|---|---|
-| `SpatialMapPanel` | the tissue as FOV tiles (CosMx) or cells; region selection | — |
-| `SpatialPlotPanel` | cells or polygons coloured by an annotation, a QC metric or a gene | `ColorBy`, `UsePolygons`, `PointSize` |
-| `SpatialQCPanel` | histogram of a QC metric, SpaceTrooper's outlier fences and the number of flagged cells | `Metric`, `UseFences` |
-| `FOVZoomPanel` (CosMx) | the selected FOVs and their cells coloured by a QC metric | `ColorBy` |
-| `FOVStatsPanel` (CosMx) | per-FOV summaries, if `metadata(spe)$fov_stats` is present | — |
-| `SpatialStatsPanel` | spatial statistics, listed below | `PlotType`, `Genes`, `LabelCol`, `K`, `Alpha` |
-| `SVGPanel` | genes ranked by Moran's I on the region; a click shows the gene in a linked spatial plot | `TopN`, `K`, `LinkedPanel` |
-| `SpatialNichePanel` | niches, neighbourhood composition and entropy, spatial domains | `PlotType`, `LabelCol`, `K`, `NNiches`, `Lambda` |
+```{r panel-table, echo = FALSE}
+panels <- data.frame(
+    Panel = c("`SpatialMapPanel`", "`SpatialPlotPanel`", "`SpatialQCPanel`",
+                "`FOVZoomPanel` (CosMx)", "`FOVStatsPanel` (CosMx)",
+                "`SpatialStatsPanel`", "`SVGPanel`", "`SpatialNichePanel`"),
+    Shows = c(
+        "the tissue as FOV tiles (CosMx) or cells; region selection",
+        "cells or polygons coloured by an annotation, a QC metric or a gene",
+        paste("histogram of a QC metric, SpaceTrooper's outlier fences and",
+                "the number of flagged cells"),
+        "the selected FOVs and their cells coloured by a QC metric",
+        "per-FOV summaries, if `metadata(spe)$fov_stats` is present",
+        "spatial statistics, listed below",
+        paste("genes ranked by Moran's I on the region; a click shows the",
+                "gene in a linked spatial plot"),
+        "niches, neighbourhood composition and entropy, spatial domains"),
+    `Main parameters` = c(
+        "—", "`ColorBy`, `UsePolygons`, `PointSize`", "`Metric`, `UseFences`",
+        "`ColorBy`", "—", "`PlotType`, `Genes`, `LabelCol`, `K`, `Alpha`",
+        "`TopN`, `K`, `LinkedPanel`",
+        "`PlotType`, `LabelCol`, `K`, `NNiches`, `Lambda`"),
+    check.names = FALSE)
+knitr::kable(panels)
+```
 
 The statistics panel offers:
 
@@ -163,7 +177,7 @@ dimension:
 ```{r composition}
 comp <- reducedDim(spe, "NicheComposition")
 round(sort(colMeans(comp[spe$cell_type == "TAMs", ], na.rm = TRUE),
-           decreasing = TRUE)[1:4], 2)
+            decreasing = TRUE)[1:4], 2)
 ```
 
 Spatial domains cluster expression smoothed over the neighbourhood
@@ -174,7 +188,7 @@ expression clusters, also returned as `expr_cluster`). They need a PCA:
 pca <- prcomp(t(as.matrix(logcounts(spe))), rank. = 15)
 reducedDim(spe, "PCA") <- pca$x
 spe <- computeSpatialDomains(spe, k_spatial = 15, lambda = 0.5,
-                             resolution = 0.5)
+                            resolution = 0.5)
 table(domain = spe$spatial_domain, expression = spe$expr_cluster)
 ```
 
@@ -191,20 +205,22 @@ panels <- list(
     SpatialPlotPanel(ColorBy = "cell_type", UsePolygons = TRUE),
     SpatialQCPanel(Metric = "Area_um"),
     SpatialStatsPanel(PlotType = "joincount_heatmap_plot",
-                      LabelCol = "cell_type", K = 15L,
-                      ComputeTrigger = "launch"),
+                        LabelCol = "cell_type", K = 15L,
+                        ComputeTrigger = "launch"),
     iSEE::ReducedDimensionPlot(Type = "PCA", ColorBy = "Column data",
-                               ColorByColumnData = "niche"))
+                                ColorByColumnData = "niche"))
 app <- iseeSpatial(spe, initial = panels, cache = FALSE)
 ```
 
 Each panel also renders as a static plot, useful for reports:
 
-```{r static, dev = "svglite", crop = NULL, fig.cap = "The join-count heatmap of the custom layout, rendered outside the app."}
+```{r static, dev = "svglite", crop = NULL}
+#| fig.cap = paste("The join-count heatmap of the custom layout, rendered",
+#|     "outside the app.")
 p <- iSEE::.generateOutput(
     SpatialStatsPanel(PlotType = "joincount_heatmap_plot",
-                      LabelCol = "cell_type", K = 15L,
-                      ComputeTrigger = "launch"), spe)
+                        LabelCol = "cell_type", K = 15L,
+                        ComputeTrigger = "launch"), spe)
 grid::grid.draw(p$gtable)
 ```
 

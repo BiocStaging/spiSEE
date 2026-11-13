@@ -6,7 +6,7 @@
     cosmx = list(
         name = "CosMx", unit = "fov", region_col = "fov",
         qc_metrics = c("total", "detected", "Area_um", "QC_score", "QScore",
-                       "log2CountArea",
+                        "log2CountArea",
             "Mean.DAPI", "Mean.GFAP", "dist_border"),
         label_cols = c("SingleR_label"),
         detect = c("fov", "Area_um")),
@@ -50,7 +50,7 @@
 #' @export
 setPlatform <- function(spe,
                         platform = c("cosmx", "xenium", "visiumhd",
-                                     "generic")) {
+                                    "generic")) {
     platform <- match.arg(platform)
     S4Vectors::metadata(spe)$iseeSpatial_platform <- platform
     spe
@@ -73,8 +73,9 @@ getPlatform <- function(spe) {
 # "fov" (tiles; CosMx-style map) or "cell" (point map).
 .selectionUnit <- function(se) {
     info <- .platformInfo(se)
-    if (identical(info$unit,
-                  "fov") && info$region_col %in% colnames(colData(se))) "fov" else "cell"
+    tiles <- identical(info$unit, "fov") &&
+        info$region_col %in% colnames(colData(se))
+    if (tiles) "fov" else "cell"
 }
 
 # Numeric colData columns usable as QC metrics: platform ones first, then any
@@ -82,7 +83,7 @@ getPlatform <- function(spe) {
 .qcMetrics <- function(se) {
     cd <- colData(se)
     num <- colnames(cd)[vapply(cd, function(v) is.numeric(v) && !is.factor(v),
-                               logical(1))]
+                                logical(1))]
     num <- setdiff(num, c("niche_entropy"))
     known <- intersect(.platformInfo(se)$qc_metrics, num)
     c(known, setdiff(num, c(known, grep("_outlier", num, value = TRUE))))
@@ -99,7 +100,7 @@ getPlatform <- function(spe) {
     }, logical(1))
     cand <- setdiff(colnames(cd)[ok], c("sample_id", "polygons"))
     known <- intersect(c(.platformInfo(se)$label_cols, "cell_type",
-                         "celltype"), cand)
+                        "celltype"), cand)
     c(known, setdiff(cand, known))
 }
 
@@ -116,5 +117,5 @@ getPlatform <- function(spe) {
     r <- S4Vectors::metadata(se)$gene_ranks
     if (is.null(r)) r <- S4Vectors::metadata(se)$iseeSpatial_gene_order
     if (!is.null(r)) c(intersect(r, rownames(se)),
-                       setdiff(sort(rownames(se)), r)) else sort(rownames(se))
+                        setdiff(sort(rownames(se)), r)) else sort(rownames(se))
 }

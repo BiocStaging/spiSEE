@@ -27,13 +27,13 @@ NULL
 # Directed k-NN adjacency (n x n, dgCMatrix, x = 1): row i has a 1 in the
 # columns of its k nearest neighbours (self excluded).
 .knnAdjacency <- function(coords, k = 10L,
-                          BNPARAM = BiocNeighbors::KmknnParam()) {
+                            BNPARAM = BiocNeighbors::KmknnParam()) {
     coords <- as.matrix(coords)
     n <- nrow(coords)
     if (n < 2L) stop("need at least 2 cells to build a neighbour graph")
     k <- min(as.integer(k), n - 1L)
     nn <- BiocNeighbors::findKNN(coords, k = k, BNPARAM = BNPARAM,
-                                 get.distance = FALSE)
+                                get.distance = FALSE)
     Matrix::sparseMatrix(i = rep(seq_len(n), times = k),
         j = as.vector(nn$index),
         x = 1, dims = c(n, n),
@@ -53,7 +53,7 @@ NULL
     if (anyNA(labels)) stop("labels contain NA; drop unlabelled cells first")
     if (include_self) adj <- adj + Matrix::Diagonal(nrow(adj))
     onehot <- Matrix::sparseMatrix(i = seq_along(labels),
-                                   j = as.integer(labels),
+                                    j = as.integer(labels),
         x = 1, dims = c(length(labels), nlevels(labels)))
     comp <- as.matrix(.rowNormalise(adj) %*% onehot)
     dimnames(comp) <- list(rownames(adj), levels(labels))
@@ -80,9 +80,10 @@ NULL
 # legend reads "N3: Astro/Oligo" instead of "3".
 .labelClusters <- function(cl, labels, prefix = "N") {
     enr <- .log2Enrichment(cl, labels)
-    tops <- apply(enr, 1,
-                  function(r) paste(names(sort(r,
-                                               decreasing = TRUE))[seq_len(min(2, length(r)))], collapse = "/"))
+    tops <- apply(enr, 1, function(r) {
+        top <- names(sort(r, decreasing = TRUE))
+        paste(top[seq_len(min(2, length(r)))], collapse = "/")
+    })
     ids <- paste0(prefix, rownames(enr))
     stats::setNames(paste0(ids, ": ", tops), rownames(enr))
 }
@@ -90,13 +91,14 @@ NULL
 .safeKmeans <- function(x, centers, seed = 1L) {
     n_distinct <- nrow(unique(round(x, 6)))
     centers <- min(as.integer(centers), n_distinct)
-    if (centers < 2L) stop("not enough distinct neighbourhoods to form 2 clusters")
+    if (centers < 2L)
+        stop("not enough distinct neighbourhoods to form 2 clusters")
     # withr::with_seed: reproducible without changing the user's random state
+    big <- nrow(x) > 5e4
     withr::with_seed(seed,
         stats::kmeans(x, centers = centers,
-                      nstart = if (nrow(x) > 5e4) 3 else 10,
-                      iter.max = if (nrow(x) > 5e4) 300 else 100,
-            algorithm = if (nrow(x) > 5e4) "MacQueen" else "Hartigan-Wong")$cluster)
+            nstart = if (big) 3 else 10, iter.max = if (big) 300 else 100,
+            algorithm = if (big) "MacQueen" else "Hartigan-Wong")$cluster)
 }
 
 # Concatenate an embedding with its neighbourhood mean, weighted so lambda
@@ -111,14 +113,14 @@ NULL
 # Graph clustering of the rows of an embedding: k-NN graph in feature space,
 # symmetrised, then Louvain modularity with a resolution parameter.
 .graphCluster <- function(emb, k = 20L, resolution = 1, seed = 1L,
-                          BNPARAM = BiocNeighbors::KmknnParam()) {
+                            BNPARAM = BiocNeighbors::KmknnParam()) {
     adj <- .knnAdjacency(emb, k = k, BNPARAM = BNPARAM)
     sym <- (adj + Matrix::t(adj)) > 0
     g <- igraph::graph_from_adjacency_matrix(sym * 1, mode = "undirected",
         weighted = NULL, diag = FALSE)
     withr::with_seed(seed,
-                     igraph::membership(igraph::cluster_louvain(g,
-                         resolution = resolution)))
+                    igraph::membership(igraph::cluster_louvain(g,
+                        resolution = resolution)))
 }
 
 # ---- SpatialExperiment-level API ------------------------------------------
@@ -139,7 +141,8 @@ NULL
 #' @examples
 #' # two zones of cell types on a 20 x 20 grid
 #' xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
-#' type <- ifelse(xy[, "x"] <= 10, c("Tumor", "T.cells")[(seq_len(400) %% 5 == 0) + 1],
+#' type <- ifelse(xy[, "x"] <= 10,
+#'     c("Tumor", "T.cells")[(seq_len(400) %% 5 == 0) + 1],
 #'     c("Fibroblast", "T.cells")[(seq_len(400) %% 4 == 0) + 1])
 #' counts <- matrix(seq_len(400 * 10) %% 7, 10, 400,
 #'     dimnames = list(paste0("g", 1:10), paste0("c", 1:400)))
@@ -150,9 +153,9 @@ NULL
 #' SingleCellExperiment::colPairNames(spe)
 #' @export
 buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
-                              BNPARAM = BiocNeighbors::KmknnParam()) {
+                                BNPARAM = BiocNeighbors::KmknnParam()) {
     adj <- .knnAdjacency(SpatialExperiment::spatialCoords(spe), k = k,
-                         BNPARAM = BNPARAM)
+                        BNPARAM = BNPARAM)
     SingleCellExperiment::colPair(spe, name) <- adj
     S4Vectors::metadata(spe)$iseeSpatial_graph <- list(name = name, k = k)
     spe
@@ -190,7 +193,8 @@ buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
 #' @examples
 #' # two zones of cell types on a 20 x 20 grid
 #' xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
-#' type <- ifelse(xy[, "x"] <= 10, c("Tumor", "T.cells")[(seq_len(400) %% 5 == 0) + 1],
+#' type <- ifelse(xy[, "x"] <= 10,
+#'     c("Tumor", "T.cells")[(seq_len(400) %% 5 == 0) + 1],
 #'     c("Fibroblast", "T.cells")[(seq_len(400) %% 4 == 0) + 1])
 #' counts <- matrix(seq_len(400 * 10) %% 7, 10, 400,
 #'     dimnames = list(paste0("g", 1:10), paste0("c", 1:400)))
@@ -201,10 +205,10 @@ buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
 #' table(spe$niche, spe$Level1)
 #' @export
 computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
-                          include_self = FALSE, seed = 1L) {
+                            include_self = FALSE, seed = 1L) {
     cd <- SummarizedExperiment::colData(spe)
     if (!label_col %in% colnames(cd)) stop("'", label_col,
-                                           "' is not a colData column")
+                                            "' is not a colData column")
     keep <- !is.na(cd[[label_col]])
     sub <- spe[, keep]
     adj <- .getSpatialAdjacency(sub, k)
@@ -252,7 +256,8 @@ computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
 #' @examples
 #' # two zones of cell types on a 20 x 20 grid
 #' xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
-#' type <- ifelse(xy[, "x"] <= 10, c("Tumor", "T.cells")[(seq_len(400) %% 5 == 0) + 1],
+#' type <- ifelse(xy[, "x"] <= 10,
+#'     c("Tumor", "T.cells")[(seq_len(400) %% 5 == 0) + 1],
 #'     c("Fibroblast", "T.cells")[(seq_len(400) %% 4 == 0) + 1])
 #' counts <- matrix(seq_len(400 * 10) %% 7, 10, 400,
 #'     dimnames = list(paste0("g", 1:10), paste0("c", 1:400)))
@@ -263,8 +268,9 @@ computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
 #' table(spe$spatial_domain)
 #' @export
 computeSpatialDomains <- function(spe, k_spatial = 15L, lambda = 0.2,
-                                  use_dimred = "PCA", n_pcs = 20L,
-                                  k_graph = 20L, resolution = 0.8, seed = 1L) {
+                                    use_dimred = "PCA", n_pcs = 20L,
+                                    k_graph = 20L, resolution = 0.8,
+                                    seed = 1L) {
     if (use_dimred %in% SingleCellExperiment::reducedDimNames(spe)) {
         emb <- SingleCellExperiment::reducedDim(spe, use_dimred)
         emb <- emb[, seq_len(min(n_pcs, ncol(emb))), drop = FALSE]

@@ -59,7 +59,7 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
                                     setdiff(colnames(colData(se)), "polygons"),
                                     drop = FALSE])
     a <- intersect(c("logcounts", "counts"),
-                   SummarizedExperiment::assayNames(se))
+                    SummarizedExperiment::assayNames(se))
     sums <- if (length(a)) Matrix::colSums(SummarizedExperiment::assay(se,
         a[1])) else NULL
     digest::digest(list(dimnames(se), SpatialExperiment::spatialCoords(se), cd,
@@ -78,7 +78,7 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
 # a restart, instead of being recomputed and stored again.
 .COMPUTE_SLOTS <- list(
     SpatialStatsPanel = c("PlotType", "Genes", "LabelCol", "K", "Alpha",
-                          "Selection"),
+                            "Selection"),
     SVGPanel          = c("TopN", "K", "Selection"),
     SpatialNichePanel = c("LabelCol", "K", "NNiches", "Lambda", "Selection"))
 

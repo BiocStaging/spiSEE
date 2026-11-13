@@ -33,10 +33,10 @@ setMethod(".defineInterface", "SpatialQCPanel", function(x, se, select_info) {
         id = paste0(enc, "_DataBoxOpen"), title = "Data parameters",
         open = TRUE,
         shiny::selectInput(paste0(enc, "_Metric"), "QC metric:",
-                           choices = .qcMetrics(se),
+                            choices = .qcMetrics(se),
             selected = .resolveMetric(x, se)),
         shiny::checkboxInput(paste0(enc, "_UseFences"),
-                             "Show outlier fences (medcouple), if computed",
+                            "Show outlier fences (medcouple), if computed",
             value = x@UseFences),
         .selectionHelp(se)))
 })
@@ -45,9 +45,11 @@ setMethod(".defineInterface", "SpatialQCPanel", function(x, se, select_info) {
 #' @export
 setMethod(".generateOutput", "SpatialQCPanel", function(x, se, ...) {
     metric <- .resolveMetric(x, se)
-    if (is.na(metric)) return(.notAvailablePlot("No numeric QC metric in colData"))
+    if (is.na(metric))
+        return(.notAvailablePlot("No numeric QC metric in colData"))
     fence_col <- paste0(metric, "_outlier_mc")
-    fences <- if (x@UseFences && fence_col %in% colnames(colData(se))) fence_col else NULL
+    fences <- if (x@UseFences && fence_col %in% colnames(colData(se)))
+        fence_col
     se <- .subsetBySelection(se, x@Selection)
     if (ncol(se) == 0) return(.notAvailablePlot("No cells in this selection"))
     p <- SpaceTrooper::plotMetricHist(se, metric = metric, useFences = fences) +
@@ -87,19 +89,19 @@ setMethod(".generateOutput", "SpatialQCPanel", function(x, se, ...) {
 #' @rdname SpatialQCPanel
 #' @export
 setMethod(".renderOutput", "SpatialQCPanel",
-          function(x, se, output, pObjects, rObjects)
+            function(x, se, output, pObjects, rObjects)
     .renderCachedSpatialPlot(x, se, output, pObjects, rObjects,
-                             c("Metric", "UseFences", "Selection")))
+                            c("Metric", "UseFences", "Selection")))
 
 #' @rdname SpatialQCPanel
 #' @export
 setMethod(".createObservers", "SpatialQCPanel",
-          function(x, se, input, session, pObjects, rObjects) {
+            function(x, se, input, session, pObjects, rObjects) {
     callNextMethod()
     enc <- .getEncodedName(x)
     .slotObserver(enc, "Metric", input, pObjects, rObjects, cast = as.character)
     .slotObserver(enc, "UseFences", input, pObjects, rObjects,
-                  cast = as.logical)
+                    cast = as.logical)
 })
 
 #' QC metric histogram for the selected region
@@ -133,42 +135,46 @@ setMethod(".defineOutput", "FOVStatsPanel", function(x)
 setMethod(".defineInterface", "FOVStatsPanel", function(x, se, select_info) {
     enc <- .getEncodedName(x)
     list(iSEE::collapseBox(id = paste0(enc, "_DataBoxOpen"), title = "Display",
-                           open = TRUE,
-        shiny::helpText("Boxplots of QC metrics per FOV (precomputed in metadata(se)$fov_stats).")))
+                            open = TRUE,
+        shiny::helpText("Boxplots of QC metrics per FOV",
+                        "(precomputed in metadata(se)$fov_stats).")))
 })
 
 #' @rdname FOVStatsPanel
 #' @export
 setMethod(".generateOutput", "FOVStatsPanel", function(x, se, ...) {
     fov_long <- S4Vectors::metadata(se)$fov_stats
-    if (is.null(fov_long)) return(.notAvailablePlot("No fov_stats in metadata(se) (see data-raw/DATASET.R)"))
+    if (is.null(fov_long))
+        return(.notAvailablePlot(
+            "No fov_stats in metadata(se) (see data-raw/DATASET.R)"))
     sel <- .splitIDs(x@Selection)
     if (length(sel)) fov_long <- fov_long[as.character(fov_long$fov) %in% sel,
-                                          , drop = FALSE]
+                                            , drop = FALSE]
     fov_long$fov <- droplevels(factor(fov_long$fov))
     n <- nlevels(fov_long$fov)
-    brk <- if (n <= 15) levels(fov_long$fov) else levels(fov_long$fov)[unique(c(1, seq(10, n, by = 10)))]
+    brk <- levels(fov_long$fov)
+    if (n > 15) brk <- brk[unique(c(1, seq(10, n, by = 10)))]
     ggplot2::ggplot(fov_long, ggplot2::aes(fov, value, fill = fov)) +
         ggplot2::facet_wrap(~name, nrow = 3, scales = "free_y") +
         ggplot2::geom_boxplot(linewidth = 0.2, outlier.size = 0.2,
-                              show.legend = FALSE) +
+                                show.legend = FALSE) +
         ggplot2::scale_x_discrete(breaks = brk) + ggplot2::theme_minimal() +
         ggplot2::theme(legend.position = "none",
-                       panel.grid.minor = ggplot2::element_blank()) +
+                        panel.grid.minor = ggplot2::element_blank()) +
         ggplot2::labs(x = "FOV", y = NULL,
-                      title = "QC metrics per field of view")
+                        title = "QC metrics per field of view")
 })
 
 #' @rdname FOVStatsPanel
 #' @export
 setMethod(".renderOutput", "FOVStatsPanel",
-          function(x, se, output, pObjects, rObjects)
+            function(x, se, output, pObjects, rObjects)
     .renderCachedSpatialPlot(x, se, output, pObjects, rObjects, "Selection"))
 
 #' @rdname FOVStatsPanel
 #' @export
 setMethod(".createObservers", "FOVStatsPanel",
-          function(x, se, input, session, pObjects, rObjects) callNextMethod())
+    function(x, se, input, session, pObjects, rObjects) callNextMethod())
 
 #' Per-FOV QC summary (CosMx)
 #'
