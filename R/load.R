@@ -1,5 +1,5 @@
 # Loaders. Each returns a SpatialExperiment with a `logcounts` assay and
-# the platform recorded (setPlatform), ready for iseeSpatial().
+# the platform recorded (setPlatform), ready for spiSEE().
 # Reader packages are in Suggests: only the loader you use must be installed.
 
 .needs <- function(pkg) {
@@ -15,11 +15,11 @@
 #' platform. Such an object is typically made with
 #' `SpaceTrooper::readCosmxSPE()` and the QC steps shown in the vignette
 #' *CosMx workflow: the mouse dentate gyrus*. Optional extras used by the
-#' app are described in [iseeSpatial()] (section *Optional metadata*).
+#' app are described in [spiSEE()] (section *Optional metadata*).
 #'
 #' @param rds_path Path to the `.RDS` file.
 #' @return A `SpatialExperiment`.
-#' @seealso [loadXenium()], [loadVisiumHD()], [iseeSpatial()].
+#' @seealso [loadXenium()], [loadVisiumHD()], [spiSEE()].
 #' @examples
 #' dir <- system.file("extdata", "CosMx_DBKero_Tiny", package = "SpaceTrooper")
 #' f <- tempfile(fileext = ".rds")
@@ -43,7 +43,7 @@ loadCosmx <- function(rds_path) {
 #'
 #' @param xenium_dir Path to an unzipped Xenium output directory.
 #' @return A `SpatialExperiment`.
-#' @seealso [loadCosmx()], [loadVisiumHD()], [iseeSpatial()].
+#' @seealso [loadCosmx()], [loadVisiumHD()], [spiSEE()].
 #' @examples
 #' d <- system.file("extdata", "Xenium_small", package = "SpatialExperimentIO")
 #' if (requireNamespace("SpatialExperimentIO", quietly = TRUE))
@@ -83,12 +83,12 @@ loadXenium <- function(xenium_dir) {
 #' a `logcounts` assay is added if missing, and the platform is recorded.
 #' For the full workflow (QC, annotation, niches) see
 #' `system.file("scripts", "visiumhd_osta_workflow.R",
-#' package = "iseeSpatial")`.
+#' package = "spiSEE")`.
 #'
 #' @param segmented_outputs Path to the `segmented_outputs` directory.
 #' @param images Image resolution to load (passed to `TENxVisiumHD`).
 #' @return A `SpatialExperiment`.
-#' @seealso [loadCosmx()], [loadXenium()], [iseeSpatial()].
+#' @seealso [loadCosmx()], [loadXenium()], [spiSEE()].
 #' @examples
 #' d <- system.file("extdata", "segmented_outputs", package = "VisiumIO")
 #' if (requireNamespace("VisiumIO", quietly = TRUE) &&

@@ -145,8 +145,8 @@ setMethod(".defineInterface", "FOVStatsPanel", function(x, se, select_info) {
     enc <- .getEncodedName(x)
     list(iSEE::collapseBox(id = paste0(enc, "_DataBoxOpen"), title = "Display",
                             open = TRUE,
-        shiny::helpText("Boxplots of QC metrics per FOV",
-                        "(metadata(se)$fov_stats, else the QC columns).")))
+        shiny::helpText("QC metrics of the cells of each selected FOV",
+                        "(all FOVs when nothing is selected).")))
 })
 
 # Long table fov / name / value: metadata(se)$fov_stats if given, else the

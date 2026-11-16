@@ -1,3 +1,3 @@
-# iseeSpatial 0.99.0
+# spiSEE 0.99.0
 
 * Initial Bioconductor submission.

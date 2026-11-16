@@ -114,8 +114,8 @@ setMethod(".refineParameters", "SpatialNichePanel", function(x, se) {
 })
 
 .storedNicheDefaults <- function(x, se) {
-    nm <- S4Vectors::metadata(se)$iseeSpatial_niches
-    dm <- S4Vectors::metadata(se)$iseeSpatial_domains
+    nm <- S4Vectors::metadata(se)$spiSEE_niches
+    dm <- S4Vectors::metadata(se)$spiSEE_domains
     if (!is.null(nm) && "niche" %in% colnames(colData(se))) {
         if (is.na(x@K) && length(nm$k)) x@K <- as.integer(nm$k)
         if (is.na(x@NNiches) && length(nm$n_niches))
@@ -200,7 +200,7 @@ setMethod(".defineInterface", "SpatialNichePanel",
                                         "domain_vs_cluster")
     recompute <- nchar(x@ComputeTrigger) > 0
     if (wants_domains) {
-        md <- S4Vectors::metadata(se)$iseeSpatial_domains
+        md <- S4Vectors::metadata(se)$spiSEE_domains
         stored_ok <- "spatial_domain" %in% colnames(colData(se)) &&
             !is.null(md) &&
             identical(as.integer(md$k_spatial),
@@ -215,7 +215,7 @@ setMethod(".defineInterface", "SpatialNichePanel",
     } else {
         # The stored (offline, full-data) result is reused only if it was made
         # with the parameters currently shown in the panel.
-        md <- S4Vectors::metadata(se)$iseeSpatial_niches
+        md <- S4Vectors::metadata(se)$spiSEE_niches
         stored_ok <- "niche" %in% colnames(colData(se)) && !is.null(md) &&
             identical(md$label_col, lab) && identical(as.integer(md$k), x@K) &&
             identical(as.integer(md$n_niches), x@NNiches)
@@ -319,7 +319,7 @@ setMethod(".renderOutput", "SpatialNichePanel",
     opened@Selection <- ""
     opened_key <- .computeKey(opened)
     fp <- .fingerprintOf(se)
-    ver <- as.character(utils::packageVersion("iseeSpatial"))
+    ver <- as.character(utils::packageVersion("spiSEE"))
     last <- new.env()   # results of the last Compute, reused across plot types
     output[[plot_name]] <- shiny::renderCachedPlot({
         key()
@@ -350,9 +350,9 @@ setMethod(".renderOutput", "SpatialNichePanel",
 
 # Panel state at each Compute, by key, for this session.
 .nicheSnapshots <- function(pObjects) {
-    if (is.null(pObjects$iseeSpatial_niche_snapshots))
-        pObjects$iseeSpatial_niche_snapshots <- new.env(parent = emptyenv())
-    pObjects$iseeSpatial_niche_snapshots
+    if (is.null(pObjects$spiSEE_niche_snapshots))
+        pObjects$spiSEE_niche_snapshots <- new.env(parent = emptyenv())
+    pObjects$spiSEE_niche_snapshots
 }
 
 #' @rdname SpatialNichePanel

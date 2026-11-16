@@ -189,9 +189,9 @@ setMethod("initialize", "SVGPanel", function(.Object, ...) {
 # recomputing. Kept on the session's own pObjects (a package-level cache
 # would be shared between simultaneous sessions of one server).
 .svgTables <- function(pObjects) {
-    if (is.null(pObjects$iseeSpatial_svg_tables))
-        pObjects$iseeSpatial_svg_tables <- new.env(parent = emptyenv())
-    pObjects$iseeSpatial_svg_tables
+    if (is.null(pObjects$spiSEE_svg_tables))
+        pObjects$spiSEE_svg_tables <- new.env(parent = emptyenv())
+    pObjects$spiSEE_svg_tables
 }
 
 #' @rdname SVGPanel
@@ -248,7 +248,7 @@ setMethod(".renderOutput", "SVGPanel",
     # selected row.
     key <- .panelKey(enc, pObjects, rObjects, function(pn) pn@ComputeTrigger)
     fp <- .fingerprintOf(se)
-    ver <- as.character(utils::packageVersion("iseeSpatial"))
+    ver <- as.character(utils::packageVersion("spiSEE"))
     output[[enc]] <- DT::renderDataTable({
         trig <- key()
         x <- .keyPanel(key)
@@ -288,7 +288,7 @@ setMethod(".createObservers", "SVGPanel",
             target <- pObjects$memory[[enc]]@LinkedPanel
             if (!nzchar(target) || is.null(pObjects$memory[[target]]) ||
                 !"ColorBy" %in% methods::slotNames(pObjects$memory[[target]])) {
-                message("[iseeSpatial] SVGPanel: LinkedPanel '", target,
+                message("[spiSEE] SVGPanel: LinkedPanel '", target,
                         "' not found or has no ColorBy.")
                 return()
             }

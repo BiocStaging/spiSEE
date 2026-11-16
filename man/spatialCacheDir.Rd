@@ -3,7 +3,7 @@
 \name{spatialCacheDir}
 \alias{spatialCacheDir}
 \alias{clearSpatialCache}
-\title{Location of the iseeSpatial image cache}
+\title{Location of the spiSEE image cache}
 \usage{
 spatialCacheDir()
 
@@ -17,7 +17,7 @@ clearSpatialCache(dir = spatialCacheDir())
 \code{dir}, invisibly.
 }
 \description{
-Plot images and map backgrounds are cached on disk by \code{\link[=iseeSpatial]{iseeSpatial()}}
+Plot images and map backgrounds are cached on disk by \code{\link[=spiSEE]{spiSEE()}}
 (argument \code{cache}). \code{spatialCacheDir()} gives the default folder for the
 images (a \code{plots} subfolder of the package's user cache, next to the map
 backgrounds); \code{clearSpatialCache()} deletes the cached images in a folder
@@ -27,5 +27,5 @@ and, for the default folder, the map backgrounds too.
 spatialCacheDir()
 }
 \seealso{
-\code{\link[=iseeSpatial]{iseeSpatial()}}, whose \code{cache} argument chooses the folder.
+\code{\link[=spiSEE]{spiSEE()}}, whose \code{cache} argument chooses the folder.
 }

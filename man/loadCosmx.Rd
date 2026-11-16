@@ -17,7 +17,7 @@ Reads a CosMx \code{SpatialExperiment} saved as RDS and records the
 platform. Such an object is typically made with
 \code{SpaceTrooper::readCosmxSPE()} and the QC steps shown in the vignette
 \emph{CosMx workflow: the mouse dentate gyrus}. Optional extras used by the
-app are described in \code{\link[=iseeSpatial]{iseeSpatial()}} (section \emph{Optional metadata}).
+app are described in \code{\link[=spiSEE]{spiSEE()}} (section \emph{Optional metadata}).
 }
 \examples{
 dir <- system.file("extdata", "CosMx_DBKero_Tiny", package = "SpaceTrooper")
@@ -26,5 +26,5 @@ saveRDS(SpaceTrooper::readCosmxSPE(dir, sampleName = "DBKero"), f)
 spe <- loadCosmx(f)
 }
 \seealso{
-\code{\link[=loadXenium]{loadXenium()}}, \code{\link[=loadVisiumHD]{loadVisiumHD()}}, \code{\link[=iseeSpatial]{iseeSpatial()}}.
+\code{\link[=loadXenium]{loadXenium()}}, \code{\link[=loadVisiumHD]{loadVisiumHD()}}, \code{\link[=spiSEE]{spiSEE()}}.
 }

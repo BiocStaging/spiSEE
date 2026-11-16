@@ -4,7 +4,7 @@
 \name{SpatialPanelBase-class}
 \alias{SpatialPanelBase-class}
 \alias{.createObservers,SpatialPanelBase-method}
-\title{Base class for iseeSpatial panels}
+\title{Base class for spiSEE panels}
 \usage{
 \S4method{.createObservers}{SpatialPanelBase}(x, se, input, session, pObjects, rObjects)
 }
@@ -34,7 +34,7 @@ ids, depending on the platform). Empty string = whole dataset.}
 }
 
 \examples{
-# every iseeSpatial panel except the map follows the map selection
+# every spiSEE panel except the map follows the map selection
 is(SpatialPlotPanel(Selection = "1,2"), "SpatialPanelBase")
 SpatialPlotPanel(Selection = "1,2")[["Selection"]]
 }

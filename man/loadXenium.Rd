@@ -24,5 +24,5 @@ if (requireNamespace("SpatialExperimentIO", quietly = TRUE))
     spe <- loadXenium(d)
 }
 \seealso{
-\code{\link[=loadCosmx]{loadCosmx()}}, \code{\link[=loadVisiumHD]{loadVisiumHD()}}, \code{\link[=iseeSpatial]{iseeSpatial()}}.
+\code{\link[=loadCosmx]{loadCosmx()}}, \code{\link[=loadVisiumHD]{loadVisiumHD()}}, \code{\link[=spiSEE]{spiSEE()}}.
 }

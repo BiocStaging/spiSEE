@@ -2,21 +2,11 @@
 # Xenium Human Colon workflow -- adapted from the OSTA book chapter:
 #   https://bioconductor.org/books/release/OSTA/pages/img-workflow-xenium.html
 #
-# This follows the book's code as closely as possible. The one real
-# deviation: the book calls scrapper's .se-suffixed convenience wrappers
-# (quickRnaQc.se, normalizeRnaCounts.se, runPca.se, clusterGraph.se,
-# scoreMarkers.se), which don't exist in scrapper 1.4.0 -- the latest
-# version available for this machine's Bioconductor release (3.22). Those
-# wrappers were added in a later scrapper release tied to a newer
-# Bioconductor version; upgrading the whole Bioconductor install to get
-# them was judged too risky (would touch dozens of interdependent
-# packages, hours of reinstalling, not easily reversible). Every step
-# below uses the same underlying scrapper functions the .se wrappers
-# would call internally (computeRnaQcMetrics, normalizeCounts, runPca,
-# buildSnnGraph, clusterGraph, scoreMarkers) -- same algorithms, same
-# results, just wired up by hand instead of through a one-line wrapper.
-# Return-value structures were verified directly against this scrapper
-# version with synthetic data before writing this, not guessed.
+# The code follows the book. One difference: the book uses scrapper's
+# *.se wrappers (quickRnaQc.se, runPca.se, ...), which older scrapper
+# versions lack; the steps below call the functions they wrap
+# (computeRnaQcMetrics, normalizeCounts, runPca, buildSnnGraph,
+# clusterGraph, scoreMarkers), so they run with both.
 # ============================================================
 
 library(BiocParallel)

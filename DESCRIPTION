@@ -1,4 +1,4 @@
-Package: iseeSpatial
+Package: spiSEE
 Title: Interactive Exploration of Cell-Resolution Spatial Transcriptomics with iSEE
 Version: 0.99.0
 Authors@R:

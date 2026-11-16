@@ -1,5 +1,5 @@
 ---
-title: "Get started with iseeSpatial"
+title: "Get started with spiSEE"
 author:
 - name: Emile Danvin
 - name: Dario Righelli
@@ -8,7 +8,7 @@ output:
     BiocStyle::html_document:
         toc_float: true
 vignette: >
-    %\VignetteIndexEntry{1. Get started with iseeSpatial}
+    %\VignetteIndexEntry{1. Get started with spiSEE}
     %\VignetteEngine{knitr::rmarkdown}
     %\VignetteEncoding{UTF-8}
 ---
@@ -22,7 +22,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
 
 # Introduction
 
-`r BiocStyle::Biocpkg("iseeSpatial")` adds spatial panels to
+`r BiocStyle::Biocpkg("spiSEE")` adds spatial panels to
 `r BiocStyle::Biocpkg("iSEE")` for data at cellular resolution:
 imaging-based (CosMx, Xenium) and sequencing-based (Visium HD,
 cell-segmented). The data are a standard
@@ -34,18 +34,18 @@ quality-control histograms, spatial statistics, spatially variable genes,
 cellular niches and spatial domains. Heavy analyses run only when the
 user presses *Compute*, on the selected region.
 
-This vignette installs the package, runs it on a small CosMx example and
-lists every panel. The vignette *CosMx workflow: the mouse dentate gyrus*
-then goes through a complete analysis of a real dataset: quality control
-of a whole brain section, cell polygons, niches, spatial domains,
-statistics and the apps.
+This vignette shows how to install the package, runs it on a small CosMx
+example and lists every panel. The vignette *CosMx workflow: the mouse
+dentate gyrus* then goes through a complete analysis of a real dataset:
+quality control of a whole brain section, cell polygons, niches, spatial
+domains, statistics and the apps.
 
 # Installation
 
 ```{r install, eval = FALSE}
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("iseeSpatial")
+BiocManager::install("spiSEE")
 ```
 
 # Quick start
@@ -55,7 +55,7 @@ one field of view (FOV) of a tumour sample with 905 cells, about 1,000
 genes, cell polygons and a cell-type label per cell.
 
 ```{r read}
-library(iseeSpatial)
+library(spiSEE)
 library(SpaceTrooper)
 
 dir <- system.file("extdata", "CosMx_DBKero_Tiny", package = "SpaceTrooper")
@@ -73,11 +73,11 @@ spe
 One call opens the app:
 
 ```{r app}
-app <- iseeSpatial(spe, cache = FALSE)
+app <- spiSEE(spe, cache = FALSE)
 if (interactive()) shiny::runApp(app)
 ```
 
-`iseeSpatial()` detects the platform from characteristic `colData`
+`spiSEE()` detects the platform from characteristic `colData`
 columns (here CosMx, so regions are selected as FOV tiles), picks the
 cell-type column, QC metrics and default genes, and builds a layout. Two
 layouts are predefined: `mode = "analysis"` (the default) and
@@ -116,7 +116,7 @@ panels <- data.frame(
         paste("histogram of a QC metric, SpaceTrooper's outlier fences and",
                 "the number of flagged cells"),
         "the selected FOVs and their cells coloured by a QC metric",
-        "per-FOV summaries, if `metadata(spe)$fov_stats` is present",
+        "boxplots of QC metrics per FOV",
         "spatial statistics, listed below",
         paste("genes ranked by Moran's I on the region; a click shows the",
                 "gene in a linked spatial plot"),
@@ -146,7 +146,7 @@ The statistics panel offers:
 Moran's I and local clusters come from `r BiocStyle::Biocpkg("Voyager")`,
 the L-functions from `r BiocStyle::Biocpkg("spatialFDA")`.
 
-and the niche panel:
+The niche panel shows:
 
 | Plot | `PlotType` |
 |---|---|
@@ -211,7 +211,7 @@ panels <- list(
                         ComputeTrigger = "launch"),
     iSEE::ReducedDimensionPlot(Type = "PCA", ColorBy = "Column data",
                                 ColorByColumnData = "niche"))
-app <- iseeSpatial(spe, initial = panels, cache = FALSE)
+app <- spiSEE(spe, initial = panels, cache = FALSE)
 ```
 
 For reports, `plotSpatialCells()` draws the cells as in the spatial
@@ -242,9 +242,9 @@ spe <- loadVisiumHD("path/to/segmented_outputs") # Visium HD, cell-segmented
 Any `SpatialExperiment` with spatial coordinates works; `setPlatform()`
 sets how regions are selected when it cannot be detected. The app shows
 one sample at a time: with several samples, choose one with
-`iseeSpatial(spe, sample = "...")`. Entries of `metadata(spe)` that the
+`spiSEE(spe, sample = "...")`. Entries of `metadata(spe)` that the
 panels use when present (gene ranking, per-FOV tables, FOV layout) are
-listed in `?iseeSpatial`.
+listed in `?spiSEE`.
 
 # Session information
 

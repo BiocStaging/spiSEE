@@ -1,4 +1,4 @@
 library(testthat)
-library(iseeSpatial)
+library(spiSEE)
 
-test_check("iseeSpatial")
+test_check("spiSEE")

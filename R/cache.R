@@ -5,9 +5,9 @@
 
 .CACHE <- new.env(parent = emptyenv())
 
-#' Location of the iseeSpatial image cache
+#' Location of the spiSEE image cache
 #'
-#' Plot images and map backgrounds are cached on disk by [iseeSpatial()]
+#' Plot images and map backgrounds are cached on disk by [spiSEE()]
 #' (argument `cache`). `spatialCacheDir()` gives the default folder for the
 #' images (a `plots` subfolder of the package's user cache, next to the map
 #' backgrounds); `clearSpatialCache()` deletes the cached images in a folder
@@ -16,13 +16,13 @@
 #' @param dir Cache folder. Only cache files (`.rds`) in it are deleted.
 #' @return `spatialCacheDir()`: the folder path. `clearSpatialCache()`:
 #'   `dir`, invisibly.
-#' @seealso [iseeSpatial()], whose `cache` argument chooses the folder.
+#' @seealso [spiSEE()], whose `cache` argument chooses the folder.
 #' @examples
 #' spatialCacheDir()
 #' @export
 spatialCacheDir <- function() file.path(.userCacheDir(), "plots")
 
-.userCacheDir <- function() tools::R_user_dir("iseeSpatial", which = "cache")
+.userCacheDir <- function() tools::R_user_dir("spiSEE", which = "cache")
 
 #' @rdname spatialCacheDir
 #' @export
@@ -37,7 +37,7 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
 }
 
 .isDevLoad <- function() exists(".__DEVTOOLS__",
-                                envir = asNamespace("iseeSpatial"),
+                                envir = asNamespace("spiSEE"),
                                 inherits = FALSE)
 
 # cache: TRUE (default folder), FALSE (memory only, lost when R stops) or a
@@ -83,7 +83,7 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
     cd <- as.data.frame(cd[, setdiff(colnames(cd), "polygons"), drop = FALSE])
     assays <- lapply(SummarizedExperiment::assays(se), .assayIdentity)
     md <- S4Vectors::metadata(se)
-    md <- md[setdiff(names(md), "iseeSpatial_fingerprint")]
+    md <- md[setdiff(names(md), "spiSEE_fingerprint")]
     digest::digest(list(dimnames(se), SpatialExperiment::spatialCoords(se),
         cd, poly, assays, as.list(SingleCellExperiment::reducedDims(se)),
         md, .selectionUnit(se)), algo = "xxhash64")
@@ -99,7 +99,7 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
 }
 
 .fingerprintOf <- function(se) {
-    fp <- S4Vectors::metadata(se)$iseeSpatial_fingerprint
+    fp <- S4Vectors::metadata(se)$spiSEE_fingerprint
     if (is.null(fp)) .datasetFingerprint(se) else fp
 }
 

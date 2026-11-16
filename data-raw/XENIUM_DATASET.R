@@ -1,5 +1,5 @@
 # ============================================================
-# iseeSpatial — Xenium Data Preparation Script
+# spiSEE — Xenium Data Preparation Script
 # ============================================================
 # Xenium counterpart of data-raw/DATASET.R: prepares real Xenium data for
 # the Xenium apps and saves the same two-RDS split CosMx's pipeline
@@ -40,7 +40,7 @@ set.seed(112358)
 bp <- MulticoreParam(32)
 
 cat("\n=====================================================\n")
-cat("   iseeSpatial Xenium Data Preparation\n")
+cat("   spiSEE Xenium Data Preparation\n")
 cat("=====================================================\n\n")
 
 # ============================================================
@@ -191,6 +191,6 @@ cat("  Analysis cells:   ", ncol(sub), "\n")
 cat("  Genes:            ", nrow(sub), "\n")
 cat("  Level1 types:     ", nlevels(sub$Level1), "\n\n")
 cat("Launch with:\n")
-cat("  library(iseeSpatial)\n")
+cat("  library(spiSEE)\n")
 cat("  iseeXeniumQC(readRDS('data-raw/xenium_unfiltered.RDS'))\n")
 cat("  iseeXeniumAnalysis(readRDS('data-raw/xenium_isee_ready.RDS'))\n\n")

@@ -1,4 +1,4 @@
-#' Launch the iseeSpatial app
+#' Launch the spiSEE app
 #'
 #' Opens an iSEE app whose panels adapt to the platform of `spe` (CosMx,
 #' Xenium, Visium HD, or any `SpatialExperiment`). A selection made on the
@@ -25,8 +25,7 @@
 #' @param cache Where plot images are cached: `TRUE` (default) on disk in
 #'   [spatialCacheDir()], kept across restarts; a folder path (used only for
 #'   the images: do not share it with other files); or `FALSE`
-#'   for memory only (lost when R stops). Under `devtools::load_all()` the
-#'   cache is always in memory.
+#'   for memory only (lost when R stops).
 #' @param cache_size Maximum size of the disk cache in bytes (default 1 GB);
 #'   the least recently used images are removed first.
 #' @param ... Passed to [iSEE::iSEE()].
@@ -51,15 +50,15 @@
 #'         dimnames = list(paste0("g", 1:10), paste0("c", 1:20)))),
 #'     spatialCoords = matrix(runif(40), 20, 2,
 #'         dimnames = list(NULL, c("x", "y"))))
-#' app <- iseeSpatial(spe, mode = "qc", cache = FALSE)
+#' app <- spiSEE(spe, mode = "qc", cache = FALSE)
 #' if (interactive()) shiny::runApp(app)
 #' @export
-iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
+spiSEE <- function(spe, mode = c("analysis", "qc"), platform = NULL,
                         selection = "", sample = NULL, initial = NULL,
-                        cache = getOption("iseeSpatial.cache", TRUE),
-                        cache_size = getOption("iseeSpatial.cache_size",
+                        cache = getOption("spiSEE.cache", TRUE),
+                        cache_size = getOption("spiSEE.cache_size",
                                                 1024^3),
-                        title = "iseeSpatial", ...) {
+                        title = "spiSEE", ...) {
     stopifnot(methods::is(spe, "SpatialExperiment"))
     mode <- match.arg(mode)
     spe <- .oneSample(spe, sample)
@@ -73,8 +72,8 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
     if ("counts" %in% SummarizedExperiment::assayNames(spe))
         spe <- .addLogcounts(spe)
     .configurePlotCache(cache, cache_size)
-    S4Vectors::metadata(spe)$iseeSpatial_gene_order <- .geneOrder(spe)
-    S4Vectors::metadata(spe)$iseeSpatial_fingerprint <- .datasetFingerprint(spe)
+    S4Vectors::metadata(spe)$spiSEE_gene_order <- .geneOrder(spe)
+    S4Vectors::metadata(spe)$spiSEE_fingerprint <- .datasetFingerprint(spe)
     if (is.null(initial)) initial <- .defaultPanels(spe, mode, selection)
     args <- list(...)
     if (is.null(args$extra)) args$extra <- .extraPanels(spe)

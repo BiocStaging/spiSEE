@@ -109,7 +109,7 @@ test_that("SVG tables are kept per session, not shared", {
 })
 
 test_that("the launcher offers the spatial panels in 'Organize panels'", {
-    expect_s3_class(iseeSpatial(.makeTestVisiumHDSPE(), mode = "qc",
+    expect_s3_class(spiSEE(.makeTestVisiumHDSPE(), mode = "qc",
                                 cache = FALSE), "shiny.appobj")
     expect_false(any(vapply(.extraPanels(.makeTestVisiumHDSPE()), is,
                             logical(1), "FOVZoomPanel")))
@@ -216,7 +216,7 @@ test_that("gene menus put the most expressed genes first", {
     spe <- .makeTestSPE()
     S4Vectors::metadata(spe)$gene_ranks <- NULL
     top <- rownames(spe)[which.max(Matrix::rowMeans(logcounts(spe)))]
-    S4Vectors::metadata(spe)$iseeSpatial_gene_order <- .geneOrder(spe)
+    S4Vectors::metadata(spe)$spiSEE_gene_order <- .geneOrder(spe)
     expect_identical(.geneChoices(spe)[1], top)
 })
 
@@ -255,18 +255,18 @@ test_that("one sample per app; cell names made unique", {
     b <- .makeTestXeniumSPE(seed = 2)
     b$sample_id <- "s2"
     both <- cbind(a, b)
-    expect_error(iseeSpatial(both, cache = FALSE), "sample =")
+    expect_error(spiSEE(both, cache = FALSE), "sample =")
     expect_identical(ncol(.oneSample(both, "s2")), ncol(b))
     expect_error(.oneSample(both, "nope"), "one of")
-    expect_message(app <- iseeSpatial(both, sample = "s2", cache = FALSE),
+    expect_message(app <- spiSEE(both, sample = "s2", cache = FALSE),
                     NA)
     dup <- a
     colnames(dup)[2] <- colnames(dup)[1]
-    expect_message(iseeSpatial(dup, cache = FALSE), "not unique")
+    expect_message(spiSEE(dup, cache = FALSE), "not unique")
 })
 
 test_that("the app starts on CosMx-like data without a FOV table", {
-    app <- iseeSpatial(.makeTestSPE(), mode = "qc", cache = FALSE)
+    app <- spiSEE(.makeTestSPE(), mode = "qc", cache = FALSE)
     expect_s3_class(app, "shiny.appobj")
     shiny::testServer(app, {
         session$flushReact()
@@ -377,4 +377,17 @@ test_that("local clusters and L-functions are drawn", {
         title <- c(as.character(p$labels$title), "")[1]
         expect_false(grepl("^(No |Not |Too |Choose)", title), info = title)
     }
+})
+
+test_that("FOV tiles come from the FOV table, else from the cells", {
+    spe <- .makeTestSPE()
+    r <- .fovRects(spe)
+    expect_identical(r$id, .allRegionIDs(spe))
+    S4Vectors::metadata(spe)$fov_positions <- data.frame(fov = 4:1,
+        x_global_px = c(300, 200, 100, 0), y_global_px = 0)
+    S4Vectors::metadata(spe)$fov_dim <- c(xdim = 100, ydim = 50)
+    r <- .fovRects(spe)
+    expect_identical(r$id, c("1", "2", "3", "4"))
+    expect_equal(r$xmin, c(0, 100, 200, 300))
+    expect_equal(r$ymax, rep(50, 4))
 })

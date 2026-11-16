@@ -3,7 +3,7 @@ test_that("dataset fingerprint separates datasets and sees metadata", {
     b <- .makeTestSPE(n_cells = 40, seed = 2)
     expect_false(identical(.datasetFingerprint(a), .datasetFingerprint(b)))
     a2 <- a
-    S4Vectors::metadata(a2)$iseeSpatial_fingerprint <- "old"
+    S4Vectors::metadata(a2)$spiSEE_fingerprint <- "old"
     expect_identical(.datasetFingerprint(a), .datasetFingerprint(a2))
     # gene_ranks decides which genes the SVG panel scans
     S4Vectors::metadata(a2)$gene_ranks <- rev(rownames(a2))
@@ -36,7 +36,7 @@ test_that("under load_all the cache stays in memory", {
 test_that("default image cache folder is separate from the map backgrounds", {
     expect_identical(basename(spatialCacheDir()), "plots")
     expect_identical(dirname(spatialCacheDir()),
-                     tools::R_user_dir("iseeSpatial", "cache"))
+                     tools::R_user_dir("spiSEE", "cache"))
 })
 
 test_that("Compute keys depend on what is computed, not on when", {

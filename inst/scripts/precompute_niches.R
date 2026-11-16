@@ -7,7 +7,7 @@
 #   Rscript precompute_niches.R in.rds out.rds label_col [k] [n_niches] [lambda]
 #
 # The script's path: system.file("scripts", "precompute_niches.R",
-#                                package = "iseeSpatial")
+#                                package = "spiSEE")
 # k = neighbours per cell. There is no universal value: a small k describes
 # the immediate contact zone, a large k a wider region. Choose it from the
 # structures studied, and give it in figures.
@@ -15,7 +15,7 @@ args <- commandArgs(trailingOnly = TRUE)
 if (length(args) < 3)
     stop("usage: precompute_niches.R in.rds out.rds label_col ",
         "[k] [n_niches] [lambda]")
-suppressPackageStartupMessages(library(iseeSpatial))
+suppressPackageStartupMessages(library(spiSEE))
 spe <- readRDS(args[1])
 label_col <- args[3]
 k <- if (length(args) >= 4) as.integer(args[4]) else 20L

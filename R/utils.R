@@ -77,10 +77,10 @@
     } else p
 }
 
-# Update requests for iseeSpatial panels. iSEE's .requestUpdate() would
+# Update requests for spiSEE panels. iSEE's .requestUpdate() would
 # make iSEE compute the panel's output a second time, so each panel has its
 # own counter in rObjects instead, read only by its .panelKey().
-.updateName <- function(enc) paste0(enc, "_iseeSpatialUpdate")
+.updateName <- function(enc) paste0(enc, "_spiSEEUpdate")
 
 .spatialUpdate <- function(enc, rObjects) {
     nm <- .updateName(enc)
@@ -124,9 +124,9 @@
 .keyPanel <- function(key) attr(key, "snapshot")$panel
 
 .keyObservers <- function(pObjects) {
-    if (is.null(pObjects$iseeSpatial_key_observers))
-        pObjects$iseeSpatial_key_observers <- new.env(parent = emptyenv())
-    pObjects$iseeSpatial_key_observers
+    if (is.null(pObjects$spiSEE_key_observers))
+        pObjects$spiSEE_key_observers <- new.env(parent = emptyenv())
+    pObjects$spiSEE_key_observers
 }
 
 # Runs a panel's output code; an R error is shown in the panel as its
@@ -134,7 +134,7 @@
 .safeOutput <- function(expr, panel) {
     tryCatch(expr, error = function(e) {
         if (inherits(e, "shiny.silent.error")) stop(e)
-        message("[iseeSpatial] ", panel, ": ", conditionMessage(e))
+        message("[spiSEE] ", panel, ": ", conditionMessage(e))
         shiny::validate(shiny::need(FALSE,
                                     paste("Error:", conditionMessage(e))))
     })
@@ -148,7 +148,7 @@
     key <- .panelKey(plot_name, pObjects, rObjects,
         function(pn) lapply(key_slots, function(s) methods::slot(pn, s)))
     fp <- .fingerprintOf(se)
-    ver <- as.character(utils::packageVersion("iseeSpatial"))
+    ver <- as.character(utils::packageVersion("spiSEE"))
     output[[plot_name]] <- shiny::renderCachedPlot(
         {
             key()

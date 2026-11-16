@@ -76,8 +76,8 @@
 .xeniumTestDataPath <- function() {
     candidates <- c("../../data-raw/xenium_test_data",
                     "data-raw/xenium_test_data",
-        "../../../iseeSpatial/data-raw/xenium_test_data",
-        "../iseeSpatial/data-raw/xenium_test_data")
+        "../../../spiSEE/data-raw/xenium_test_data",
+        "../spiSEE/data-raw/xenium_test_data")
     found <- candidates[dir.exists(candidates)]
     if (length(found) == 0) NA_character_ else found[1]
 }

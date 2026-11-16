@@ -9,7 +9,7 @@
 # printed result written to the console (pipe to a log file to keep it).
 # Code is the chapter's; only comments, print() and figure saving were added.
 #
-# Part 2 (iseeSpatial additions, NOT in the chapter): gene ranking, PCA,
+# Part 2 (spiSEE additions, NOT in the chapter): gene ranking, PCA,
 # neighbour graph, niches, spatial domains; saves the filtered object for
 # the analysis app and the unfiltered one for the QC app.
 #
@@ -17,20 +17,15 @@
 #
 # Needs: OSTA.data, VisiumIO, scrapper, SpotSweeper, SingleR, DropletUtils,
 # Voyager, SpatialFeatureExperiment, ggspavis, sf, arrow, dplyr, tidyr,
-# patchwork, pals, scater, iseeSpatial. Memory-heavy: prefer a server.
+# patchwork, pals, scater, spiSEE. Memory-heavy: prefer a server.
 # ============================================================
 
 args   <- commandArgs(trailingOnly = TRUE)
 out    <- if (length(args) >= 1) args[1] else "visiumhd_isee_ready.RDS"
 k      <- if (length(args) >= 2) as.integer(args[2]) else 20L   # neighbourhood size; adapt to the structures
 figdir <- if (length(args) >= 3) args[3] else "osta_visiumhd_figures"
-# OSTA.data_load() (called twice below) has a real upstream bug: it setwd()s
-# into its own download tempdir and never restores the caller's original
-# working directory before returning (same bug hit and worked around in
-# data-raw/XENIUM_DATASET.R). Two calls in this script means two chances to
-# silently corrupt every later relative path (figdir, out). Resolve both to
-# absolute paths up front, before any chapter code runs, so they're immune
-# to it regardless of cwd state.
+# OSTA.data_load() changes the working directory and does not restore it:
+# make the output paths absolute first, and go back after each call.
 out    <- normalizePath(out, mustWork = FALSE)
 figdir <- normalizePath(figdir, mustWork = FALSE)
 repo_wd <- getwd()  # restored after each OSTA.data_load() call, see below
@@ -336,7 +331,7 @@ print(table(sfe$ex))  # number of cells kept/removed overall
   fig(p, "17.4.2_outliers", w = 7, h = 7)
 })
 
-# iseeSpatial: keep the unfiltered object for the QC app (flags visible there).
+# spiSEE: keep the unfiltered object for the QC app (flags visible there).
 sfe_unfiltered <- sfe
 
 # apply filtering
@@ -437,8 +432,8 @@ fig(p, "17.6_areas_by_celltype", w = 12, h = 5)
 
 message("OSTA chapter reproduced in ", format(Sys.time() - t_start))
 
-# ---- Part 2: iseeSpatial additions (not in the chapter) -----------------
-suppressPackageStartupMessages(library(iseeSpatial))
+# ---- Part 2: spiSEE additions (not in the chapter) -----------------
+suppressPackageStartupMessages(library(spiSEE))
 
 if (!"logcounts" %in% assayNames(sfe)) stop("No 'logcounts' assay: check .normalizeRnaCounts() output name")
 logcounts(sfe_unfiltered) <- log1p(counts(sfe_unfiltered))

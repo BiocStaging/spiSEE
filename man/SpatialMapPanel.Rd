@@ -38,7 +38,7 @@ SpatialMapPanel(...)
 
 \item{...}{Slots passed to \code{new()}, e.g. \code{PanelWidth}, or
 \code{CommittedIDs}: an initial selection (comma-separated ids), as set by
-the \code{selection} argument of \code{\link[=iseeSpatial]{iseeSpatial()}}.}
+the \code{selection} argument of \code{\link[=spiSEE]{spiSEE()}}.}
 
 \item{all_memory, all_contents}{iSEE's full panel-state list and the
 current selection contents of every panel, passed to
@@ -57,13 +57,13 @@ A \code{SpatialMapPanel} object.
 \description{
 Shows the whole tissue and lets the user pick FOVs (CosMx) or cells
 (Xenium, Visium HD) by clicking or dragging a rectangle. Selection happens
-in the browser; pressing \emph{Validate} applies it to every iseeSpatial panel
+in the browser; pressing \emph{Validate} applies it to every spiSEE panel
 in the app (all classes extending \linkS4class{SpatialPanelBase}).
 }
 \examples{
 SpatialMapPanel()
 }
 \seealso{
-\code{\link[=iseeSpatial]{iseeSpatial()}}; \linkS4class{SpatialPanelBase} for the panels that
+\code{\link[=spiSEE]{spiSEE()}}; \linkS4class{SpatialPanelBase} for the panels that
 follow the selection.
 }

@@ -40,7 +40,7 @@ cell-type annotation. It shows:
 # Reading the data
 
 ```{r download}
-library(iseeSpatial)
+library(spiSEE)
 library(SpaceTrooper)
 library(ggplot2)
 
@@ -111,7 +111,7 @@ plotCentroids(spe, colourBy = "log10_total", size = 0.05)
 ## The QC app
 
 ```{r app-qc}
-app <- iseeSpatial(spe, mode = "qc", cache = FALSE)
+app <- spiSEE(spe, mode = "qc", cache = FALSE)
 if (interactive()) shiny::runApp(app)
 ```
 
@@ -228,7 +228,7 @@ ggplot(df, aes(x, y, colour = cluster)) +
 # The analysis app
 
 ```{r app}
-app <- iseeSpatial(roi, mode = "analysis", cache = FALSE)
+app <- spiSEE(roi, mode = "analysis", cache = FALSE)
 if (interactive()) shiny::runApp(app)
 ```
 
@@ -268,7 +268,7 @@ panels <- list(
     SpatialPlotPanel(ColorBy = "CD8A", UsePolygons = TRUE),
     SpatialStatsPanel(PlotType = "lcross_plot", LabelCol = "cell_type",
                       ComputeTrigger = "launch"))
-app <- iseeSpatial(roi, initial = panels, cache = FALSE)
+app <- spiSEE(roi, initial = panels, cache = FALSE)
 ```
 
 # Session information

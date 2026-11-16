@@ -34,7 +34,7 @@ section of human colorectal cancer (Oliveira et al. 2025), as in the
 885 MB. All the figures were produced by running exactly this code; the
 script is `data-raw/visiumhd_vignette.R` in the source package. A
 complete reproduction of the OSTA chapter, with app-ready objects, is in
-`system.file("scripts", "visiumhd_osta_workflow.R", package = "iseeSpatial")`.
+`system.file("scripts", "visiumhd_osta_workflow.R", package = "spiSEE")`.
 
 # Reading the data
 
@@ -43,7 +43,7 @@ complete reproduction of the OSTA chapter, with app-ready objects, is in
 records the platform. The counts stay on disk (HDF5) until needed.
 
 ```{r read}
-library(iseeSpatial)
+library(spiSEE)
 library(SpaceTrooper)
 library(SingleR)
 library(ggplot2)
@@ -133,7 +133,7 @@ and cell area with their outlier fences; any other metric (here
 `subsets_mito_percent`) can be chosen in the panels:
 
 ```{r app-qc}
-app <- iseeSpatial(roi, mode = "qc")
+app <- spiSEE(roi, mode = "qc")
 ```
 
 ```{r fig-qc, echo = FALSE, eval = TRUE, fig.cap = "QC app on the region: UMI counts per cell on the polygons, and histograms of counts and cell area with their outlier fences."}
@@ -227,7 +227,7 @@ knitr::include_graphics("figures/visiumhd_domains.jpg")
 # The analysis app
 
 ```{r app}
-app <- iseeSpatial(cells, mode = "analysis")
+app <- spiSEE(cells, mode = "analysis")
 if (interactive()) shiny::runApp(app)
 ```
 
@@ -250,7 +250,7 @@ Clicking a gene shows it on the polygons.
 ```{r save}
 saveRDS(roi, "visiumhd_region_unfiltered.rds")   # QC app
 saveRDS(cells, "visiumhd_region.rds")            # analysis app
-app <- iseeSpatial(readRDS("visiumhd_region.rds"))
+app <- spiSEE(readRDS("visiumhd_region.rds"))
 ```
 
 # Session information
@@ -258,6 +258,6 @@ app <- iseeSpatial(readRDS("visiumhd_region.rds"))
 The figures were made with:
 
 ```{r session-info, eval = TRUE, echo = FALSE}
-cat("R 4.5.2, iseeSpatial 0.99.0, SpaceTrooper 1.0.1, SingleR,",
+cat("R 4.5.2, spiSEE 0.99.0, SpaceTrooper 1.0.1, SingleR,",
     "VisiumIO, OSTA.data 1.2.1 (macOS).\n")
 ```

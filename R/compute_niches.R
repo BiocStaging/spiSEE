@@ -175,13 +175,13 @@ buildSpatialGraph <- function(spe, k = 20L, name = "spatial_knn",
     adj <- .knnAdjacency(SpatialExperiment::spatialCoords(spe), k = k,
                         BNPARAM = BNPARAM)
     SingleCellExperiment::colPair(spe, name) <- adj
-    S4Vectors::metadata(spe)$iseeSpatial_graph <- list(name = name, k = k)
+    S4Vectors::metadata(spe)$spiSEE_graph <- list(name = name, k = k)
     spe
 }
 
 # Use the stored graph when it exists and matches k; build otherwise.
 .getSpatialAdjacency <- function(spe, k, name = "spatial_knn") {
-    meta <- S4Vectors::metadata(spe)$iseeSpatial_graph
+    meta <- S4Vectors::metadata(spe)$spiSEE_graph
     if (name %in% SingleCellExperiment::colPairNames(spe) &&
         !is.null(meta) && identical(as.integer(meta$k), as.integer(k))) {
         adj <- SingleCellExperiment::colPair(spe, name, asSparse = TRUE)
@@ -198,7 +198,7 @@ buildSpatialGraph <- function(spe, k = 20L, name = "spatial_knn",
 #' enriched cell types) and `niche_entropy` (Shannon entropy of the
 #' neighbourhood, bits). Stores the composition as `reducedDim(spe,
 #' "NicheComposition")` and the niche x cell-type log2 enrichment in
-#' `metadata(spe)$iseeSpatial_niches`.
+#' `metadata(spe)$spiSEE_niches`.
 #'
 #' @param spe A `SpatialExperiment`.
 #' @param label_col `colData` column with cell-type labels.
@@ -252,7 +252,7 @@ computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
         levels = unname(nice[order(as.integer(names(nice)))]))
     SummarizedExperiment::colData(spe)$niche_entropy <- entropy
     SingleCellExperiment::reducedDim(spe, "NicheComposition") <- full_comp
-    S4Vectors::metadata(spe)$iseeSpatial_niches <- list(
+    S4Vectors::metadata(spe)$spiSEE_niches <- list(
         label_col = label_col, k = k, n_niches = length(nice),
         enrichment = .log2Enrichment(niche[keep], labels))
     spe
@@ -277,7 +277,7 @@ computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
 #' @param resolution Louvain resolution (higher = more domains).
 #' @param seed Random seed.
 #' @return `spe` with `colData` columns `spatial_domain` and `expr_cluster`.
-#'   The parameters are stored in `metadata(spe)$iseeSpatial_domains`;
+#'   The parameters are stored in `metadata(spe)$spiSEE_domains`;
 #'   *Compute* in [SpatialNichePanel()] reuses `resolution` and `k_graph`.
 #' @seealso [buildSpatialGraph()], [SpatialNichePanel()].
 #' @examples
@@ -317,7 +317,7 @@ computeSpatialDomains <- function(spe, k_spatial = 20L, lambda = 0.2,
         dom), levels = paste0("D", sort(unique(dom))))
     SummarizedExperiment::colData(spe)$expr_cluster   <- factor(paste0("C",
         ecl), levels = paste0("C", sort(unique(ecl))))
-    S4Vectors::metadata(spe)$iseeSpatial_domains <- list(
+    S4Vectors::metadata(spe)$spiSEE_domains <- list(
         k_spatial = k_spatial, lambda = lambda, k_graph = k_graph,
         resolution = resolution)
     spe

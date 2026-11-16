@@ -20,7 +20,7 @@ cell segmentation) with \code{VisiumIO::TENxVisiumHD()}, as in the OSTA book
 chapter "Visium HD (segmented)". Gene symbols become unique row names,
 a \code{logcounts} assay is added if missing, and the platform is recorded.
 For the full workflow (QC, annotation, niches) see
-\code{system.file("scripts", "visiumhd_osta_workflow.R", package = "iseeSpatial")}.
+\code{system.file("scripts", "visiumhd_osta_workflow.R", package = "spiSEE")}.
 }
 \examples{
 d <- system.file("extdata", "segmented_outputs", package = "VisiumIO")
@@ -29,5 +29,5 @@ if (requireNamespace("VisiumIO", quietly = TRUE) &&
     spe <- loadVisiumHD(d)
 }
 \seealso{
-\code{\link[=loadCosmx]{loadCosmx()}}, \code{\link[=loadXenium]{loadXenium()}}, \code{\link[=iseeSpatial]{iseeSpatial()}}.
+\code{\link[=loadCosmx]{loadCosmx()}}, \code{\link[=loadXenium]{loadXenium()}}, \code{\link[=spiSEE]{spiSEE()}}.
 }

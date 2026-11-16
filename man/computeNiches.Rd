@@ -37,7 +37,7 @@ spatial neighbours, then groups cells with similar surroundings by
 k-means. Adds to \code{colData}: \code{niche} (factor, named after the two most
 enriched cell types) and \code{niche_entropy} (Shannon entropy of the
 neighbourhood, bits). Stores the composition as \code{reducedDim(spe, "NicheComposition")} and the niche x cell-type log2 enrichment in
-\code{metadata(spe)$iseeSpatial_niches}.
+\code{metadata(spe)$spiSEE_niches}.
 }
 \examples{
 # two zones of cell types on a 20 x 20 grid

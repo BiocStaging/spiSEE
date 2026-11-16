@@ -19,9 +19,9 @@ getPlatform(spe)
 \code{getPlatform()} returns the platform key (character).
 }
 \description{
-iseeSpatial adapts its panels to the platform: CosMx data are selected
+spiSEE adapts its panels to the platform: CosMx data are selected
 by field of view (FOV), Xenium and Visium HD data by individual cells.
-The platform is stored in \code{metadata(spe)$iseeSpatial_platform}; when it
+The platform is stored in \code{metadata(spe)$spiSEE_platform}; when it
 is absent it is guessed from characteristic \code{colData} columns.
 }
 \examples{
@@ -34,6 +34,6 @@ spe <- setPlatform(spe, "xenium")
 getPlatform(spe)
 }
 \seealso{
-\code{\link[=iseeSpatial]{iseeSpatial()}}, whose \code{platform} argument calls
+\code{\link[=spiSEE]{spiSEE()}}, whose \code{platform} argument calls
 \code{setPlatform()}.
 }

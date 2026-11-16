@@ -1,12 +1,13 @@
-#' iseeSpatial: interactive exploration of imaging- and sequencing-based
+#' spiSEE: interactive exploration of imaging- and sequencing-based
 #' spatial transcriptomics
 #'
-#' iSEE panels for spatial data at cellular resolution (CosMx, Xenium,
-#' Visium HD). Select a region on an overview map and every panel follows:
+#' spiSEE (spatial iSEE) adds iSEE panels for spatial data at cellular
+#' resolution (CosMx, Xenium, Visium HD). Select a region on an overview
+#' map and every panel follows:
 #' spatial plots, QC histograms, spatial statistics, spatially variable
 #' genes, cellular niches and spatial domains.
 #'
-#' Start with [iseeSpatial()]; the panel classes can also be mixed with any
+#' Start with [spiSEE()]; the panel classes can also be mixed with any
 #' standard iSEE panel.
 #'
 #' @import methods

@@ -37,7 +37,7 @@ PCA is computed on \code{logcounts} with \code{scater::calculatePCA()}.}
 }
 \value{
 \code{spe} with \code{colData} columns \code{spatial_domain} and \code{expr_cluster}.
-The parameters are stored in \code{metadata(spe)$iseeSpatial_domains};
+The parameters are stored in \code{metadata(spe)$spiSEE_domains};
 \emph{Compute} in \code{\link[=SpatialNichePanel]{SpatialNichePanel()}} reuses \code{resolution} and \code{k_graph}.
 }
 \description{

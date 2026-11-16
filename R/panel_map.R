@@ -83,17 +83,66 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
     base
 }
 
-# Tiles from SpaceTrooper's FOV layout when the object has it
-# (metadata fov_positions and fov_dim, as read by readCosmxSPE()), else
-# from the extent of the cells of each FOV.
 .buildMapBase <- function(se, unit) {
-    md <- S4Vectors::metadata(se)
     base <- if (unit == "cell") .buildPointMapBase(se)
-    else if (is.null(md$fov_positions) || is.null(md$fov_dim))
-        .buildCellTileMapBase(se)
     else .buildTileMapBase(se)
     base$unit <- unit
     base
+}
+
+# FOV rectangles: from the FOV layout read by SpaceTrooper::readCosmxSPE()
+# (metadata fov_positions and fov_dim) when present, else from the extent
+# of the cells of each FOV. Only FOVs with cells are kept.
+.fovRects <- function(se) {
+    ids <- .allRegionIDs(se)
+    md <- S4Vectors::metadata(se)
+    pos <- md$fov_positions
+    dim <- md$fov_dim
+    if (!is.null(pos) && !is.null(dim) &&
+        all(c("fov", "x_global_px", "y_global_px") %in% colnames(pos))) {
+        pos <- as.data.frame(pos)
+        pos <- pos[match(ids, as.character(pos$fov)), , drop = FALSE]
+        if (!anyNA(pos$fov))
+            return(data.frame(id = ids, xmin = pos$x_global_px,
+                xmax = pos$x_global_px + dim[["xdim"]],
+                ymin = pos$y_global_px,
+                ymax = pos$y_global_px + dim[["ydim"]]))
+    }
+    xy <- SpatialExperiment::spatialCoords(se)
+    fov <- as.character(colData(se)[[.platformInfo(se)$region_col]])
+    rng <- function(v) vapply(ids, function(f) range(v[fov == f]),
+                                numeric(2))
+    rx <- rng(xy[, 1])
+    ry <- rng(xy[, 2])
+    data.frame(id = ids, xmin = rx[1, ], xmax = rx[2, ], ymin = ry[1, ],
+                ymax = ry[2, ])
+}
+
+# Tiles: the cells as small points, the FOV outlines and numbers. Only
+# plain data frames and PNG bytes are cached -- never a ggplot object,
+# whose environments would drag the whole dataset into the cache file.
+.buildTileMapBase <- function(se) {
+    xy <- SpatialExperiment::spatialCoords(se)
+    rects <- .fovRects(se)
+    pad <- function(v) range(v) + c(-1, 1) * diff(range(v)) * 0.02
+    xr <- pad(c(xy[, 1], rects$xmin, rects$xmax))
+    yr <- pad(c(xy[, 2], rects$ymin, rects$ymax))
+    px <- (rects$xmin + rects$xmax) / 2
+    py <- (rects$ymin + rects$ymax) / 2
+    bg <- ggplot2::ggplot() +
+        ggplot2::geom_point(data = data.frame(x = xy[, 1], y = xy[, 2]),
+            mapping = ggplot2::aes(x = x, y = y), colour = "firebrick",
+            size = 0.05, alpha = 0.8) +
+        ggplot2::geom_rect(data = rects, mapping = ggplot2::aes(
+            xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+            colour = "black", fill = NA, linewidth = 0.2) +
+        ggplot2::annotate("text", x = px, y = py, label = rects$id,
+                            size = 3.5, fontface = "bold", alpha = 0.8) +
+        ggplot2::coord_fixed(xlim = xr, ylim = yr, expand = FALSE) +
+        ggplot2::theme_void()
+    list(png_raw = .savePNG(bg, xr, yr), xr = xr, yr = yr,
+        rects = rects[, c("xmin", "xmax", "ymin", "ymax")], ids = rects$id,
+        px = px, py = py)
 }
 
 .savePNG <- function(p, xr, yr) {
@@ -105,66 +154,6 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
                     bg = "white")
     on.exit(unlink(tmp))
     readBin(tmp, "raw", file.info(tmp)$size)
-}
-
-# Tiles: reuse SpaceTrooper's FOV layout. Only plain data frames and PNG
-# bytes are cached -- never a ggplot object, whose environments would drag
-# the whole dataset into the cache file.
-.buildTileMapBase <- function(se) {
-    built <- ggplot2::ggplot_build(do.call(SpaceTrooper::plotCellsFovs,
-        c(list(se), .scaleBarArgs(SpaceTrooper::plotCellsFovs, se))))
-    points <- built$data[[1]]
-    rects <- built$data[[2]]
-    labs <- built$data[[3]]
-    xr <- built$layout$panel_params[[1]]$x.range
-    yr <- built$layout$panel_params[[1]]$y.range
-    pt <- points[1, ]
-    r1 <- rects[1, ]
-    l1 <- labs[1, ]
-    bg <- ggplot2::ggplot() +
-        ggplot2::geom_point(data = points, mapping = ggplot2::aes(x = x, y = y),
-            colour = pt$colour, alpha = pt$alpha, size = pt$size,
-            shape = pt$shape, stroke = pt$stroke) +
-        ggplot2::geom_rect(data = rects,
-            mapping = ggplot2::aes(xmin = xmin, xmax = xmax, ymin = ymin,
-                                    ymax = ymax),
-            colour = r1$colour, fill = NA, linewidth = r1$linewidth,
-            linetype = r1$linetype, alpha = r1$alpha) +
-        ggplot2::geom_text(data = labs,
-                            mapping = ggplot2::aes(x = x, y = y, label = label),
-            colour = l1$colour, size = l1$size, alpha = l1$alpha,
-            fontface = l1$fontface,
-            family = l1$family, hjust = l1$hjust, vjust = l1$vjust) +
-        ggplot2::coord_fixed(xlim = xr, ylim = yr,
-                            expand = FALSE) + ggplot2::theme_void()
-    list(png_raw = .savePNG(bg, xr, yr), xr = xr, yr = yr, rects = rects,
-        ids = as.character(labs$label), px = labs$x, py = labs$y)
-}
-
-.buildCellTileMapBase <- function(se) {
-    xy <- SpatialExperiment::spatialCoords(se)
-    fov <- as.character(colData(se)[[.platformInfo(se)$region_col]])
-    ids <- .allRegionIDs(se)
-    rng <- function(v) vapply(ids, function(f) range(v[fov == f]),
-                                numeric(2))
-    rx <- rng(xy[, 1])
-    ry <- rng(xy[, 2])
-    rects <- data.frame(xmin = rx[1, ], xmax = rx[2, ], ymin = ry[1, ],
-                        ymax = ry[2, ])
-    xr <- range(xy[, 1]) + c(-1, 1) * diff(range(xy[, 1])) * 0.03
-    yr <- range(xy[, 2]) + c(-1, 1) * diff(range(xy[, 2])) * 0.03
-    px <- (rects$xmin + rects$xmax) / 2
-    py <- (rects$ymin + rects$ymax) / 2
-    bg <- ggplot2::ggplot() +
-        ggplot2::geom_point(data = data.frame(x = xy[, 1], y = xy[, 2]),
-            mapping = ggplot2::aes(x = x, y = y), colour = "firebrick",
-            size = 0.05, alpha = 0.8) +
-        ggplot2::annotate("text", x = px, y = py, label = ids,
-                            fontface = "bold", alpha = 0.8) +
-        ggplot2::coord_fixed(xlim = xr, ylim = yr, expand = FALSE) +
-        ggplot2::theme_void()
-    list(png_raw = .savePNG(bg, xr, yr), xr = xr, yr = yr, rects = rects,
-        ids = ids, px = px, py = py)
 }
 
 .buildPointMapBase <- function(se) {
@@ -432,14 +421,14 @@ setMethod(".createObservers", "SpatialMapPanel",
 #'
 #' Shows the whole tissue and lets the user pick FOVs (CosMx) or cells
 #' (Xenium, Visium HD) by clicking or dragging a rectangle. Selection happens
-#' in the browser; pressing *Validate* applies it to every iseeSpatial panel
+#' in the browser; pressing *Validate* applies it to every spiSEE panel
 #' in the app (all classes extending [SpatialPanelBase-class]).
 #'
 #' @param ... Slots passed to `new()`, e.g. `PanelWidth`, or
 #'   `CommittedIDs`: an initial selection (comma-separated ids), as set by
-#'   the `selection` argument of [iseeSpatial()].
+#'   the `selection` argument of [spiSEE()].
 #' @return A `SpatialMapPanel` object.
-#' @seealso [iseeSpatial()]; [SpatialPanelBase-class] for the panels that
+#' @seealso [spiSEE()]; [SpatialPanelBase-class] for the panels that
 #'   follow the selection.
 #' @examples
 #' SpatialMapPanel()

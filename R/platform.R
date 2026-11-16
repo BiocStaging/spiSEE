@@ -30,16 +30,16 @@
 
 #' Set or detect the spatial platform of a dataset
 #'
-#' iseeSpatial adapts its panels to the platform: CosMx data are selected
+#' spiSEE adapts its panels to the platform: CosMx data are selected
 #' by field of view (FOV), Xenium and Visium HD data by individual cells.
-#' The platform is stored in `metadata(spe)$iseeSpatial_platform`; when it
+#' The platform is stored in `metadata(spe)$spiSEE_platform`; when it
 #' is absent it is guessed from characteristic `colData` columns.
 #'
 #' @param spe A `SpatialExperiment`.
 #' @param platform One of `"cosmx"`, `"xenium"`, `"visiumhd"`, `"generic"`.
 #' @return `setPlatform()` returns `spe` with the platform recorded;
 #'   `getPlatform()` returns the platform key (character).
-#' @seealso [iseeSpatial()], whose `platform` argument calls
+#' @seealso [spiSEE()], whose `platform` argument calls
 #'   `setPlatform()`.
 #' @examples
 #' spe <- SpatialExperiment::SpatialExperiment(
@@ -54,14 +54,14 @@ setPlatform <- function(spe,
                         platform = c("cosmx", "xenium", "visiumhd",
                                     "generic")) {
     platform <- match.arg(platform)
-    S4Vectors::metadata(spe)$iseeSpatial_platform <- platform
+    S4Vectors::metadata(spe)$spiSEE_platform <- platform
     spe
 }
 
 #' @rdname setPlatform
 #' @export
 getPlatform <- function(spe) {
-    p <- S4Vectors::metadata(spe)$iseeSpatial_platform
+    p <- S4Vectors::metadata(spe)$spiSEE_platform
     if (!is.null(p) && p %in% names(.PLATFORMS)) return(p)
     cn <- colnames(SummarizedExperiment::colData(spe))
     for (k in setdiff(names(.PLATFORMS), "generic")) {
@@ -114,10 +114,10 @@ getPlatform <- function(spe) {
 
 # Genes ordered for menus: precomputed ranking if present, else alphabetical.
 # Gene menus: metadata(se)$gene_ranks first if given, otherwise by mean
-# expression (computed once by iseeSpatial()), otherwise alphabetical.
+# expression (computed once by spiSEE()), otherwise alphabetical.
 .geneChoices <- function(se) {
     r <- S4Vectors::metadata(se)$gene_ranks
-    if (is.null(r)) r <- S4Vectors::metadata(se)$iseeSpatial_gene_order
+    if (is.null(r)) r <- S4Vectors::metadata(se)$spiSEE_gene_order
     if (!is.null(r)) c(intersect(r, rownames(se)),
                         setdiff(sort(rownames(se)), r)) else sort(rownames(se))
 }

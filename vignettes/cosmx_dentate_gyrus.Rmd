@@ -42,7 +42,7 @@ cached).
 # Reading the data
 
 ```{r download}
-library(iseeSpatial)
+library(spiSEE)
 library(SpaceTrooper)
 library(ggplot2)
 
@@ -82,6 +82,7 @@ medcouple-adjusted fences (robust to skewed distributions), here for the
 total counts, which the score does not use, and for the cell area.
 
 ```{r qscore}
+set.seed(1998)   # the score's model is trained on a random sample of cells
 spe <- computeQScore(spe)
 spe <- computeQScoreFlags(spe, qsThreshold = 0.5)
 table(low_QScore = spe$low_QScore)
@@ -120,17 +121,17 @@ plotZoomFovsMap(spe, fovs = dg_fovs, colourBy = "QScore")
 ## The QC app
 
 The QC app shows the same metrics interactively. Each FOV is a tile on the
-overview map: clicking tiles (or brushing several) and pressing *Validate*
-restricts every other panel to them; *Clear* goes back to the whole
-section. A selection can also be given at launch with `selection =`, as
-here for the nine dentate gyrus FOVs. The QC histograms count the cells
-outside the outlier fences in the selection, and the FOV zoom panel shows
-where the selected FOVs lie and their cells coloured by the quality
-score.
+overview map: clicking tiles (or dragging a box over several) and pressing
+*Validate* restricts every other panel to them; *Clear* goes back to the
+whole section. A selection can also be given at launch with `selection =`,
+as here for the nine dentate gyrus FOVs. The QC histograms count the cells
+outside the outlier fences in the selection, the FOV zoom panel shows
+where the selected FOVs lie and their cells coloured by the quality score,
+and the last panel compares the QC metrics of the selected FOVs.
 
 ```{r app-qc}
 spe <- setPlatform(spe, "cosmx")
-app <- iseeSpatial(spe, mode = "qc", cache = FALSE,
+app <- spiSEE(spe, mode = "qc", cache = FALSE,
                     selection = paste(dg_fovs, collapse = ","))
 if (interactive()) shiny::runApp(app)
 ```
@@ -138,13 +139,14 @@ if (interactive()) shiny::runApp(app)
 ```{r shot-qc, echo = FALSE}
 #| fig.cap = paste("QC app on the whole section with the nine dentate",
 #|     "gyrus FOVs selected (orange): total counts, QC histograms with outlier",
-#|     "fences, and the FOV zoom coloured by quality score.")
+#|     "fences, the FOV zoom coloured by quality score and the QC metrics",
+#|     "per FOV.")
 knitr::include_graphics("figures/cosmx_qc.jpg")
 ```
 
 Low-quality cells (dark in the FOV zoom) concentrate at FOV borders and
-along a few tissue edges; these patterns are easy to miss in a table and
-obvious on the map.
+along a few tissue edges, which is easier to see on the map than in a
+table.
 
 # The dentate gyrus
 
@@ -284,8 +286,10 @@ plotSpatialCells(dg, c("expr_cluster", "spatial_domain"), ncol = 2) +
     theme(legend.position = "none")
 ```
 
-Domains are smoother than expression clusters: neighbouring cells of
-different types are grouped when they form one structure.
+With `lambda = 0.2` the domains stay close to the expression clusters.
+The difference is in mixed areas: at the top right, cells of two
+intermixed expression clusters form one domain. A larger `lambda` gives
+smoother domains.
 
 The niches and domains are now stored in the object. The app shows them
 without recomputing, and recomputes them on a selected region on request.
@@ -293,7 +297,7 @@ without recomputing, and recomputes them on a selected region on request.
 # The analysis app
 
 ```{r app}
-app <- iseeSpatial(dg, mode = "analysis", cache = FALSE)
+app <- spiSEE(dg, mode = "analysis", cache = FALSE)
 if (interactive()) shiny::runApp(app)
 ```
 
@@ -369,7 +373,7 @@ panels <- list(
                                 ColorByColumnData = "niche"),
     SpatialStatsPanel(PlotType = "localmoran_plot", Genes = "Adcy1",
                         K = 15L, ComputeTrigger = "launch"))
-app <- iseeSpatial(dg, initial = panels, cache = FALSE)
+app <- spiSEE(dg, initial = panels, cache = FALSE)
 ```
 
 ## Saving the prepared object
@@ -379,7 +383,7 @@ The object can be saved and reopened directly in the app later
 
 ```{r save, eval = FALSE}
 saveRDS(dg, "dentate_gyrus.rds")
-app <- iseeSpatial(loadCosmx("dentate_gyrus.rds"))
+app <- spiSEE(loadCosmx("dentate_gyrus.rds"))
 ```
 
 # Session information

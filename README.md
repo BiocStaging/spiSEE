@@ -1,7 +1,7 @@
-# iseeSpatial
+# spiSEE
 
-Interactive exploration of cell-resolution spatial transcriptomics (CosMx,
-Xenium, cell-segmented Visium HD) with
+spiSEE (spatial iSEE): interactive exploration of cell-resolution spatial
+transcriptomics (CosMx, Xenium, cell-segmented Visium HD) with
 [iSEE](https://bioconductor.org/packages/iSEE). The data are a standard
 `SpatialExperiment`.
 
@@ -19,21 +19,15 @@ once.
 ```r
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("iseeSpatial")
-```
-
-The development version, from this repository:
-
-```r
-BiocManager::install("emiledvn/iseeSpatial-modular")
+BiocManager::install("spiSEE")
 ```
 
 ## Quick start
 
 ```r
-library(iseeSpatial)
+library(spiSEE)
 spe <- loadXenium("path/to/xenium/outs")   # or loadCosmx(), loadVisiumHD()
-app <- iseeSpatial(spe)                    # or mode = "qc" for raw data
+app <- spiSEE(spe)                    # or mode = "qc" for raw data
 shiny::runApp(app)
 ```
 
@@ -41,18 +35,17 @@ Any `SpatialExperiment` with spatial coordinates works.
 
 ## Documentation
 
-* *Get started with iseeSpatial*: installation, a small CosMx example and
-  the list of panels, `vignette("iseeSpatial", package = "iseeSpatial")`.
+* *Get started with spiSEE*: installation, a small CosMx example and
+  the list of panels, `vignette("spiSEE", package = "spiSEE")`.
 * *CosMx workflow: the mouse dentate gyrus*: quality control of a whole
   section, cell polygons, niches, spatial domains and the apps,
-  `vignette("cosmx_dentate_gyrus", package = "iseeSpatial")`.
-* Scripts in `system.file("scripts", package = "iseeSpatial")`: the OSTA
+  `vignette("cosmx_dentate_gyrus", package = "spiSEE")`.
+* Scripts in `system.file("scripts", package = "spiSEE")`: the OSTA
   book workflows for Xenium and Visium HD made ready for the app, and the
   precomputation of niches and domains on a full dataset.
 
 ## Issues
 
-Questions and bug reports:
-[GitHub issues](https://github.com/emiledvn/iseeSpatial-modular/issues) or
-the [Bioconductor support site](https://support.bioconductor.org) (tag
-`iseeSpatial`).
+Questions and bug reports: the
+[Bioconductor support site](https://support.bioconductor.org) (tag
+`spiSEE`).

@@ -4,7 +4,7 @@
 # Run from the package root:  Rscript data-raw/visiumhd_vignette.R
 # The app screenshots were taken from the objects saved at the end.
 
-library(iseeSpatial)
+library(spiSEE)
 library(SpaceTrooper)
 library(SingleR)
 library(ggplot2)

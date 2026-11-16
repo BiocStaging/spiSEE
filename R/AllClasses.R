@@ -1,7 +1,7 @@
 # Panel classes. Panels that follow the map selection extend
 # SpatialPanelBase: a `Selection` slot of comma-separated FOV or cell ids.
 
-#' Base class for iseeSpatial panels
+#' Base class for spiSEE panels
 #'
 #' Virtual class extending [iSEE::Panel-class]. It adds a `Selection` slot
 #' that the [SpatialMapPanel()] fills when the user presses *Validate*.
@@ -13,7 +13,7 @@
 #' }
 #' @seealso [SpatialMapPanel()], which sets the selection.
 #' @examples
-#' # every iseeSpatial panel except the map follows the map selection
+#' # every spiSEE panel except the map follows the map selection
 #' is(SpatialPlotPanel(Selection = "1,2"), "SpatialPanelBase")
 #' SpatialPlotPanel(Selection = "1,2")[["Selection"]]
 #' @name SpatialPanelBase-class
