@@ -3,7 +3,8 @@ Title: Interactive Exploration of Cell-Resolution Spatial Transcriptomics with i
 Version: 0.99.0
 Authors@R:
     c(person("Emile", "Danvin", email = "emile.danvin@gmail.com",
-        role = c("aut", "cre")),
+        role = c("aut", "cre"),
+        comment = c(ORCID = "0009-0000-0913-6893")),
     person("Dario", "Righelli", email = "dario.righelli@gmail.com",
         role = c("aut"),
         comment = c(ORCID = "0000-0003-1504-3583")))
