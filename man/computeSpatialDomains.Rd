@@ -6,7 +6,7 @@
 \usage{
 computeSpatialDomains(
   spe,
-  k_spatial = 15L,
+  k_spatial = 20L,
   lambda = 0.2,
   use_dimred = "PCA",
   n_pcs = 20L,
@@ -19,7 +19,8 @@ computeSpatialDomains(
 \item{spe}{A \code{SpatialExperiment} with a \code{logcounts} assay (or a
 \code{reducedDim} named by \code{use_dimred}).}
 
-\item{k_spatial}{Spatial neighbours used for the neighbourhood average.}
+\item{k_spatial}{Spatial neighbours used for the neighbourhood average
+(default 20, as \code{\link[=buildSpatialGraph]{buildSpatialGraph()}}, whose graph is then reused).}
 
 \item{lambda}{Share (0-1) of the neighbourhood part.}
 
@@ -36,6 +37,8 @@ PCA is computed on \code{logcounts} with \code{scater::calculatePCA()}.}
 }
 \value{
 \code{spe} with \code{colData} columns \code{spatial_domain} and \code{expr_cluster}.
+The parameters are stored in \code{metadata(spe)$iseeSpatial_domains};
+\emph{Compute} in \code{\link[=SpatialNichePanel]{SpatialNichePanel()}} reuses \code{resolution} and \code{k_graph}.
 }
 \description{
 Clusters cells on their expression PCs concatenated with the average PCs
@@ -56,4 +59,7 @@ spe <- SpatialExperiment::SpatialExperiment(
     colData = S4Vectors::DataFrame(Level1 = type), spatialCoords = xy)
 spe <- computeSpatialDomains(spe, k_spatial = 8, n_pcs = 3, k_graph = 10)
 table(spe$spatial_domain)
+}
+\seealso{
+\code{\link[=buildSpatialGraph]{buildSpatialGraph()}}, \code{\link[=SpatialNichePanel]{SpatialNichePanel()}}.
 }

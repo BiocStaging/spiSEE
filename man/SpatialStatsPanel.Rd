@@ -46,7 +46,9 @@ SpatialStatsPanel(
 
 \item{select_info}{A list of selection information, passed by iSEE.}
 
-\item{...}{Other slots, e.g. \code{Selection}.}
+\item{...}{Other slots: \code{Selection}, and \code{ComputeTrigger}, which is set
+when \emph{Compute} is pressed. Give any non-empty value (e.g.
+\code{ComputeTrigger = "launch"}) to compute the panel when the app opens.}
 
 \item{all_memory, all_contents}{iSEE's full panel-state list and the
 current selection contents of every panel, passed to
@@ -81,6 +83,23 @@ Neighbour graph, global and local Moran's I, local cluster significance,
 join-count statistics and L-functions, computed on the region selected
 on the \code{\link[=SpatialMapPanel]{SpatialMapPanel()}} when the user presses \emph{Compute}.
 }
+\details{
+The neighbour graph is a k-nearest-neighbour graph on the cell
+centroids of the region. Moran's I and the local clusters come from
+Voyager, the join counts from spdep. The L-function (\code{lest_plot}) is
+computed for the most frequent cell type and the L-cross function
+(\code{lcross_plot}) for the two most frequent ones (types with at least 10
+cells), with spatialFDA, up to a radius of a quarter of the shorter
+side of the region.
+
+Changing a parameter does not recompute anything: results are computed
+on \emph{Compute} and cached by what they compute (statistic, parameters,
+region and dataset), so the same analysis opens at once the next time.
+}
 \examples{
 SpatialStatsPanel(PlotType = "joincount_plot", K = 10)
+}
+\seealso{
+\code{\link[=SVGPanel]{SVGPanel()}} to rank genes by Moran's I, \code{\link[=SpatialNichePanel]{SpatialNichePanel()}}
+for niches and domains.
 }

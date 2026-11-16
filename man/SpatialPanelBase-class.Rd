@@ -33,3 +33,6 @@ ids, depending on the platform). Empty string = whole dataset.}
 is(SpatialPlotPanel(Selection = "1,2"), "SpatialPanelBase")
 SpatialPlotPanel(Selection = "1,2")[["Selection"]]
 }
+\seealso{
+\code{\link[=SpatialMapPanel]{SpatialMapPanel()}}, which sets the selection.
+}

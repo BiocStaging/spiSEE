@@ -51,3 +51,6 @@ if (nzchar(dir)) {
     plotSpatialCells(spe, "Area_um")
 }
 }
+\seealso{
+\code{\link[=SpatialPlotPanel]{SpatialPlotPanel()}}, the same plot in the app.
+}

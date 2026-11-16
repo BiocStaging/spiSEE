@@ -3,7 +3,7 @@
 # ============================================================
 # Xenium counterpart of data-raw/DATASET.R: prepares real Xenium data for
 # the Xenium apps and saves the same two-RDS split CosMx's pipeline
-# produces upstream of DATASET.R (see load_cosmx.R) -- an unfiltered
+# produces upstream of DATASET.R (see loadCosmx.R) -- an unfiltered
 # snapshot for the QC app, an analysis-ready one for the Analysis app.
 #
 # Computation is adapted from Xenium_OSTA_workflow.R (the OSTA book's
@@ -53,7 +53,7 @@ pa <- OSTA.data_load(id, mol = FALSE)  # and never restores it -- see below
 setwd(repo_wd)      # so every relative path after this stays repo-relative
 dir.create(td <- tempfile())
 unzip(pa, exdir = td)
-# See load_xenium.R for why addParquetPaths=FALSE: book uses
+# See loadXenium.R for why addParquetPaths=FALSE: book uses
 # readXeniumSXE(td, addTx=FALSE), which doesn't exist in this installed
 # SpatialExperimentIO version -- addParquetPaths=FALSE achieves the same
 # thing (skip transcripts.parquet, not present since mol=FALSE above).
@@ -61,7 +61,7 @@ spe <- readXeniumSXE(td, addParquetPaths = FALSE)
 cat(sprintf("  -> %d cells, %d genes\n", ncol(spe), nrow(spe)))
 
 # Cell boundary polygons, when the download includes them -- same approach
-# as load_xenium.R's handling of the small bundled test dataset. Missing/
+# as loadXenium.R's handling of the small bundled test dataset. Missing/
 # unreadable boundaries are non-fatal (UsePolygons defaults to FALSE
 # everywhere); this just means the real dataset gets to use them too
 # when they're there, instead of only ever being available for the tiny

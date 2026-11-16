@@ -342,3 +342,19 @@ test_that("loaders read the example data of the reader packages", {
         system.file("extdata", "segmented_outputs", package = "VisiumIO"))))
     expect_identical(getPlatform(v), "visiumhd")
 })
+
+test_that("per-FOV summary works from colData, fov_stats or nothing", {
+    spe <- .makeTestSPE()
+    p <- .generateOutput(FOVStatsPanel(), spe)
+    expect_s3_class(p, "ggplot")
+    expect_setequal(unique(p$data$name), utils::head(.qcMetrics(spe), 6))
+    S4Vectors::metadata(spe)$fov_stats <- data.frame(fov = spe$fov,
+        name = "log total", value = log(spe$total))
+    p2 <- .generateOutput(FOVStatsPanel(Selection = "1,2"), spe)
+    expect_identical(unique(p2$data$name), "log total")
+    expect_setequal(levels(p2$data$fov), c("1", "2"))
+    p3 <- .generateOutput(FOVStatsPanel(Selection = "99"), spe)
+    expect_match(p3$labels$title, "No per-FOV values")
+    expect_match(.generateOutput(FOVStatsPanel(),
+        .makeTestXeniumSPE())$labels$title, "FOV-based")
+})

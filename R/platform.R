@@ -39,6 +39,8 @@
 #' @param platform One of `"cosmx"`, `"xenium"`, `"visiumhd"`, `"generic"`.
 #' @return `setPlatform()` returns `spe` with the platform recorded;
 #'   `getPlatform()` returns the platform key (character).
+#' @seealso [iseeSpatial()], whose `platform` argument calls
+#'   `setPlatform()`.
 #' @examples
 #' spe <- SpatialExperiment::SpatialExperiment(
 #'     assays = list(counts = matrix(1, 2, 3)),

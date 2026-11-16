@@ -38,7 +38,7 @@ complete reproduction of the OSTA chapter, with app-ready objects, is in
 
 # Reading the data
 
-`load_visiumhd()` reads the cell-segmented outputs with
+`loadVisiumHD()` reads the cell-segmented outputs with
 `r BiocStyle::Biocpkg("VisiumIO")`, uses gene symbols as row names and
 records the platform. The counts stay on disk (HDF5) until needed.
 
@@ -54,7 +54,7 @@ setwd(wd)    # OSTA.data_load() changes the working directory
 dir <- tempfile()
 unzip(zip, exdir = dir)
 seg <- file.path(dir, "segmented_outputs")
-spe <- load_visiumhd(seg)
+spe <- loadVisiumHD(seg)
 #> Visium HD: 220703 cells, 18132 genes
 ```
 

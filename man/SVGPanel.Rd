@@ -39,7 +39,8 @@ SVGPanel(TopN = 200L, K = 6L, LinkedPanel = "", ...)
 
 \item{select_info}{A list of selection information, passed by iSEE.}
 
-\item{...}{Other slots, e.g. \code{Selection}.}
+\item{...}{Other slots: \code{Selection}, and \code{ComputeTrigger} (see
+\code{\link[=SpatialStatsPanel]{SpatialStatsPanel()}}).}
 
 \item{all_memory, all_contents}{iSEE's full panel-state list and the
 current selection contents of every panel, passed to
@@ -64,8 +65,14 @@ of \code{metadata(se)$gene_ranks}).}
 A \code{SVGPanel} object.
 }
 \description{
-Ranking of spatially variable genes (Moran's I)
+iSEE panel with a table of genes ranked by Moran's I on the region
+selected on the \code{\link[=SpatialMapPanel]{SpatialMapPanel()}}, computed on \emph{Compute} (Voyager, on
+a k-nearest-neighbour graph of the cell centroids). Clicking a row shows
+the gene in a linked \code{\link[=SpatialPlotPanel]{SpatialPlotPanel()}}.
 }
 \examples{
 SVGPanel(TopN = 100, LinkedPanel = "SpatialPlotPanel1")
+}
+\seealso{
+\code{\link[=SpatialStatsPanel]{SpatialStatsPanel()}} for Moran's I of chosen genes.
 }

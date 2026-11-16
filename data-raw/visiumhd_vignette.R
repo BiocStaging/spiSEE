@@ -22,7 +22,7 @@ setwd(wd)    # OSTA.data_load() changes the working directory
 dir <- tempfile()
 unzip(zip, exdir = dir)
 seg <- file.path(dir, "segmented_outputs")
-spe <- load_visiumhd(seg)
+spe <- loadVisiumHD(seg)
 
 # ---- The whole section
 xy <- spatialCoords(spe)

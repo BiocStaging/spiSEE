@@ -18,7 +18,8 @@ computeNiches(
 
 \item{label_col}{\code{colData} column with cell-type labels.}
 
-\item{k}{Neighbours per cell.}
+\item{k}{Neighbours per cell (default 20, as \code{\link[=buildSpatialGraph]{buildSpatialGraph()}} and
+the niche panel).}
 
 \item{n_niches}{Number of niches (k-means centres).}
 
@@ -51,4 +52,7 @@ spe <- SpatialExperiment::SpatialExperiment(
     colData = S4Vectors::DataFrame(Level1 = type), spatialCoords = xy)
 spe <- computeNiches(spe, label_col = "Level1", k = 8, n_niches = 2)
 table(spe$niche, spe$Level1)
+}
+\seealso{
+\code{\link[=buildSpatialGraph]{buildSpatialGraph()}}, \code{\link[=SpatialNichePanel]{SpatialNichePanel()}}.
 }

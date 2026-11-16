@@ -193,8 +193,12 @@ setMethod(".defineInterface", "SpatialNichePanel",
             identical(as.integer(md$k_spatial),
                         x@K) && isTRUE(all.equal(md$lambda, x@Lambda))
         if (!recompute && !stored_ok) stop(.PRESS_COMPUTE)
-        if (recompute || !stored_ok)
-            se <- computeSpatialDomains(se, k_spatial = x@K, lambda = x@Lambda)
+        if (recompute || !stored_ok) {
+            args <- list(se, k_spatial = x@K, lambda = x@Lambda)
+            if (!is.null(md$resolution)) args$resolution <- md$resolution
+            if (!is.null(md$k_graph)) args$k_graph <- md$k_graph
+            se <- do.call(computeSpatialDomains, args)
+        }
     } else {
         # The stored (offline, full-data) result is reused only if it was made
         # with the parameters currently shown in the panel.
@@ -403,8 +407,11 @@ setMethod(".createObservers", "SpatialNichePanel",
 #'   scatter on the "on tissue" plot types (needs a `polygons` column, as
 #'   created by SpaceTrooper). `NA` (the default) follows the dataset: on
 #'   at load time if a `polygons` column exists, off otherwise.
-#' @param ... Other slots, e.g. `Selection`.
+#' @param ... Other slots: `Selection`, and `ComputeTrigger` (see
+#'   [SpatialStatsPanel()]).
 #' @return A `SpatialNichePanel` object.
+#' @seealso [computeNiches()] and [computeSpatialDomains()], which run the
+#'   same analyses outside the app.
 #' @examples
 #' SpatialNichePanel(K = 30, NNiches = 8)
 #' @export

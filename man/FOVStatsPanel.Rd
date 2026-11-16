@@ -53,8 +53,31 @@ method.}
 A \code{FOVStatsPanel} object.
 }
 \description{
-Per-FOV QC summary (CosMx)
+iSEE panel with one boxplot per field of view (FOV) for each of several
+QC metrics, on the FOVs selected on the \code{\link[=SpatialMapPanel]{SpatialMapPanel()}} (all FOVs
+when nothing is selected). Useful to spot FOVs with weak staining or few
+transcripts before filtering.
+}
+\details{
+By default the first six QC metrics of \code{colData} are shown, on their own
+scale. A table in \code{metadata(spe)$fov_stats} replaces them, for instance
+to show transformed values: a \code{data.frame} in long format with one row
+per cell and metric and the columns \code{fov} (FOV id, as in \code{spe$fov}),
+\code{name} (metric name, one facet each) and \code{value} (number).
 }
 \examples{
 FOVStatsPanel()
+
+# optional: transformed values, one row per cell and metric
+spe <- SpatialExperiment::SpatialExperiment(
+    assays = list(counts = matrix(1, 2, 6)),
+    colData = S4Vectors::DataFrame(fov = rep(1:2, 3), total = 1:6),
+    spatialCoords = matrix(runif(12), 6, 2,
+        dimnames = list(NULL, c("x", "y"))))
+S4Vectors::metadata(spe)$fov_stats <- data.frame(fov = spe$fov,
+    name = "log10 total", value = log10(spe$total))
+}
+\seealso{
+\code{\link[=SpatialQCPanel]{SpatialQCPanel()}} for the distribution of one metric,
+\code{\link[=FOVZoomPanel]{FOVZoomPanel()}} for the cells of the selected FOVs.
 }

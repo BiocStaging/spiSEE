@@ -1,26 +1,39 @@
 #!/usr/bin/env Rscript
 # Offline step: build the spatial graph once, compute niches and spatial
 # domains on the FULL dataset, save an app-ready RDS. The niche panel then
-# shows these instantly as long as its k / number of niches match; Compute
-# re-runs on the current selection with the panel's parameters.
+# shows these at once as long as its parameters match; Compute re-runs on
+# the current selection with the panel's parameters.
 #
-#   Rscript inst/scripts/precompute_niches.R in.RDS out.RDS [label_col] [k] [n_niches] [lambda]
+#   Rscript precompute_niches.R in.rds out.rds label_col [k] [n_niches] [lambda]
 #
-# k = neighbours per cell. No universal value: small k describes the
-# immediate contact zone, large k a wider region. Choose it from the
-# structures you look at (and say which k in figures).
+# The script's path: system.file("scripts", "precompute_niches.R",
+#                                package = "iseeSpatial")
+# k = neighbours per cell. There is no universal value: a small k describes
+# the immediate contact zone, a large k a wider region. Choose it from the
+# structures studied, and give it in figures.
 args <- commandArgs(trailingOnly = TRUE)
-stopifnot(length(args) >= 2)
-suppressPackageStartupMessages(devtools::load_all(".", quiet = TRUE))
+if (length(args) < 3)
+    stop("usage: precompute_niches.R in.rds out.rds label_col ",
+        "[k] [n_niches] [lambda]")
+suppressPackageStartupMessages(library(iseeSpatial))
 spe <- readRDS(args[1])
-label_col <- if (length(args) >= 3 && nzchar(args[3])) args[3] else iseeSpatial:::.defaultLabelCol(spe)
-k        <- if (length(args) >= 4) as.integer(args[4]) else 20L
-n_niches <- if (length(args) >= 5) as.integer(args[5]) else 8L
-lambda   <- if (length(args) >= 6) as.numeric(args[6]) else 0.2
+label_col <- args[3]
+k <- if (length(args) >= 4) as.integer(args[4]) else 20L
+n_niches <- if (length(args) >= 5) as.integer(args[5]) else 6L
+lambda <- if (length(args) >= 6) as.numeric(args[6]) else 0.2
 message(sprintf("cells: %d | labels: %s | k = %d | niches = %d | lambda = %.2f",
-                ncol(spe), label_col, k, n_niches, lambda))
-t0 <- Sys.time(); spe <- buildSpatialGraph(spe, k = k);                     message("graph:   ", format(Sys.time() - t0))
-t0 <- Sys.time(); spe <- computeNiches(spe, label_col, k = k, n_niches = n_niches); message("niches:  ", format(Sys.time() - t0))
-t0 <- Sys.time(); spe <- computeSpatialDomains(spe, k_spatial = k, lambda = lambda); message("domains: ", format(Sys.time() - t0))
-print(table(spe$niche, useNA = "ifany")); print(table(spe$spatial_domain))
+    ncol(spe), label_col, k, n_niches, lambda))
+timed <- function(what, expr) {
+    t0 <- Sys.time()
+    out <- force(expr)
+    message(what, ": ", format(Sys.time() - t0))
+    out
+}
+spe <- timed("graph", buildSpatialGraph(spe, k = k))
+spe <- timed("niches", computeNiches(spe, label_col, k = k,
+    n_niches = n_niches))
+spe <- timed("domains", computeSpatialDomains(spe, k_spatial = k,
+    lambda = lambda))
+print(table(spe$niche, useNA = "ifany"))
+print(table(spe$spatial_domain))
 saveRDS(spe, args[2])

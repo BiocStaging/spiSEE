@@ -140,8 +140,8 @@ The statistics panel offers:
 | Local cluster significance (hot and cold spots) | `locclust_plot` |
 | Join-count statistics of the cell types | `joincount_plot` |
 | Cell-type co-occurrence heatmap | `joincount_heatmap_plot` |
-| L-function of the frequent cell types | `lest_plot` |
-| L-cross function of pairs of cell types | `lcross_plot` |
+| L-function of the most frequent cell type | `lest_plot` |
+| L-cross function of the two most frequent cell types | `lcross_plot` |
 
 Moran's I and local clusters come from `r BiocStyle::Biocpkg("Voyager")`,
 the L-functions from `r BiocStyle::Biocpkg("spatialFDA")`.
@@ -192,7 +192,9 @@ spe <- computeSpatialDomains(spe, k_spatial = 15, lambda = 0.5,
 table(domain = spe$spatial_domain, expression = spe$expr_cluster)
 ```
 
-The niche panel opens on these stored results without recomputing.
+The niche panel opens on these stored results without recomputing, with
+the same `k`, number of niches and `lambda`; *Compute* on a selected
+region reuses the stored `resolution`.
 
 # Custom layouts
 
@@ -212,16 +214,13 @@ panels <- list(
 app <- iseeSpatial(spe, initial = panels, cache = FALSE)
 ```
 
-Each panel also renders as a static plot, useful for reports:
+For reports, `plotSpatialCells()` draws the cells as in the spatial
+plot panels, with the same colours, here the niches computed above:
 
-```{r static, dev = "svglite", crop = NULL}
-#| fig.cap = paste("The join-count heatmap of the custom layout, rendered",
-#|     "outside the app.")
-p <- iSEE::.generateOutput(
-    SpatialStatsPanel(PlotType = "joincount_heatmap_plot",
-                        LabelCol = "cell_type", K = 15L,
-                        ComputeTrigger = "launch"), spe)
-grid::grid.draw(p$gtable)
+```{r static, fig.width = 7, fig.height = 4}
+#| fig.cap = paste("The niches of the example, drawn outside the app with",
+#|     "plotSpatialCells().")
+plotSpatialCells(spe, "niche")
 ```
 
 # Image cache
@@ -235,13 +234,17 @@ nothing to the user's folders. `clearSpatialCache()` empties the folder.
 # Loading other data
 
 ```{r loaders, eval = FALSE}
-spe <- load_cosmx("cosmx_spe.rds")                # a prepared CosMx object
-spe <- load_xenium("path/to/xenium/outs")         # 10x Xenium bundle
-spe <- load_visiumhd("path/to/segmented_outputs") # Visium HD, cell-segmented
+spe <- loadCosmx("cosmx_spe.rds")                # a prepared CosMx object
+spe <- loadXenium("path/to/xenium/outs")         # 10x Xenium bundle
+spe <- loadVisiumHD("path/to/segmented_outputs") # Visium HD, cell-segmented
 ```
 
 Any `SpatialExperiment` with spatial coordinates works; `setPlatform()`
-sets how regions are selected when it cannot be detected.
+sets how regions are selected when it cannot be detected. The app shows
+one sample at a time: with several samples, choose one with
+`iseeSpatial(spe, sample = "...")`. Entries of `metadata(spe)` that the
+panels use when present (gene ranking, per-FOV tables, FOV layout) are
+listed in `?iseeSpatial`.
 
 # Session information
 

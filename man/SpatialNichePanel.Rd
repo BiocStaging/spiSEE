@@ -47,7 +47,8 @@ SpatialNichePanel(
 
 \item{select_info}{A list of selection information, passed by iSEE.}
 
-\item{...}{Other slots, e.g. \code{Selection}.}
+\item{...}{Other slots: \code{Selection}, and \code{ComputeTrigger} (see
+\code{\link[=SpatialStatsPanel]{SpatialStatsPanel()}}).}
 
 \item{all_memory, all_contents}{iSEE's full panel-state list and the
 current selection contents of every panel, passed to
@@ -88,4 +89,8 @@ panel's parameters match them; \emph{Compute} re-runs on the selection.
 }
 \examples{
 SpatialNichePanel(K = 30, NNiches = 8)
+}
+\seealso{
+\code{\link[=computeNiches]{computeNiches()}} and \code{\link[=computeSpatialDomains]{computeSpatialDomains()}}, which run the
+same analyses outside the app.
 }

@@ -36,7 +36,9 @@ SpatialMapPanel(...)
 
 \item{select_info}{A list of selection information, passed by iSEE.}
 
-\item{...}{Slots passed to \code{new()}, e.g. \code{PanelWidth}.}
+\item{...}{Slots passed to \code{new()}, e.g. \code{PanelWidth}, or
+\code{CommittedIDs}: an initial selection (comma-separated ids), as set by
+the \code{selection} argument of \code{\link[=iseeSpatial]{iseeSpatial()}}.}
 
 \item{all_memory, all_contents}{iSEE's full panel-state list and the
 current selection contents of every panel, passed to
@@ -60,4 +62,8 @@ in the app (all classes extending \linkS4class{SpatialPanelBase}).
 }
 \examples{
 SpatialMapPanel()
+}
+\seealso{
+\code{\link[=iseeSpatial]{iseeSpatial()}}; \linkS4class{SpatialPanelBase} for the panels that
+follow the selection.
 }

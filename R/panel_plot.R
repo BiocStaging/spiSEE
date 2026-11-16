@@ -195,15 +195,23 @@ setMethod(".createObservers", "SpatialPlotPanel",
 
 #' Spatial plot of cells coloured by annotation, QC metric or gene
 #'
+#' iSEE panel showing the cells of the region selected on the
+#' [SpatialMapPanel()], as centroids or as their segmentation polygons,
+#' coloured by a cell annotation, a QC metric or the expression of a gene
+#' (`logcounts`). It redraws as soon as the selection or a parameter
+#' changes.
+#'
 #' @param ColorBy A `colData` column or a gene name. Empty string = first
 #'   cell-type column, else first QC metric.
 #' @param UsePolygons Draw segmentation polygons instead of centroids (needs
 #'   a `polygons` column, as created by SpaceTrooper). `NA` (the default)
-#'   follows the dataset: on at load time if a `polygons` column exists,
-#'   off otherwise.
+#'   follows the dataset: on if a `polygons` column exists and the dataset
+#'   has at most 20,000 cells (more polygons make the browser slow), off
+#'   otherwise. It can still be ticked in the app on a small selection.
 #' @param PointSize Centroid size.
 #' @param ... Other slots, e.g. `Selection`.
 #' @return A `SpatialPlotPanel` object.
+#' @seealso [plotSpatialCells()] for the same plot outside the app.
 #' @examples
 #' SpatialPlotPanel(ColorBy = "total")
 #' @export
@@ -283,11 +291,17 @@ setMethod(".createObservers", "FOVZoomPanel",
 
 #' Zoom on selected FOVs (CosMx)
 #'
-#' @param ColorBy QC metric used to colour cell polygons.
+#' iSEE panel drawing the cell polygons of the FOVs selected on the
+#' [SpatialMapPanel()], coloured by a QC metric, with
+#' `SpaceTrooper::plotZoomFovsMap()`. Needs a `polygons` column.
+#'
+#' @param ColorBy QC metric used to colour cell polygons. Empty = the
+#'   first QC metric.
 #' @param ... Other slots, e.g. `Selection`.
 #' @return A `FOVZoomPanel` object.
+#' @seealso [FOVStatsPanel()], [SpatialQCPanel()].
 #' @examples
-#' FOVZoomPanel(ColorBy = "QC_score")
+#' FOVZoomPanel(ColorBy = "QScore")
 #' @export
 FOVZoomPanel <- function(ColorBy = "", ...) new("FOVZoomPanel",
                                                 ColorBy = ColorBy, ...)

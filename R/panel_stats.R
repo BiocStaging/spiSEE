@@ -120,6 +120,18 @@ setMethod(".createObservers", "SpatialStatsPanel",
 #' join-count statistics and L-functions, computed on the region selected
 #' on the [SpatialMapPanel()] when the user presses *Compute*.
 #'
+#' The neighbour graph is a k-nearest-neighbour graph on the cell
+#' centroids of the region. Moran's I and the local clusters come from
+#' Voyager, the join counts from spdep. The L-function (`lest_plot`) is
+#' computed for the most frequent cell type and the L-cross function
+#' (`lcross_plot`) for the two most frequent ones (types with at least 10
+#' cells), with spatialFDA, up to a radius of a quarter of the shorter
+#' side of the region.
+#'
+#' Changing a parameter does not recompute anything: results are computed
+#' on *Compute* and cached by what they compute (statistic, parameters,
+#' region and dataset), so the same analysis opens at once the next time.
+#'
 #' @param PlotType One of `"graph_plot"`, `"localmoran_plot"`,
 #'   `"moran_plot"`, `"locclust_plot"`, `"joincount_plot"`,
 #'   `"joincount_heatmap_plot"`, `"lest_plot"`, `"lcross_plot"`.
@@ -129,8 +141,12 @@ setMethod(".createObservers", "SpatialStatsPanel",
 #' @param Alpha Significance level for the local cluster plot: a cell is
 #'   called significant when its adjusted p-value (local Moran's I) is
 #'   below `Alpha`. Shown on the plot.
-#' @param ... Other slots, e.g. `Selection`.
+#' @param ... Other slots: `Selection`, and `ComputeTrigger`, which is set
+#'   when *Compute* is pressed. Give any non-empty value (e.g.
+#'   `ComputeTrigger = "launch"`) to compute the panel when the app opens.
 #' @return A `SpatialStatsPanel` object.
+#' @seealso [SVGPanel()] to rank genes by Moran's I, [SpatialNichePanel()]
+#'   for niches and domains.
 #' @examples
 #' SpatialStatsPanel(PlotType = "joincount_plot", K = 10)
 #' @export
@@ -272,13 +288,20 @@ setMethod(".createObservers", "SVGPanel",
 
 #' Ranking of spatially variable genes (Moran's I)
 #'
+#' iSEE panel with a table of genes ranked by Moran's I on the region
+#' selected on the [SpatialMapPanel()], computed on *Compute* (Voyager, on
+#' a k-nearest-neighbour graph of the cell centroids). Clicking a row shows
+#' the gene in a linked [SpatialPlotPanel()].
+#'
 #' @param TopN Number of most expressed genes to scan (or the first `TopN`
 #'   of `metadata(se)$gene_ranks`).
 #' @param K Number of spatial neighbours per cell.
 #' @param LinkedPanel Name of a [SpatialPlotPanel()] (e.g.
 #'   `"SpatialPlotPanel2"`) that shows the gene clicked in the table.
-#' @param ... Other slots, e.g. `Selection`.
+#' @param ... Other slots: `Selection`, and `ComputeTrigger` (see
+#'   [SpatialStatsPanel()]).
 #' @return A `SVGPanel` object.
+#' @seealso [SpatialStatsPanel()] for Moran's I of chosen genes.
 #' @examples
 #' SVGPanel(TopN = 100, LinkedPanel = "SpatialPlotPanel1")
 #' @export

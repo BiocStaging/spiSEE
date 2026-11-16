@@ -17,6 +17,7 @@
 #' @param borders Draw cell borders (polygons only).
 #' @param point_size Point size when drawing points.
 #' @return A `ggplot`.
+#' @seealso [SpatialPlotPanel()], the same plot in the app.
 #' @examples
 #' dir <- system.file("extdata", "CosMx_DBKero_Tiny", package = "SpaceTrooper")
 #' if (nzchar(dir)) {

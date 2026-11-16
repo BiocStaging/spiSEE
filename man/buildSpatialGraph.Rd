@@ -6,7 +6,7 @@
 \usage{
 buildSpatialGraph(
   spe,
-  k = 10L,
+  k = 20L,
   name = "spatial_knn",
   BNPARAM = BiocNeighbors::KmknnParam()
 )
@@ -14,7 +14,8 @@ buildSpatialGraph(
 \arguments{
 \item{spe}{A \code{SpatialExperiment}.}
 
-\item{k}{Number of neighbours per cell.}
+\item{k}{Number of neighbours per cell. The default, 20, is that of
+\code{\link[=computeNiches]{computeNiches()}}, so the graph is reused there.}
 
 \item{name}{Name of the stored column pairing.}
 
@@ -43,4 +44,7 @@ spe <- SpatialExperiment::SpatialExperiment(
     colData = S4Vectors::DataFrame(Level1 = type), spatialCoords = xy)
 spe <- buildSpatialGraph(spe, k = 8)
 SingleCellExperiment::colPairNames(spe)
+}
+\seealso{
+\code{\link[=computeNiches]{computeNiches()}}, \code{\link[=computeSpatialDomains]{computeSpatialDomains()}}.
 }

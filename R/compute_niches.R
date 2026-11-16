@@ -18,7 +18,7 @@ NULL
 #     gives ordinary expression clusters, so the two can be compared directly.
 #
 # Everything heavy is a plain function that works offline on the full object
-# (see inst/scripts/precompute_niches.R); SpatialNichePanel only displays the
+# (see scripts/precompute_niches.R); SpatialNichePanel only displays the
 # stored result, and recomputes on the current selection on request.
 
 
@@ -148,11 +148,13 @@ NULL
 #' graph instead of rebuilding it.
 #'
 #' @param spe A `SpatialExperiment`.
-#' @param k Number of neighbours per cell.
+#' @param k Number of neighbours per cell. The default, 20, is that of
+#'   [computeNiches()], so the graph is reused there.
 #' @param name Name of the stored column pairing.
 #' @param BNPARAM A `BiocNeighborParam`; use `BiocNeighbors::AnnoyParam()`
 #'   for very large datasets.
 #' @return `spe` with `colPair(spe, name)` set.
+#' @seealso [computeNiches()], [computeSpatialDomains()].
 #' @examples
 #' # two zones of cell types on a 20 x 20 grid
 #' xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
@@ -167,7 +169,7 @@ NULL
 #' spe <- buildSpatialGraph(spe, k = 8)
 #' SingleCellExperiment::colPairNames(spe)
 #' @export
-buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
+buildSpatialGraph <- function(spe, k = 20L, name = "spatial_knn",
                                 BNPARAM = BiocNeighbors::KmknnParam()) {
     k <- .checkCount(k, "k")
     adj <- .knnAdjacency(SpatialExperiment::spatialCoords(spe), k = k,
@@ -200,12 +202,14 @@ buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
 #'
 #' @param spe A `SpatialExperiment`.
 #' @param label_col `colData` column with cell-type labels.
-#' @param k Neighbours per cell.
+#' @param k Neighbours per cell (default 20, as [buildSpatialGraph()] and
+#'   the niche panel).
 #' @param n_niches Number of niches (k-means centres).
 #' @param include_self Count the cell itself in its neighbourhood.
 #' @param seed Random seed for k-means.
 #' @return `spe` with niche annotations added. Cells with an `NA` label get
 #'   `NA` niche.
+#' @seealso [buildSpatialGraph()], [SpatialNichePanel()].
 #' @examples
 #' # two zones of cell types on a 20 x 20 grid
 #' xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
@@ -263,7 +267,8 @@ computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
 #'
 #' @param spe A `SpatialExperiment` with a `logcounts` assay (or a
 #'   `reducedDim` named by `use_dimred`).
-#' @param k_spatial Spatial neighbours used for the neighbourhood average.
+#' @param k_spatial Spatial neighbours used for the neighbourhood average
+#'   (default 20, as [buildSpatialGraph()], whose graph is then reused).
 #' @param lambda Share (0-1) of the neighbourhood part.
 #' @param use_dimred Name of an existing `reducedDim` to use; if absent,
 #'   PCA is computed on `logcounts` with `scater::calculatePCA()`.
@@ -272,6 +277,9 @@ computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
 #' @param resolution Louvain resolution (higher = more domains).
 #' @param seed Random seed.
 #' @return `spe` with `colData` columns `spatial_domain` and `expr_cluster`.
+#'   The parameters are stored in `metadata(spe)$iseeSpatial_domains`;
+#'   *Compute* in [SpatialNichePanel()] reuses `resolution` and `k_graph`.
+#' @seealso [buildSpatialGraph()], [SpatialNichePanel()].
 #' @examples
 #' # two zones of cell types on a 20 x 20 grid
 #' xy <- as.matrix(expand.grid(x = 1:20, y = 1:20))
@@ -286,7 +294,7 @@ computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
 #' spe <- computeSpatialDomains(spe, k_spatial = 8, n_pcs = 3, k_graph = 10)
 #' table(spe$spatial_domain)
 #' @export
-computeSpatialDomains <- function(spe, k_spatial = 15L, lambda = 0.2,
+computeSpatialDomains <- function(spe, k_spatial = 20L, lambda = 0.2,
                                     use_dimred = "PCA", n_pcs = 20L,
                                     k_graph = 20L, resolution = 0.8,
                                     seed = 1L) {

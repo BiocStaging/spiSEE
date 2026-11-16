@@ -31,6 +31,20 @@
 #'   the least recently used images are removed first.
 #' @param ... Passed to [iSEE::iSEE()].
 #' @return A Shiny app object (prints/launches in an interactive session).
+#' @section Optional metadata:
+#' Some entries of `metadata(spe)` are used when present:
+#' * `gene_ranks`: gene names, in the order of the gene menus and of the
+#'   genes scanned by [SVGPanel()] (default: by mean expression).
+#' * `fov_stats`: per-FOV values for [FOVStatsPanel()] (see there).
+#' * `technology`: as set by SpaceTrooper's readers; gives the unit of the
+#'   scale bars of the spatial plots (none without it).
+#' * `fov_positions`, `fov_dim`: FOV layout from
+#'   `SpaceTrooper::readCosmxSPE()`, drawn on the map (CosMx); without them
+#'   the tiles follow the extent of the cells of each FOV.
+#' * Niches and domains stored by [computeNiches()] and
+#'   [computeSpatialDomains()]: shown by [SpatialNichePanel()] without
+#'   recomputing.
+#' @seealso [SpatialMapPanel()] and the other panels; [spatialCacheDir()].
 #' @examples
 #' spe <- SpatialExperiment::SpatialExperiment(
 #'     assays = list(counts = matrix(rpois(200, 3), 10, 20,
@@ -98,7 +112,7 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
         if (tiles) panels <- append(panels, list(FOVZoomPanel(
             ColorBy = if (length(score)) score[1] else "",
             Selection = selection)))
-        if (tiles && !is.null(S4Vectors::metadata(spe)$fov_stats))
+        if (tiles)
             panels <- append(panels, list(FOVStatsPanel(Selection = selection)))
         return(panels)
     }

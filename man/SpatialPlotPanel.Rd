@@ -57,8 +57,9 @@ cell-type column, else first QC metric.}
 
 \item{UsePolygons}{Draw segmentation polygons instead of centroids (needs
 a \code{polygons} column, as created by SpaceTrooper). \code{NA} (the default)
-follows the dataset: on at load time if a \code{polygons} column exists,
-off otherwise.}
+follows the dataset: on if a \code{polygons} column exists and the dataset
+has at most 20,000 cells (more polygons make the browser slow), off
+otherwise. It can still be ticked in the app on a small selection.}
 
 \item{PointSize}{Centroid size.}
 }
@@ -66,8 +67,15 @@ off otherwise.}
 A \code{SpatialPlotPanel} object.
 }
 \description{
-Spatial plot of cells coloured by annotation, QC metric or gene
+iSEE panel showing the cells of the region selected on the
+\code{\link[=SpatialMapPanel]{SpatialMapPanel()}}, as centroids or as their segmentation polygons,
+coloured by a cell annotation, a QC metric or the expression of a gene
+(\code{logcounts}). It redraws as soon as the selection or a parameter
+changes.
 }
 \examples{
 SpatialPlotPanel(ColorBy = "total")
+}
+\seealso{
+\code{\link[=plotSpatialCells]{plotSpatialCells()}} for the same plot outside the app.
 }

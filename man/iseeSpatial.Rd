@@ -65,6 +65,24 @@ per-FOV summary for CosMx). Meant for unfiltered data.
 spatial statistics, spatially variable genes, niches and domains.
 }
 }
+\section{Optional metadata}{
+
+Some entries of \code{metadata(spe)} are used when present:
+\itemize{
+\item \code{gene_ranks}: gene names, in the order of the gene menus and of the
+genes scanned by \code{\link[=SVGPanel]{SVGPanel()}} (default: by mean expression).
+\item \code{fov_stats}: per-FOV values for \code{\link[=FOVStatsPanel]{FOVStatsPanel()}} (see there).
+\item \code{technology}: as set by SpaceTrooper's readers; gives the unit of the
+scale bars of the spatial plots (none without it).
+\item \code{fov_positions}, \code{fov_dim}: FOV layout from
+\code{SpaceTrooper::readCosmxSPE()}, drawn on the map (CosMx); without them
+the tiles follow the extent of the cells of each FOV.
+\item Niches and domains stored by \code{\link[=computeNiches]{computeNiches()}} and
+\code{\link[=computeSpatialDomains]{computeSpatialDomains()}}: shown by \code{\link[=SpatialNichePanel]{SpatialNichePanel()}} without
+recomputing.
+}
+}
+
 \examples{
 spe <- SpatialExperiment::SpatialExperiment(
     assays = list(counts = matrix(rpois(200, 3), 10, 20,
@@ -73,4 +91,7 @@ spe <- SpatialExperiment::SpatialExperiment(
         dimnames = list(NULL, c("x", "y"))))
 app <- iseeSpatial(spe, mode = "qc", cache = FALSE)
 if (interactive()) shiny::runApp(app)
+}
+\seealso{
+\code{\link[=SpatialMapPanel]{SpatialMapPanel()}} and the other panels; \code{\link[=spatialCacheDir]{spatialCacheDir()}}.
 }

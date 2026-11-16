@@ -69,9 +69,10 @@
         colData = cd, spatialCoords = coords)
 }
 
-# Path to the small, real, committed Xenium test bundle -- ships with the
-# repo (data-raw/xenium_test_data, ~17MB), so tests gated on this always
-# run rather than skip -- see test-xenium-panels.R.
+# Path to a small real Xenium bundle (10x "Xenium Prime Mouse Ileum tiny",
+# subset), if present locally in data-raw/xenium_test_data; it is not
+# shipped, so the test that needs it skips elsewhere. The loaders are also
+# tested on the example data of SpatialExperimentIO and VisiumIO.
 .xeniumTestDataPath <- function() {
     candidates <- c("../../data-raw/xenium_test_data",
                     "data-raw/xenium_test_data",

@@ -49,14 +49,20 @@ method.}
 
 \item{input, session}{The current Shiny \code{input} and \code{session} objects.}
 
-\item{ColorBy}{QC metric used to colour cell polygons.}
+\item{ColorBy}{QC metric used to colour cell polygons. Empty = the
+first QC metric.}
 }
 \value{
 A \code{FOVZoomPanel} object.
 }
 \description{
-Zoom on selected FOVs (CosMx)
+iSEE panel drawing the cell polygons of the FOVs selected on the
+\code{\link[=SpatialMapPanel]{SpatialMapPanel()}}, coloured by a QC metric, with
+\code{SpaceTrooper::plotZoomFovsMap()}. Needs a \code{polygons} column.
 }
 \examples{
-FOVZoomPanel(ColorBy = "QC_score")
+FOVZoomPanel(ColorBy = "QScore")
+}
+\seealso{
+\code{\link[=FOVStatsPanel]{FOVStatsPanel()}}, \code{\link[=SpatialQCPanel]{SpatialQCPanel()}}.
 }

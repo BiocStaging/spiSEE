@@ -106,12 +106,21 @@ setMethod(".createObservers", "SpatialQCPanel",
 
 #' QC metric histogram for the selected region
 #'
+#' iSEE panel with the histogram of one QC metric (a numeric `colData`
+#' column) over the cells of the region selected on the
+#' [SpatialMapPanel()]. When SpaceTrooper's medcouple outlier detection has
+#' been run (`SpaceTrooper::computeSpatialOutlier()`, which adds a column
+#' `<Metric>_outlier_mc`), the outlier fences are drawn and the number of
+#' flagged cells is given.
+#'
 #' @param Metric A numeric `colData` column. Empty = first known QC metric
 #'   of the platform.
 #' @param UseFences Show medcouple outlier fences when a column
 #'   `<Metric>_outlier_mc` exists (SpaceTrooper).
 #' @param ... Other slots, e.g. `Selection`.
 #' @return A `SpatialQCPanel` object.
+#' @seealso [FOVStatsPanel()] for metrics per FOV, [SpatialPlotPanel()] to
+#'   see a metric on the tissue.
 #' @examples
 #' SpatialQCPanel(Metric = "total")
 #' @export
@@ -137,20 +146,39 @@ setMethod(".defineInterface", "FOVStatsPanel", function(x, se, select_info) {
     list(iSEE::collapseBox(id = paste0(enc, "_DataBoxOpen"), title = "Display",
                             open = TRUE,
         shiny::helpText("Boxplots of QC metrics per FOV",
-                        "(precomputed in metadata(se)$fov_stats).")))
+                        "(metadata(se)$fov_stats, else the QC columns).")))
 })
+
+# Long table fov / name / value: metadata(se)$fov_stats if given, else the
+# first six QC metrics of colData.
+.fovLong <- function(se) {
+    st <- S4Vectors::metadata(se)$fov_stats
+    if (!is.null(st)) return(as.data.frame(st)[, c("fov", "name", "value")])
+    m <- utils::head(.qcMetrics(se), 6)
+    if (!length(m)) return(NULL)
+    cd <- colData(se)
+    fov <- as.character(cd[[.platformInfo(se)$region_col]])
+    do.call(rbind, lapply(m, function(v) data.frame(fov = fov, name = v,
+        value = as.numeric(cd[[v]]))))
+}
 
 #' @rdname FOVStatsPanel
 #' @export
 setMethod(".generateOutput", "FOVStatsPanel", function(x, se, ...) {
-    fov_long <- S4Vectors::metadata(se)$fov_stats
+    if (.selectionUnit(se) != "fov")
+        return(.notAvailablePlot("Per-FOV summaries need FOV-based data"))
+    fov_long <- .fovLong(se)
     if (is.null(fov_long))
-        return(.notAvailablePlot(
-            "No fov_stats in metadata(se) (see data-raw/DATASET.R)"))
+        return(.notAvailablePlot("No QC metric to summarise per FOV"))
     sel <- .splitIDs(x@Selection)
     if (length(sel)) fov_long <- fov_long[as.character(fov_long$fov) %in% sel,
                                             , drop = FALSE]
-    fov_long$fov <- droplevels(factor(fov_long$fov))
+    if (!nrow(fov_long))
+        return(.notAvailablePlot("No per-FOV values for this selection"))
+    u <- unique(as.character(fov_long$fov))
+    all_ids <- .allRegionIDs(se)
+    fov_long$fov <- factor(fov_long$fov,
+        levels = c(intersect(all_ids, u), setdiff(u, all_ids)))
     n <- nlevels(fov_long$fov)
     brk <- levels(fov_long$fov)
     if (n > 15) brk <- brk[unique(c(1, seq(10, n, by = 10)))]
@@ -178,9 +206,31 @@ setMethod(".createObservers", "FOVStatsPanel",
 
 #' Per-FOV QC summary (CosMx)
 #'
+#' iSEE panel with one boxplot per field of view (FOV) for each of several
+#' QC metrics, on the FOVs selected on the [SpatialMapPanel()] (all FOVs
+#' when nothing is selected). Useful to spot FOVs with weak staining or few
+#' transcripts before filtering.
+#'
+#' By default the first six QC metrics of `colData` are shown, on their own
+#' scale. A table in `metadata(spe)$fov_stats` replaces them, for instance
+#' to show transformed values: a `data.frame` in long format with one row
+#' per cell and metric and the columns `fov` (FOV id, as in `spe$fov`),
+#' `name` (metric name, one facet each) and `value` (number).
+#'
 #' @param ... Slots, e.g. `Selection`.
+#' @seealso [SpatialQCPanel()] for the distribution of one metric,
+#'   [FOVZoomPanel()] for the cells of the selected FOVs.
 #' @return A `FOVStatsPanel` object.
 #' @examples
 #' FOVStatsPanel()
+#'
+#' # optional: transformed values, one row per cell and metric
+#' spe <- SpatialExperiment::SpatialExperiment(
+#'     assays = list(counts = matrix(1, 2, 6)),
+#'     colData = S4Vectors::DataFrame(fov = rep(1:2, 3), total = 1:6),
+#'     spatialCoords = matrix(runif(12), 6, 2,
+#'         dimnames = list(NULL, c("x", "y"))))
+#' S4Vectors::metadata(spe)$fov_stats <- data.frame(fov = spe$fov,
+#'     name = "log10 total", value = log10(spe$total))
 #' @export
 FOVStatsPanel <- function(...) new("FOVStatsPanel", ...)

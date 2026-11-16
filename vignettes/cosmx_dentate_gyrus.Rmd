@@ -47,10 +47,9 @@ library(SpaceTrooper)
 library(ggplot2)
 
 # OSTA.data_load() changes the working directory on first download:
-# put it back.
-owd <- getwd()
-zip <- OSTA.data::OSTA.data_load("CosMx1k_MouseBrain2", mol = FALSE)
-setwd(owd)
+# run it from a temporary one.
+zip <- withr::with_dir(tempdir(),
+    OSTA.data::OSTA.data_load("CosMx1k_MouseBrain2", mol = FALSE))
 dir <- tempfile()
 unzip(zip, exdir = dir)
 list.files(dir)
@@ -80,13 +79,14 @@ summary(spe$Area_um)
 The metrics are combined into one quality score per cell, `QScore`,
 between 0 and 1. Outliers of a single metric are flagged with
 medcouple-adjusted fences (robust to skewed distributions), here for the
-total counts, which the score does not use.
+total counts, which the score does not use, and for the cell area.
 
 ```{r qscore}
 spe <- computeQScore(spe)
 spe <- computeQScoreFlags(spe, qsThreshold = 0.5)
 table(low_QScore = spe$low_QScore)
 spe <- computeSpatialOutlier(spe, computeBy = "total", method = "mc")
+spe <- computeSpatialOutlier(spe, computeBy = "Area_um", method = "mc")
 ```
 
 The cell polygons are read once the score is computed:
@@ -273,7 +273,7 @@ PCA is needed first.
 ```{r domains}
 pca <- prcomp(t(as.matrix(logcounts(dg))), rank. = 20)
 reducedDim(dg, "PCA") <- pca$x
-dg <- computeSpatialDomains(dg, k_spatial = 15, lambda = 0.5,
+dg <- computeSpatialDomains(dg, k_spatial = 15, lambda = 0.2,
                             resolution = 0.5)
 table(domain = dg$spatial_domain)
 ```
@@ -306,7 +306,7 @@ second click on a validated tile removes it; *Clear* returns to the whole
 dataset.
 
 The same selection works cell by cell for platforms without fields of
-view. For Xenium and Visium HD data (`load_xenium()`, `load_visiumhd()`),
+view. For Xenium and Visium HD data (`loadXenium()`, `loadVisiumHD()`),
 or any `SpatialExperiment` whose platform is not CosMx, the overview map
 shows every cell as a point: clicking adds or removes a cell, and the box
 tool selects all the cells in a rectangle, also on sections of more than
@@ -322,8 +322,8 @@ The statistics panel offers, for a gene or for the cell types:
 * local cluster significance (high-high, low-low, ...) at a level set in
     the panel;
 * join-count statistics and a cell-type co-occurrence heatmap;
-* L-function and L-cross function
-    (`r BiocStyle::Biocpkg("spatialFDA")`).
+* the L-function of the most frequent cell type and the L-cross function
+    of the two most frequent ones (`r BiocStyle::Biocpkg("spatialFDA")`).
 
 ```{r shot-stats, echo = FALSE}
 #| fig.cap = paste("Local Moran's I of Adcy1 (left) and cell-type",
@@ -375,11 +375,11 @@ app <- iseeSpatial(dg, initial = panels, cache = FALSE)
 ## Saving the prepared object
 
 The object can be saved and reopened directly in the app later
-(`load_cosmx()` sets the platform):
+(`loadCosmx()` sets the platform):
 
 ```{r save, eval = FALSE}
 saveRDS(dg, "dentate_gyrus.rds")
-app <- iseeSpatial(load_cosmx("dentate_gyrus.rds"))
+app <- iseeSpatial(loadCosmx("dentate_gyrus.rds"))
 ```
 
 # Session information

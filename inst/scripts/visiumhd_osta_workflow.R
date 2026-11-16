@@ -17,8 +17,7 @@
 #
 # Needs: OSTA.data, VisiumIO, scrapper, SpotSweeper, SingleR, DropletUtils,
 # Voyager, SpatialFeatureExperiment, ggspavis, sf, arrow, dplyr, tidyr,
-# patchwork, pals, scater, devtools (+ iseeSpatial from this folder).
-# Run from the package root. Memory-heavy: prefer the server.
+# patchwork, pals, scater, iseeSpatial. Memory-heavy: prefer a server.
 # ============================================================
 
 args   <- commandArgs(trailingOnly = TRUE)
@@ -439,7 +438,7 @@ fig(p, "17.6_areas_by_celltype", w = 12, h = 5)
 message("OSTA chapter reproduced in ", format(Sys.time() - t_start))
 
 # ---- Part 2: iseeSpatial additions (not in the chapter) -----------------
-suppressPackageStartupMessages(devtools::load_all(".", quiet = TRUE))
+suppressPackageStartupMessages(library(iseeSpatial))
 
 if (!"logcounts" %in% assayNames(sfe)) stop("No 'logcounts' assay: check .normalizeRnaCounts() output name")
 logcounts(sfe_unfiltered) <- log1p(counts(sfe_unfiltered))

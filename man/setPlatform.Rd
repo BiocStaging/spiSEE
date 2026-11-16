@@ -33,3 +33,7 @@ getPlatform(spe)
 spe <- setPlatform(spe, "xenium")
 getPlatform(spe)
 }
+\seealso{
+\code{\link[=iseeSpatial]{iseeSpatial()}}, whose \code{platform} argument calls
+\code{setPlatform()}.
+}

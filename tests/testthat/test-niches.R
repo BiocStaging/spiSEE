@@ -45,14 +45,14 @@ test_that("niche k-means separates the two zones", {
     expect_match(nice, "^N[12]: ")
 })
 
-test_that(".log2Enrichment is ~0 under independence and positive on the diagonal when aligned", {
+test_that(".log2Enrichment: ~0 if independent, > 0 on an aligned diagonal", {
     g <- rep(c("x", "y"), each = 50)
     e <- .log2Enrichment(g, g)
     expect_gt(e["x", "x"], 0)
     expect_lt(e["x", "y"], 0)
 })
 
-test_that(".augmentEmbedding with lambda 0 is the identity; spatial clustering finds the zones", {
+test_that("lambda 0 is plain expression; domains find the zones", {
     d <- .twoZoneData(n = 600)
     set.seed(2)
     # Expression signal follows the zone weakly; neighbourhood averaging
@@ -74,7 +74,7 @@ test_that(".augmentEmbedding with lambda 0 is the identity; spatial clustering f
 })
 
 # SpatialExperiment-level API (needs SpatialExperiment; runs on your machine).
-test_that("buildSpatialGraph/computeNiches work on a SpatialExperiment and survive subsetting", {
+test_that("graph and niches work on an SPE and survive subsetting", {
     skip_if_not_installed("SpatialExperiment")
     spe <- .makeTestSPE(n_cells = 300)
     spe <- buildSpatialGraph(spe, k = 10)
@@ -120,7 +120,7 @@ test_that("niche results are reused when only the plot type changes", {
     expect_s3_class(out2, "pheatmap")
 })
 
-test_that("niche clustering is reproducible and leaves the user's random state alone", {
+test_that("niches are reproducible; the random state is left alone", {
     set.seed(42)
     before <- .Random.seed
     x <- matrix(c(rnorm(50), rnorm(50, 5)), ncol = 2)

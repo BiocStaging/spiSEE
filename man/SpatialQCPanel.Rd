@@ -59,8 +59,17 @@ of the platform.}
 A \code{SpatialQCPanel} object.
 }
 \description{
-QC metric histogram for the selected region
+iSEE panel with the histogram of one QC metric (a numeric \code{colData}
+column) over the cells of the region selected on the
+\code{\link[=SpatialMapPanel]{SpatialMapPanel()}}. When SpaceTrooper's medcouple outlier detection has
+been run (\code{SpaceTrooper::computeSpatialOutlier()}, which adds a column
+\verb{<Metric>_outlier_mc}), the outlier fences are drawn and the number of
+flagged cells is given.
 }
 \examples{
 SpatialQCPanel(Metric = "total")
+}
+\seealso{
+\code{\link[=FOVStatsPanel]{FOVStatsPanel()}} for metrics per FOV, \code{\link[=SpatialPlotPanel]{SpatialPlotPanel()}} to
+see a metric on the tissue.
 }

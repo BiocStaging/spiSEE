@@ -30,7 +30,7 @@ section of human breast cancer with about 168,000 cells and 313 genes
 distributed by `r BiocStyle::Biocpkg("OSTA.data")` (about 40 MB) with a
 cell-type annotation. It shows:
 
-1. reading a Xenium bundle with `load_xenium()`, with cell polygons;
+1. reading a Xenium bundle with `loadXenium()`, with cell polygons;
 2. quality control of the whole section, in static plots and in the QC app;
 3. a region where ductal carcinoma in situ (DCIS) meets invasive tumour,
    with its immune and stromal surroundings;
@@ -51,11 +51,11 @@ unzip(zip, exdir = dir)
 list.files(dir)
 ```
 
-`load_xenium()` reads the counts, the cell metadata and the cell
+`loadXenium()` reads the counts, the cell metadata and the cell
 boundaries, adds `logcounts` and records the platform:
 
 ```{r read}
-spe <- load_xenium(dir)
+spe <- loadXenium(dir)
 spe
 ```
 

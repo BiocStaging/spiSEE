@@ -435,8 +435,12 @@ setMethod(".createObservers", "SpatialMapPanel",
 #' in the browser; pressing *Validate* applies it to every iseeSpatial panel
 #' in the app (all classes extending [SpatialPanelBase-class]).
 #'
-#' @param ... Slots passed to `new()`, e.g. `PanelWidth`.
+#' @param ... Slots passed to `new()`, e.g. `PanelWidth`, or
+#'   `CommittedIDs`: an initial selection (comma-separated ids), as set by
+#'   the `selection` argument of [iseeSpatial()].
 #' @return A `SpatialMapPanel` object.
+#' @seealso [iseeSpatial()]; [SpatialPanelBase-class] for the panels that
+#'   follow the selection.
 #' @examples
 #' SpatialMapPanel()
 #' @export

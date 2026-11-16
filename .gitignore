@@ -15,3 +15,7 @@ check/
 CLAUDE.md
 .claude/
 HANDOFF*
+
+# personal launchers (kept in ../launchers)
+run_*.command
+run_app.R
