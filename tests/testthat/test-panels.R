@@ -358,3 +358,23 @@ test_that("per-FOV summary works from colData, fov_stats or nothing", {
     expect_match(.generateOutput(FOVStatsPanel(),
         .makeTestXeniumSPE())$labels$title, "FOV-based")
 })
+
+test_that("panel parameters are checked", {
+    expect_error(SpatialStatsPanel(K = 1), "'K'")
+    expect_error(SVGPanel(TopN = 0), "'TopN'")
+    expect_error(SpatialNichePanel(Lambda = 1.5), "'Lambda'")
+    expect_error(SpatialNichePanel(NNiches = 1), "'NNiches'")
+    expect_s4_class(SpatialNichePanel(), "SpatialNichePanel")
+})
+
+test_that("local clusters and L-functions are drawn", {
+    skip_on_cran()
+    spe <- .makeTestVisiumHDSPE(n_cells = 90)
+    for (pt in c("locclust_plot", "lest_plot", "lcross_plot")) {
+        p <- suppressWarnings(suppressMessages(.computeSpatialStat(spe, pt,
+            genes = rownames(spe)[1], group_col = "Level1", k = 6L)))
+        expect_true(inherits(p, "ggplot"), info = pt)
+        title <- c(as.character(p$labels$title), "")[1]
+        expect_false(grepl("^(No |Not |Too |Choose)", title), info = title)
+    }
+})

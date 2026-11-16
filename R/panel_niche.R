@@ -90,6 +90,19 @@ setMethod("initialize", "SpatialNichePanel", function(.Object, ...) {
     .Object
 })
 
+setValidity("SpatialNichePanel", function(object) {
+    l <- object@Lambda
+    n <- object@NNiches
+    msg <- c(
+        if (.badK(object@K, na_ok = TRUE))
+            "'K' must be NA or a single whole number >= 2",
+        if (length(n) != 1 || (!is.na(n) && n < 2))
+            "'NNiches' must be NA or a single whole number >= 2",
+        if (length(l) != 1 || (!is.na(l) && (l < 0 || l >= 1)))
+            "'Lambda' must be NA or a single number in [0, 1)")
+    if (length(msg)) msg else TRUE
+})
+
 #' @rdname SpatialNichePanel
 #' @export
 setMethod(".refineParameters", "SpatialNichePanel", function(x, se) {

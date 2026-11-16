@@ -11,11 +11,28 @@ setMethod("initialize", "SpatialStatsPanel", function(.Object, ...) {
     .Object
 })
 
+# Number of neighbours: one whole number >= 2 (NA allowed where it means
+# "from the stored result").
+.badK <- function(k, na_ok = FALSE) {
+    length(k) != 1 || (is.na(k) && !na_ok) || (!is.na(k) && k < 2)
+}
+
 setValidity("SpatialStatsPanel", function(object) {
     a <- object@Alpha
-    if (length(a) != 1 || is.na(a) || a <= 0 || a >= 1)
-        "'Alpha' must be a single number in (0, 1)"
-    else TRUE
+    msg <- c(
+        if (length(a) != 1 || is.na(a) || a <= 0 || a >= 1)
+            "'Alpha' must be a single number in (0, 1)",
+        if (.badK(object@K)) "'K' must be a single whole number >= 2")
+    if (length(msg)) msg else TRUE
+})
+
+setValidity("SVGPanel", function(object) {
+    n <- object@TopN
+    msg <- c(
+        if (length(n) != 1 || is.na(n) || n < 1)
+            "'TopN' must be a single whole number >= 1",
+        if (.badK(object@K)) "'K' must be a single whole number >= 2")
+    if (length(msg)) msg else TRUE
 })
 
 #' @rdname SpatialStatsPanel
