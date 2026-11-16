@@ -48,8 +48,8 @@
 .plotFOVOverview <- function(se, point_size = 0) {
     coords <- as.data.frame(SpatialExperiment::spatialCoords(se))
     f <- as.character(colData(se)[["fov"]])
-    num <- suppressWarnings(as.numeric(f))
-    coords$fov <- if (anyNA(num[!is.na(f)])) as.integer(factor(f)) else num
+    is_num <- all(grepl("^-?[0-9.]+$", f[!is.na(f)]))
+    coords$fov <- if (is_num) as.numeric(f) else as.integer(factor(f))
     xcol <- colnames(coords)[1]
     ycol <- colnames(coords)[2]
     ggplot2::ggplot(coords, ggplot2::aes(x = .data[[xcol]], y = .data[[ycol]],

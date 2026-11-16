@@ -47,6 +47,9 @@
 #' @param se The `SpatialExperiment` being explored.
 #' @param input,session,pObjects,rObjects Shiny and iSEE state, passed by
 #'   iSEE.
+#' @return `.createObservers()` is called for its side effects (it gives a
+#'   panel added while the app runs the selection of the map) and returns
+#'   `NULL`.
 #' @rdname SpatialPanelBase-class
 #' @export
 setMethod(".createObservers", "SpatialPanelBase",

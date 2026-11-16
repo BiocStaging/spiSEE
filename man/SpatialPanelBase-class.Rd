@@ -16,6 +16,11 @@
 \item{input, session, pObjects, rObjects}{Shiny and iSEE state, passed by
 iSEE.}
 }
+\value{
+\code{.createObservers()} is called for its side effects (it gives a
+panel added while the app runs the selection of the map) and returns
+\code{NULL}.
+}
 \description{
 Virtual class extending \link[iSEE:Panel-class]{iSEE::Panel}. It adds a \code{Selection} slot
 that the \code{\link[=SpatialMapPanel]{SpatialMapPanel()}} fills when the user presses \emph{Validate}.
