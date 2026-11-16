@@ -52,13 +52,15 @@ NULL
     has_groups <- !is.na(group_col) &&
         group_col %in% colnames(colData(se)) &&
         !all(is.na(colData(se)[[group_col]]))
-    if (has_groups) se <- se[, !is.na(colData(se)[[group_col]])]
+    need_groups <- c("lest_plot", "lcross_plot", "locclust_plot",
+        "joincount_plot", "joincount_heatmap_plot")
+    # Unlabelled cells are left out only where the labels are used.
+    if (has_groups && plot_type %in% need_groups)
+        se <- se[, !is.na(colData(se)[[group_col]])]
     if (ncol(se) < max(5, k + 1)) {
         return(.notAvailablePlot(sprintf(
             "Too few cells (%d) in this selection for k = %d", ncol(se), k)))
     }
-    need_groups <- c("lest_plot", "lcross_plot", "locclust_plot",
-        "joincount_plot", "joincount_heatmap_plot")
     if (plot_type %in% need_groups && !has_groups) {
         return(.notAvailablePlot(
             "No cell-type column chosen / available for this statistic"))
@@ -86,7 +88,9 @@ NULL
         .notAvailablePlot(paste("Unknown plot type:", plot_type)))
 }
 
-# Lest / Lcross (spatialFDA) on the most frequent cell types (>= 10 cells).
+# Lest of the most frequent cell type, Lcross of the two most frequent ones
+# (spatialFDA; types with >= 10 cells). The radius goes up to a quarter of
+# the shorter side of the region, the usual limit for edge corrections.
 .lFunctionPlot <- function(se, plot_type, group_col) {
     labs <- droplevels(factor(colData(se)[[group_col]]))
     counts <- sort(table(labs), decreasing = TRUE)
@@ -100,9 +104,15 @@ NULL
         spe = se, fun = if (plot_type == "lest_plot") "Lest" else "Lcross",
         subsetby = "sample_id", marks = group_col,
         selection = top[seq_len(n_needed)],
-        rSeq = seq(0, 500, length.out = 100), by = "sample_id", ncores = 1)
+        rSeq = .lRadii(SpatialExperiment::spatialCoords(se)),
+        by = "sample_id", ncores = 1)
     spatialFDA::plotMetricPerFov(res, theo = TRUE, correction = "iso",
         x = "r", imageId = "sample_id")
+}
+
+.lRadii <- function(xy) {
+    side <- min(diff(range(xy[, 1])), diff(range(xy[, 2])))
+    seq(0, max(side, 1e-6) / 4, length.out = 100)
 }
 
 .runLocalMoran <- function(sfe, genes) {

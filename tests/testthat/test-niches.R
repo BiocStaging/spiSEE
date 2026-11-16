@@ -163,3 +163,13 @@ test_that("without a stored result, nothing is computed before Compute", {
     expect_identical(out$labels$title, .PRESS_COMPUTE)
     expect_identical(out2$labels$title, .PRESS_COMPUTE)
 })
+
+test_that("niche and graph functions check their arguments", {
+    spe <- .makeTestSPE(n_cells = 60)
+    expect_error(computeNiches(spe, "SingleR_label", k = NA), "'k'")
+    expect_error(computeNiches(spe, c("a", "b")), "label_col")
+    expect_error(computeNiches(spe, "SingleR_label", n_niches = 1),
+                    "n_niches")
+    expect_error(buildSpatialGraph(spe, k = -1), "'k'")
+    expect_error(computeSpatialDomains(spe, lambda = 2), "lambda")
+})

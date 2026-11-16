@@ -123,6 +123,21 @@ NULL
                         resolution = resolution)))
 }
 
+# ---- argument checks ------------------------------------------------------
+
+.checkCount <- function(x, name, min = 1) {
+    if (length(x) != 1 || is.na(x) || !is.numeric(x) || x < min ||
+        x != round(x))
+        stop("'", name, "' must be a whole number >= ", min, call. = FALSE)
+    as.integer(x)
+}
+
+.checkFraction <- function(x, name) {
+    if (length(x) != 1 || is.na(x) || !is.numeric(x) || x < 0 || x > 1)
+        stop("'", name, "' must be a number between 0 and 1", call. = FALSE)
+    x
+}
+
 # ---- SpatialExperiment-level API ------------------------------------------
 
 #' Build the spatial k-NN graph once and store it on the object
@@ -154,6 +169,7 @@ NULL
 #' @export
 buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
                                 BNPARAM = BiocNeighbors::KmknnParam()) {
+    k <- .checkCount(k, "k")
     adj <- .knnAdjacency(SpatialExperiment::spatialCoords(spe), k = k,
                         BNPARAM = BNPARAM)
     SingleCellExperiment::colPair(spe, name) <- adj
@@ -207,8 +223,11 @@ buildSpatialGraph <- function(spe, k = 10L, name = "spatial_knn",
 computeNiches <- function(spe, label_col, k = 20L, n_niches = 6L,
                             include_self = FALSE, seed = 1L) {
     cd <- SummarizedExperiment::colData(spe)
-    if (!label_col %in% colnames(cd)) stop("'", label_col,
-                                            "' is not a colData column")
+    if (!is.character(label_col) || length(label_col) != 1 ||
+        !label_col %in% colnames(cd))
+        stop("'label_col' must be the name of one colData column")
+    k <- .checkCount(k, "k")
+    n_niches <- .checkCount(n_niches, "n_niches", min = 2)
     keep <- !is.na(cd[[label_col]])
     sub <- spe[, keep]
     adj <- .getSpatialAdjacency(sub, k)
@@ -271,6 +290,10 @@ computeSpatialDomains <- function(spe, k_spatial = 15L, lambda = 0.2,
                                     use_dimred = "PCA", n_pcs = 20L,
                                     k_graph = 20L, resolution = 0.8,
                                     seed = 1L) {
+    k_spatial <- .checkCount(k_spatial, "k_spatial")
+    k_graph <- .checkCount(k_graph, "k_graph")
+    n_pcs <- .checkCount(n_pcs, "n_pcs")
+    lambda <- .checkFraction(lambda, "lambda")
     if (use_dimred %in% SingleCellExperiment::reducedDimNames(spe)) {
         emb <- SingleCellExperiment::reducedDim(spe, use_dimred)
         emb <- emb[, seq_len(min(n_pcs, ncol(emb))), drop = FALSE]

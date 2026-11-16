@@ -34,7 +34,7 @@ Imports:
     SummarizedExperiment,
     SingleCellExperiment,
     SpatialFeatureExperiment,
-    SpaceTrooper,
+    SpaceTrooper (>= 1.3.1),
     Voyager,
     spatialFDA,
     spdep,

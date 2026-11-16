@@ -9,13 +9,18 @@
 #' * `mode = "analysis"`: map, two spatial plots (annotation and gene),
 #'   spatial statistics, spatially variable genes, niches and domains.
 #'
-#' @param spe A `SpatialExperiment` (e.g. from [load_cosmx()],
-#'   [load_xenium()] or [load_visiumhd()]).
+#' @param spe A `SpatialExperiment` (e.g. from [loadCosmx()],
+#'   [loadXenium()] or [loadVisiumHD()]).
 #' @param mode `"analysis"` or `"qc"`.
 #' @param platform Optional platform key to override detection
 #'   (see [setPlatform()]).
-#' @param selection Initial selection (comma-separated FOV or cell ids).
-#'   Empty = whole dataset.
+#' @param selection Initial selection: FOV or cell ids, as a character
+#'   vector or one comma-separated string. Empty = whole dataset. Unknown
+#'   ids are dropped with a warning.
+#' @param sample With several samples (`spe$sample_id`), the one to show:
+#'   the app shows one sample at a time (one map, one coordinate system).
+#'   Open one app per sample to compare them.
+#' @param title Title of the app (browser tab and header).
 #' @param initial Optional list of panels; replaces the default layout.
 #' @param cache Where plot images are cached: `TRUE` (default) on disk in
 #'   [spatialCacheDir()], kept across restarts; a folder path (used only for
@@ -36,13 +41,21 @@
 #' if (interactive()) shiny::runApp(app)
 #' @export
 iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
-                        selection = "", initial = NULL,
+                        selection = "", sample = NULL, initial = NULL,
                         cache = getOption("iseeSpatial.cache", TRUE),
                         cache_size = getOption("iseeSpatial.cache_size",
-                                                1024^3), ...) {
+                                                1024^3),
+                        title = "iseeSpatial", ...) {
     stopifnot(methods::is(spe, "SpatialExperiment"))
     mode <- match.arg(mode)
+    spe <- .oneSample(spe, sample)
+    if (anyDuplicated(colnames(spe)) || is.null(colnames(spe))) {
+        message("Cell names are missing or not unique: made unique.")
+        colnames(spe) <- make.unique(if (is.null(colnames(spe)))
+            as.character(seq_len(ncol(spe))) else colnames(spe))
+    }
     if (!is.null(platform)) spe <- setPlatform(spe, platform)
+    selection <- .checkSelection(selection, spe)
     if ("counts" %in% SummarizedExperiment::assayNames(spe))
         spe <- .addLogcounts(spe)
     .configurePlotCache(cache, cache_size)
@@ -51,6 +64,7 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
     if (is.null(initial)) initial <- .defaultPanels(spe, mode, selection)
     args <- list(...)
     if (is.null(args$extra)) args$extra <- .extraPanels(spe)
+    if (is.null(args$appTitle)) args$appTitle <- title
     # quote(spe): iSEE() runs deparse(substitute(se)) for its code export; with
     # the object itself in the call, that deparsed the whole dataset at launch.
     do.call(iSEE::iSEE, c(list(quote(spe), initial = initial), args))
@@ -104,4 +118,32 @@ iseeSpatial <- function(spe, mode = c("analysis", "qc"), platform = NULL,
         nrow(spe) == 0) return(NULL)
     m <- Matrix::rowMeans(SingleCellExperiment::logcounts(spe))
     rownames(spe)[order(m, decreasing = TRUE)]
+}
+
+# One sample per app: several samples share FOV numbers and coordinates.
+.oneSample <- function(spe, sample) {
+    ids <- unique(as.character(spe$sample_id))
+    if (!is.null(sample)) {
+        if (!sample %in% ids)
+            stop("'sample' must be one of: ", paste(ids, collapse = ", "))
+        return(spe[, spe$sample_id == sample])
+    }
+    if (length(ids) > 1)
+        stop("'spe' holds ", length(ids), " samples (",
+            paste(utils::head(ids, 5), collapse = ", "),
+            if (length(ids) > 5) ", ...", "): choose one with 'sample ='.",
+            call. = FALSE)
+    spe
+}
+
+# Selection given at launch: trimmed, checked against the dataset's ids.
+.checkSelection <- function(selection, spe) {
+    ids <- trimws(unlist(strsplit(as.character(selection), ",")))
+    ids <- unique(ids[nzchar(ids)])
+    bad <- setdiff(ids, .allRegionIDs(spe))
+    if (length(bad))
+        warning("Unknown ids dropped from 'selection': ",
+            paste(utils::head(bad, 5), collapse = ", "),
+            if (length(bad) > 5) ", ...", call. = FALSE)
+    paste(setdiff(ids, bad), collapse = ",")
 }

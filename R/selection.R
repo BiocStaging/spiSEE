@@ -33,3 +33,29 @@
                         f))) f[order(as.numeric(f))] else sort(f)
     } else colnames(se)
 }
+
+# A panel added while the app runs (Organize panels) comes with an empty
+# Selection: give it the selection in force on the map.
+.mapSelection <- function(pObjects) {
+    is_map <- vapply(pObjects$memory, methods::is, logical(1),
+                        "SpatialMapPanel")
+    if (!any(is_map)) return(NULL)
+    pObjects$memory[[which(is_map)[1]]]@CommittedIDs
+}
+
+#' @param x A panel extending `SpatialPanelBase`.
+#' @param se The `SpatialExperiment` being explored.
+#' @param input,session,pObjects,rObjects Shiny and iSEE state, passed by
+#'   iSEE.
+#' @rdname SpatialPanelBase-class
+#' @export
+setMethod(".createObservers", "SpatialPanelBase",
+            function(x, se, input, session, pObjects, rObjects) {
+    callNextMethod()
+    enc <- .getEncodedName(x)
+    sel <- .mapSelection(pObjects)
+    if (!is.null(sel) && !is.null(pObjects$memory[[enc]]) &&
+        !identical(pObjects$memory[[enc]]@Selection, sel))
+        pObjects$memory[[enc]]@Selection <- sel
+    invisible(NULL)
+})

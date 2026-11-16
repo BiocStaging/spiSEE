@@ -69,14 +69,30 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
 
 .cachedMapBase <- function(se) {
     unit <- .selectionUnit(se)
-    cache_dir <- tools::R_user_dir("iseeSpatial", "cache")
-    dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
-    f <- file.path(cache_dir,
-                    sprintf("map_%s_%s.rds", unit, .mapCacheKey(se, unit)))
+    key <- sprintf("map_%s_%s", unit, .mapCacheKey(se, unit))
+    store <- .mapStore()
+    if (is.environment(store)) {
+        if (is.null(store[[key]])) store[[key]] <- .buildMapBase(se, unit)
+        return(store[[key]])
+    }
+    dir.create(store, recursive = TRUE, showWarnings = FALSE)
+    f <- file.path(store, paste0(key, ".rds"))
     if (file.exists(f)) return(readRDS(f))
-    base <- if (unit == "fov") .buildTileMapBase(se) else .buildPointMapBase(se)
-    base$unit <- unit
+    base <- .buildMapBase(se, unit)
     saveRDS(base, f)
+    base
+}
+
+# Tiles from SpaceTrooper's FOV layout when the object has it
+# (metadata fov_positions and fov_dim, as read by readCosmxSPE()), else
+# from the extent of the cells of each FOV.
+.buildMapBase <- function(se, unit) {
+    md <- S4Vectors::metadata(se)
+    base <- if (unit == "cell") .buildPointMapBase(se)
+    else if (is.null(md$fov_positions) || is.null(md$fov_dim))
+        .buildCellTileMapBase(se)
+    else .buildTileMapBase(se)
+    base$unit <- unit
     base
 }
 
@@ -125,6 +141,32 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
         ids = as.character(labs$label), px = labs$x, py = labs$y)
 }
 
+.buildCellTileMapBase <- function(se) {
+    xy <- SpatialExperiment::spatialCoords(se)
+    fov <- as.character(colData(se)[[.platformInfo(se)$region_col]])
+    ids <- .allRegionIDs(se)
+    rng <- function(v) vapply(ids, function(f) range(v[fov == f]),
+                                numeric(2))
+    rx <- rng(xy[, 1])
+    ry <- rng(xy[, 2])
+    rects <- data.frame(xmin = rx[1, ], xmax = rx[2, ], ymin = ry[1, ],
+                        ymax = ry[2, ])
+    xr <- range(xy[, 1]) + c(-1, 1) * diff(range(xy[, 1])) * 0.03
+    yr <- range(xy[, 2]) + c(-1, 1) * diff(range(xy[, 2])) * 0.03
+    px <- (rects$xmin + rects$xmax) / 2
+    py <- (rects$ymin + rects$ymax) / 2
+    bg <- ggplot2::ggplot() +
+        ggplot2::geom_point(data = data.frame(x = xy[, 1], y = xy[, 2]),
+            mapping = ggplot2::aes(x = x, y = y), colour = "firebrick",
+            size = 0.05, alpha = 0.8) +
+        ggplot2::annotate("text", x = px, y = py, label = ids,
+                            fontface = "bold", alpha = 0.8) +
+        ggplot2::coord_fixed(xlim = xr, ylim = yr, expand = FALSE) +
+        ggplot2::theme_void()
+    list(png_raw = .savePNG(bg, xr, yr), xr = xr, yr = yr, rects = rects,
+        ids = ids, px = px, py = py)
+}
+
 .buildPointMapBase <- function(se) {
     xy <- SpatialExperiment::spatialCoords(se)
     xr <- range(xy[, 1])
@@ -149,7 +191,13 @@ setMethod(".defineInterface", "SpatialMapPanel", function(x, se, select_info) {
 function(el, x, data) {
     var enc = data.enc, ids = data.ids, unit = data.unit;
     var pending = new Set(), pendingRemove = new Set();
-    var committed = new Set(data.committed || []);
+    var known = new Set(ids);
+    function knownOnly(a) {
+        return new Set((a || []).filter(function(id) {
+            return known.has(id);
+        }));
+    }
+    var committed = knownOnly(data.committed);
     var idToXY = {};
     if (unit === 'cell') ids.forEach(function(id, i) {
         idToXY[id] = [data.px[i], data.py[i]];
@@ -231,9 +279,12 @@ function(el, x, data) {
     });
     // The server sends back what was applied (empty list on Clear): adopt it.
     Shiny.addCustomMessageHandler(enc + '_markCommitted', function(applied) {
-        committed = new Set(applied);
+        committed = knownOnly(applied);
         pending.clear(); pendingRemove.clear(); redraw();
     });
+    // A widget shown again (Organize panels) may be an old copy: ask the
+    // server for the selection in force.
+    Shiny.setInputValue(enc + '_mounted', Date.now(), {priority: 'event'});
 }"
 
 .buildMapWidget <- function(base, enc, committed = character(0)) {
@@ -303,11 +354,14 @@ setMethod(".generateOutput", "SpatialMapPanel", function(x, se, ...) {
 setMethod(".renderOutput", "SpatialMapPanel",
             function(x, se, output, pObjects, rObjects) {
     plot_name <- .getEncodedName(x)
-    base <- .cachedMapBase(se)
     # Built once; deliberately no dependency on rObjects$modified: all
-    # interaction is client-side, so it never needs to re-render.
-    output[[plot_name]] <- plotly::renderPlotly(.buildMapWidget(base,
-        plot_name, .splitIDs(pObjects$memory[[plot_name]]@CommittedIDs)))
+    # interaction is client-side, so it never needs to re-render. The
+    # background is made inside the render, so a failure shows in the panel
+    # instead of stopping the app.
+    output[[plot_name]] <- plotly::renderPlotly(.safeOutput(
+        .buildMapWidget(.cachedMapBase(se), plot_name,
+            .splitIDs(pObjects$memory[[plot_name]]@CommittedIDs)),
+        plot_name))
 })
 
 #' @rdname SpatialMapPanel
@@ -328,6 +382,11 @@ setMethod(".createObservers", "SpatialMapPanel",
         pending <- .splitIDs(mem@PendingIDs)
         removed <- .splitIDs(mem@PendingRemoveIDs)
         apply_sel(setdiff(union(committed, pending), removed))
+    }, ignoreInit = TRUE)
+
+    shiny::observeEvent(input[[paste0(enc, "_mounted")]], {
+        session$sendCustomMessage(paste0(enc, "_markCommitted"),
+            as.list(.splitIDs(pObjects$memory[[enc]]@CommittedIDs)))
     }, ignoreInit = TRUE)
 
     shiny::observeEvent(input[[paste0(enc, "_ClearPending")]],

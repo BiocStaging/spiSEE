@@ -11,16 +11,22 @@
 
 #' Load a prepared CosMx dataset
 #'
-#' Reads a `SpatialExperiment` saved as RDS (for instance by the CosMx
-#' preparation script, `data-raw/DATASET.R`) and records the platform.
+#' Reads a CosMx `SpatialExperiment` saved as RDS and records the
+#' platform. Such an object is typically made with
+#' `SpaceTrooper::readCosmxSPE()` and the QC steps shown in the vignette
+#' *CosMx workflow: the mouse dentate gyrus*. Optional extras used by the
+#' app are described in [iseeSpatial()] (section *Optional metadata*).
 #'
 #' @param rds_path Path to the `.RDS` file.
 #' @return A `SpatialExperiment`.
+#' @seealso [loadXenium()], [loadVisiumHD()], [iseeSpatial()].
 #' @examples
-#' f <- "cos_isee_ready.RDS"   # a CosMx SpatialExperiment saved with saveRDS()
-#' if (file.exists(f)) spe <- load_cosmx(f)
+#' dir <- system.file("extdata", "CosMx_DBKero_Tiny", package = "SpaceTrooper")
+#' f <- tempfile(fileext = ".rds")
+#' saveRDS(SpaceTrooper::readCosmxSPE(dir, sampleName = "DBKero"), f)
+#' spe <- loadCosmx(f)
 #' @export
-load_cosmx <- function(rds_path) {
+loadCosmx <- function(rds_path) {
     spe <- readRDS(rds_path)
     spe <- setPlatform(spe, "cosmx")
     message(sprintf("CosMx: %d cells, %d genes, %d FOVs", ncol(spe), nrow(spe),
@@ -37,11 +43,13 @@ load_cosmx <- function(rds_path) {
 #'
 #' @param xenium_dir Path to an unzipped Xenium output directory.
 #' @return A `SpatialExperiment`.
+#' @seealso [loadCosmx()], [loadVisiumHD()], [iseeSpatial()].
 #' @examples
-#' d <- "xenium_output"        # a Xenium output folder (outs/)
-#' if (dir.exists(d)) spe <- load_xenium(d)
+#' d <- system.file("extdata", "Xenium_small", package = "SpatialExperimentIO")
+#' if (requireNamespace("SpatialExperimentIO", quietly = TRUE))
+#'     spe <- loadXenium(d)
 #' @export
-load_xenium <- function(xenium_dir) {
+loadXenium <- function(xenium_dir) {
     .needs("SpatialExperimentIO")
     # Bundles shared without transcripts.parquet (the largest file) are
     # common; readXeniumSXE() fails on them unless parquet paths are off.
@@ -80,12 +88,16 @@ load_xenium <- function(xenium_dir) {
 #' @param segmented_outputs Path to the `segmented_outputs` directory.
 #' @param images Image resolution to load (passed to `TENxVisiumHD`).
 #' @return A `SpatialExperiment`.
+#' @seealso [loadCosmx()], [loadXenium()], [iseeSpatial()].
 #' @examples
-#' d <- "VisiumHD/segmented_outputs"   # Space Ranger cell segmentation output
-#' if (dir.exists(d)) spe <- load_visiumhd(d)
+#' d <- system.file("extdata", "segmented_outputs", package = "VisiumIO")
+#' if (requireNamespace("VisiumIO", quietly = TRUE) &&
+#'     requireNamespace("BiocIO", quietly = TRUE))
+#'     spe <- loadVisiumHD(d)
 #' @export
-load_visiumhd <- function(segmented_outputs, images = "lowres") {
+loadVisiumHD <- function(segmented_outputs, images = "lowres") {
     .needs("VisiumIO")
+    .needs("BiocIO")
     spe <- BiocIO::import(VisiumIO::TENxVisiumHD(format = "h5", images = images,
         segmented_outputs = segmented_outputs))
     rd <- SummarizedExperiment::rowData(spe)

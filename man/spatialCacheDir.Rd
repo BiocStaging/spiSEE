@@ -10,18 +10,22 @@ spatialCacheDir()
 clearSpatialCache(dir = spatialCacheDir())
 }
 \arguments{
-\item{dir}{Cache folder.}
+\item{dir}{Cache folder. Only cache files (\code{.rds}) in it are deleted.}
 }
 \value{
 \code{spatialCacheDir()}: the folder path. \code{clearSpatialCache()}:
 \code{dir}, invisibly.
 }
 \description{
-Plot images are cached on disk by \code{\link[=iseeSpatial]{iseeSpatial()}} (argument \code{cache}).
-\code{spatialCacheDir()} gives the default folder for the images (a \code{plots}
-subfolder of the package's user cache, next to the map backgrounds);
-\code{clearSpatialCache()} deletes every cached image in a folder.
+Plot images and map backgrounds are cached on disk by \code{\link[=iseeSpatial]{iseeSpatial()}}
+(argument \code{cache}). \code{spatialCacheDir()} gives the default folder for the
+images (a \code{plots} subfolder of the package's user cache, next to the map
+backgrounds); \code{clearSpatialCache()} deletes the cached images in a folder
+and, for the default folder, the map backgrounds too.
 }
 \examples{
 spatialCacheDir()
+}
+\seealso{
+\code{\link[=iseeSpatial]{iseeSpatial()}}, whose \code{cache} argument chooses the folder.
 }

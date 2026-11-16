@@ -35,15 +35,21 @@
 
 .FORCE_CATEGORICAL <- c("fov", "SingleR_label", "low_qcscore", "ex")
 
+# Text and logical columns become factors too: SpaceTrooper puts a
+# continuous scale on any column that is not a factor.
 .forceCategorical <- function(se, colorby) {
-    if (colorby %in% .FORCE_CATEGORICAL && colorby %in% colnames(colData(se)))
-        colData(se)[[colorby]] <- factor(colData(se)[[colorby]])
+    if (!colorby %in% colnames(colData(se))) return(se)
+    v <- colData(se)[[colorby]]
+    if (colorby %in% .FORCE_CATEGORICAL || is.character(v) || is.logical(v))
+        colData(se)[[colorby]] <- factor(v)
     se
 }
 
 .plotFOVOverview <- function(se, point_size = 0) {
     coords <- as.data.frame(SpatialExperiment::spatialCoords(se))
-    coords$fov <- as.integer(as.character(colData(se)[["fov"]]))
+    f <- as.character(colData(se)[["fov"]])
+    num <- suppressWarnings(as.numeric(f))
+    coords$fov <- if (anyNA(num[!is.na(f)])) as.integer(factor(f)) else num
     xcol <- colnames(coords)[1]
     ycol <- colnames(coords)[2]
     ggplot2::ggplot(coords, ggplot2::aes(x = .data[[xcol]], y = .data[[ycol]],
@@ -85,15 +91,42 @@
 
 # Reactive render key of one panel: changes only when the panel is asked to
 # update and the slots in key_fun() differ (reactiveVal() ignores identical
-# values), so an output re-runs only for its own changes.
+# values), so an output re-runs only for its own changes. The panel as it
+# was when the key last changed is kept (.keyPanel): outputs are drawn from
+# it, so a re-render for another reason (a resize) shows what the key says,
+# not parameters changed since without Compute. The observer stops when the
+# panel is removed (Organize panels), and replaces the one of an earlier
+# render of the same panel.
 .panelKey <- function(enc, pObjects, rObjects, key_fun) {
-    rv <- shiny::reactiveVal(key_fun(pObjects$memory[[enc]]))
-    shiny::observe({
+    snap <- new.env(parent = emptyenv())
+    snap$panel <- pObjects$memory[[enc]]
+    rv <- shiny::reactiveVal(key_fun(snap$panel))
+    obs <- .keyObservers(pObjects)
+    if (!is.null(obs[[enc]])) obs[[enc]]$destroy()
+    obs[[enc]] <- shiny::observe({
         rObjects[[.updateName(enc)]]
         rObjects$modified
-        rv(key_fun(pObjects$memory[[enc]]))
+        pn <- pObjects$memory[[enc]]
+        if (is.null(pn)) {
+            obs[[enc]]$destroy()
+            return()
+        }
+        k <- key_fun(pn)
+        if (!identical(k, shiny::isolate(rv()))) {
+            snap$panel <- pn
+            rv(k)
+        }
     })
+    attr(rv, "snapshot") <- snap
     rv
+}
+
+.keyPanel <- function(key) attr(key, "snapshot")$panel
+
+.keyObservers <- function(pObjects) {
+    if (is.null(pObjects$iseeSpatial_key_observers))
+        pObjects$iseeSpatial_key_observers <- new.env(parent = emptyenv())
+    pObjects$iseeSpatial_key_observers
 }
 
 # Runs a panel's output code; an R error is shown in the panel as its
@@ -119,8 +152,8 @@
     output[[plot_name]] <- shiny::renderCachedPlot(
         {
             key()
-            .safeOutput(.drawPlot(.generateOutput(pObjects$memory[[plot_name]],
-                                    se)), plot_name)
+            .safeOutput(.drawPlot(.generateOutput(.keyPanel(key), se)),
+                        plot_name)
         },
         cacheKeyExpr = list(fp, ver, plot_name, key()),
         cache = .plotCache())

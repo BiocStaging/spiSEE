@@ -292,23 +292,26 @@ setMethod(".generateOutput", "SpatialNichePanel",
 setMethod(".renderOutput", "SpatialNichePanel",
             function(x, se, output, pObjects, rObjects) {
     plot_name <- .getEncodedName(x)
-    # Selection and parameters are not in the key: they apply on Compute only.
+    # Selection and parameters are not in the key: they apply on Compute
+    # only. Before the first Compute the panel shows the full-data result
+    # for the parameters it opened with (`opened`), which are part of the
+    # cache key, since another layout can open with other ones.
     key <- .panelKey(plot_name, pObjects, rObjects,
         function(pn) list(pn@PlotType, pn@UsePolygons, pn@ComputeTrigger))
+    opened <- x
+    opened@Selection <- ""
+    opened_key <- .computeKey(opened)
     fp <- .fingerprintOf(se)
     ver <- as.character(utils::packageVersion("iseeSpatial"))
     last <- new.env()   # results of the last Compute, reused across plot types
     output[[plot_name]] <- shiny::renderCachedPlot({
         key()
-        x <- pObjects$memory[[plot_name]]
+        x <- .keyPanel(key)
         trig <- x@ComputeTrigger
         # The panel as it was at its Compute (the key encodes it), not the
         # current map selection or parameters.
-        snap <- if (!nzchar(trig)) {
-            s <- x
-            s@Selection <- ""
-            s
-        } else get0(trig, envir = .nicheSnapshots(pObjects),
+        snap <- if (!nzchar(trig)) opened
+        else get0(trig, envir = .nicheSnapshots(pObjects),
                     inherits = FALSE, ifnotfound = x)
         if (!identical(last$trigger, trig)) {
             last$trigger <- trig
@@ -324,7 +327,7 @@ setMethod(".renderOutput", "SpatialNichePanel",
         .safeOutput(.drawPlot(.nicheOutput(snap, se, last$cache, note)),
                     plot_name)
     },
-    cacheKeyExpr = list(fp, ver, plot_name, key()),
+    cacheKeyExpr = list(fp, ver, plot_name, key(), opened_key),
     cache = .plotCache())
 })
 

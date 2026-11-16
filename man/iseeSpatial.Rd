@@ -9,23 +9,30 @@ iseeSpatial(
   mode = c("analysis", "qc"),
   platform = NULL,
   selection = "",
+  sample = NULL,
   initial = NULL,
   cache = getOption("iseeSpatial.cache", TRUE),
   cache_size = getOption("iseeSpatial.cache_size", 1024^3),
+  title = "iseeSpatial",
   ...
 )
 }
 \arguments{
-\item{spe}{A \code{SpatialExperiment} (e.g. from \code{\link[=load_cosmx]{load_cosmx()}},
-\code{\link[=load_xenium]{load_xenium()}} or \code{\link[=load_visiumhd]{load_visiumhd()}}).}
+\item{spe}{A \code{SpatialExperiment} (e.g. from \code{\link[=loadCosmx]{loadCosmx()}},
+\code{\link[=loadXenium]{loadXenium()}} or \code{\link[=loadVisiumHD]{loadVisiumHD()}}).}
 
 \item{mode}{\code{"analysis"} or \code{"qc"}.}
 
 \item{platform}{Optional platform key to override detection
 (see \code{\link[=setPlatform]{setPlatform()}}).}
 
-\item{selection}{Initial selection (comma-separated FOV or cell ids).
-Empty = whole dataset.}
+\item{selection}{Initial selection: FOV or cell ids, as a character
+vector or one comma-separated string. Empty = whole dataset. Unknown
+ids are dropped with a warning.}
+
+\item{sample}{With several samples (\code{spe$sample_id}), the one to show:
+the app shows one sample at a time (one map, one coordinate system).
+Open one app per sample to compare them.}
 
 \item{initial}{Optional list of panels; replaces the default layout.}
 
@@ -37,6 +44,8 @@ cache is always in memory.}
 
 \item{cache_size}{Maximum size of the disk cache in bytes (default 1 GB);
 the least recently used images are removed first.}
+
+\item{title}{Title of the app (browser tab and header).}
 
 \item{...}{Passed to \code{\link[iSEE:iSEE]{iSEE::iSEE()}}.}
 }

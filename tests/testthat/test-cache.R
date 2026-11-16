@@ -1,10 +1,13 @@
-test_that("dataset fingerprint separates datasets and ignores metadata", {
+test_that("dataset fingerprint separates datasets and sees metadata", {
     a <- .makeTestSPE(n_cells = 40, seed = 1)
     b <- .makeTestSPE(n_cells = 40, seed = 2)
     expect_false(identical(.datasetFingerprint(a), .datasetFingerprint(b)))
     a2 <- a
-    S4Vectors::metadata(a2)$anything <- 1
+    S4Vectors::metadata(a2)$iseeSpatial_fingerprint <- "old"
     expect_identical(.datasetFingerprint(a), .datasetFingerprint(a2))
+    # gene_ranks decides which genes the SVG panel scans
+    S4Vectors::metadata(a2)$gene_ranks <- rev(rownames(a2))
+    expect_false(identical(.datasetFingerprint(a), .datasetFingerprint(a2)))
     a3 <- a
     colData(a3)$total[1] <- colData(a3)$total[1] + 1
     expect_false(identical(.datasetFingerprint(a), .datasetFingerprint(a3)))
@@ -102,4 +105,25 @@ test_that("map background key changes with the coordinates", {
     SpatialExperiment::spatialCoords(b)[5, 1] <- 1
     expect_false(identical(.mapCacheKey(a, "cell"), .mapCacheKey(b, "cell")))
     expect_identical(.mapCacheKey(a, "cell"), .mapCacheKey(a, "cell"))
+})
+
+test_that("map backgrounds follow the cache setting", {
+    home <- withr::local_tempdir()
+    local_mocked_bindings(.userCacheDir = function() home,
+                            .isDevLoad = function() FALSE)
+    withr::defer(.configurePlotCache(FALSE))
+    spe <- .makeTestSPE()     # tiles without SpaceTrooper's FOV table
+    .configurePlotCache(FALSE)
+    base <- .cachedMapBase(spe)
+    expect_identical(base$unit, "fov")
+    expect_setequal(base$ids, levels(spe$fov))
+    expect_length(list.files(home, recursive = TRUE), 0)
+    expect_identical(.cachedMapBase(spe), base)
+    .configurePlotCache(TRUE)
+    .cachedMapBase(spe)
+    expect_length(list.files(home, pattern = "^map_"), 1)
+    writeLines("x", file.path(spatialCacheDir(), "notes.txt"))
+    clearSpatialCache()
+    expect_length(list.files(home, pattern = "^map_"), 0)
+    expect_true(file.exists(file.path(spatialCacheDir(), "notes.txt")))
 })

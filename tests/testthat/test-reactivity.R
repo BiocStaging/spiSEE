@@ -92,3 +92,43 @@ test_that("map selection: browser state is stored, Validate sets every panel", {
             rObjects[[.updateName("SpatialPlotPanel1")]])))
     })
 })
+
+test_that("outputs are drawn from the panel as it was when its key changed", {
+    shiny::testServer(function(input, output, session) {
+        pObjects <- new.env()
+        pObjects$memory <- list(A = SpatialStatsPanel(
+            PlotType = "joincount_plot", ComputeTrigger = "k1"))
+        rObjects <- shiny::reactiveValues(modified = list())
+        key <- .panelKey("A", pObjects, rObjects,
+                            function(pn) pn@ComputeTrigger)
+    }, {
+        session$flushReact()
+        # menu changed, Compute not pressed: the drawn panel stays the same
+        pObjects$memory$A@PlotType <- "graph_plot"
+        .spatialUpdate("A", rObjects)
+        session$flushReact()
+        expect_identical(.keyPanel(key)@PlotType, "joincount_plot")
+        # Compute: key and drawn panel change together
+        pObjects$memory$A@ComputeTrigger <- "k2"
+        .spatialUpdate("A", rObjects)
+        session$flushReact()
+        expect_identical(key(), "k2")
+        expect_identical(.keyPanel(key)@PlotType, "graph_plot")
+    })
+})
+
+test_that("a removed panel's key observer stops quietly", {
+    shiny::testServer(function(input, output, session) {
+        pObjects <- new.env()
+        pObjects$memory <- list(A = SpatialPlotPanel(ColorBy = "a"))
+        rObjects <- shiny::reactiveValues(modified = list())
+        key <- .panelKey("A", pObjects, rObjects, function(pn) pn@ColorBy)
+    }, {
+        session$flushReact()
+        pObjects$memory$A <- NULL
+        rObjects$modified <- list(B = character(0))
+        expect_no_error(session$flushReact())
+        rObjects$modified <- list()
+        expect_no_error(session$flushReact())
+    })
+})

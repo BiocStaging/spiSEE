@@ -218,7 +218,7 @@ setMethod(".renderOutput", "SVGPanel",
     ver <- as.character(utils::packageVersion("iseeSpatial"))
     output[[enc]] <- DT::renderDataTable({
         trig <- key()
-        x <- pObjects$memory[[enc]]
+        x <- .keyPanel(key)
         tbl <- .safeOutput(if (nzchar(trig))
             .cachedResult(digest::digest(list(fp, ver, "svg", trig),
                                         algo = "xxhash64"),

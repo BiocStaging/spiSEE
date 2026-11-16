@@ -7,24 +7,32 @@
 
 #' Location of the iseeSpatial image cache
 #'
-#' Plot images are cached on disk by [iseeSpatial()] (argument `cache`).
-#' `spatialCacheDir()` gives the default folder for the images (a `plots`
-#' subfolder of the package's user cache, next to the map backgrounds);
-#' `clearSpatialCache()` deletes every cached image in a folder.
+#' Plot images and map backgrounds are cached on disk by [iseeSpatial()]
+#' (argument `cache`). `spatialCacheDir()` gives the default folder for the
+#' images (a `plots` subfolder of the package's user cache, next to the map
+#' backgrounds); `clearSpatialCache()` deletes the cached images in a folder
+#' and, for the default folder, the map backgrounds too.
 #'
-#' @param dir Cache folder.
+#' @param dir Cache folder. Only cache files (`.rds`) in it are deleted.
 #' @return `spatialCacheDir()`: the folder path. `clearSpatialCache()`:
 #'   `dir`, invisibly.
+#' @seealso [iseeSpatial()], whose `cache` argument chooses the folder.
 #' @examples
 #' spatialCacheDir()
 #' @export
-spatialCacheDir <- function() file.path(tools::R_user_dir("iseeSpatial",
-    which = "cache"), "plots")
+spatialCacheDir <- function() file.path(.userCacheDir(), "plots")
+
+.userCacheDir <- function() tools::R_user_dir("iseeSpatial", which = "cache")
 
 #' @rdname spatialCacheDir
 #' @export
 clearSpatialCache <- function(dir = spatialCacheDir()) {
-    if (dir.exists(dir)) unlink(list.files(dir, full.names = TRUE))
+    rds <- function(d) list.files(d, pattern = "[.]rds$", full.names = TRUE)
+    if (dir.exists(dir)) unlink(rds(dir))
+    if (identical(normalizePath(dir, mustWork = FALSE),
+                    normalizePath(spatialCacheDir(), mustWork = FALSE)))
+        unlink(grep("/map_[^/]*[.]rds$", rds(.userCacheDir()), value = TRUE))
+    if (!is.null(.CACHE$maps)) rm(list = ls(.CACHE$maps), envir = .CACHE$maps)
     invisible(dir)
 }
 
@@ -51,22 +59,34 @@ clearSpatialCache <- function(dir = spatialCacheDir()) {
 
 .plotCache <- function() if (is.null(.CACHE$cache)) "app" else .CACHE$cache
 
+# Map backgrounds follow the plot cache: on disk next to it when it is on
+# disk, else in memory for this R session (nothing written with
+# cache = FALSE).
+.mapStore <- function() {
+    if (inherits(.CACHE$cache, "cachem")) return(.userCacheDir())
+    if (is.null(.CACHE$maps)) .CACHE$maps <- new.env(parent = emptyenv())
+    .CACHE$maps
+}
+
 # Identity of the data the plots and analyses are made from: names,
 # coordinates, cell annotations and polygons, reduced dimensions and the
 # full content of every assay (not a summary such as per-cell sums, which
 # two different matrices can share). Computed once, at launch.
-# Not included: metadata(), which only holds this fingerprint and helper
-# tables derived from the data. Assays kept on disk (DelayedArray, e.g.
-# HDF5) are identified by their file and its size and modification time.
+# metadata() is included (gene_ranks, fov_stats, technology... change the
+# plots), except the fingerprint itself. Assays kept on disk (DelayedArray,
+# e.g. HDF5) are identified by their file and its size and modification
+# time.
 .datasetFingerprint <- function(se) {
     cd <- colData(se)
     poly <- if ("polygons" %in% colnames(cd))
         sf::st_as_binary(sf::st_geometry(cd[["polygons"]]))
     cd <- as.data.frame(cd[, setdiff(colnames(cd), "polygons"), drop = FALSE])
     assays <- lapply(SummarizedExperiment::assays(se), .assayIdentity)
+    md <- S4Vectors::metadata(se)
+    md <- md[setdiff(names(md), "iseeSpatial_fingerprint")]
     digest::digest(list(dimnames(se), SpatialExperiment::spatialCoords(se),
         cd, poly, assays, as.list(SingleCellExperiment::reducedDims(se)),
-        .selectionUnit(se)), algo = "xxhash64")
+        md, .selectionUnit(se)), algo = "xxhash64")
 }
 
 # A DelayedArray serialises as its seed (file path, dataset) and delayed

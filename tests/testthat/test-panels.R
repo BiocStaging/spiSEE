@@ -81,7 +81,7 @@ test_that("Xenium test bundle: loader, k-NN graph and known top SVG", {
     path <- .xeniumTestDataPath()
     skip_if(is.na(path), "bundled Xenium test data not found")
     skip_if_not_installed("SpatialExperimentIO")
-    spe <- load_xenium(path)
+    spe <- loadXenium(path)
     expect_identical(getPlatform(spe), "xenium")
     expect_equal(ncol(spe), 36)
     expect_s3_class(.computeSpatialStat(spe, "graph_plot"), "ggplot")
@@ -209,7 +209,7 @@ test_that("an initial selection is shown on the map", {
     spe <- .makeTestSPE()
     panels <- .defaultPanels(spe, "qc", selection = "1,2")
     expect_identical(panels[[1]]@CommittedIDs, "1,2")
-    expect_match(.MAP_JS, "new Set(data.committed", fixed = TRUE)
+    expect_match(.MAP_JS, "knownOnly(data.committed)", fixed = TRUE)
 })
 
 test_that("gene menus put the most expressed genes first", {
@@ -239,4 +239,106 @@ test_that("plotSpatialCells draws polygons, points, genes and panels", {
                                    function(i) sq(xy[i, 1], xy[i, 2]))))
     p3 <- plotSpatialCells(spe, "grp", borders = TRUE)
     expect_true(inherits(p3$layers[[1]]$geom, "GeomSf"))
+})
+
+test_that("the selection given at launch is checked", {
+    spe <- .makeTestSPE()
+    expect_identical(.checkSelection(" 1, 2 ,", spe), "1,2")
+    expect_identical(.checkSelection(c("2", "1"), spe), "2,1")
+    expect_warning(sel <- .checkSelection("1,99", spe), "99")
+    expect_identical(sel, "1")
+    expect_identical(.checkSelection("", spe), "")
+})
+
+test_that("one sample per app; cell names made unique", {
+    a <- .makeTestXeniumSPE()
+    b <- .makeTestXeniumSPE(seed = 2)
+    b$sample_id <- "s2"
+    both <- cbind(a, b)
+    expect_error(iseeSpatial(both, cache = FALSE), "sample =")
+    expect_identical(ncol(.oneSample(both, "s2")), ncol(b))
+    expect_error(.oneSample(both, "nope"), "one of")
+    expect_message(app <- iseeSpatial(both, sample = "s2", cache = FALSE),
+                    NA)
+    dup <- a
+    colnames(dup)[2] <- colnames(dup)[1]
+    expect_message(iseeSpatial(dup, cache = FALSE), "not unique")
+})
+
+test_that("the app starts on CosMx-like data without a FOV table", {
+    app <- iseeSpatial(.makeTestSPE(), mode = "qc", cache = FALSE)
+    expect_s3_class(app, "shiny.appobj")
+    shiny::testServer(app, {
+        session$flushReact()
+        expect_true(TRUE)
+    })
+})
+
+test_that("a panel added while the app runs takes the map selection", {
+    spe <- .makeTestSPE()
+    shiny::testServer(function(input, output, session) {
+        pObjects <- new.env()
+        rObjects <- shiny::reactiveValues(modified = list())
+        map <- SpatialMapPanel(CommittedIDs = "1,2", PanelId = 1L)
+        new_panel <- SpatialQCPanel(PanelId = 1L)
+        pObjects$memory <- list(SpatialMapPanel1 = map,
+                                SpatialQCPanel1 = new_panel)
+        .createObservers(new_panel, spe, input, session, pObjects, rObjects)
+    }, {
+        expect_identical(pObjects$memory$SpatialQCPanel1@Selection, "1,2")
+    })
+})
+
+test_that("text and logical label columns are drawn as categories", {
+    spe <- .makeTestSPE()
+    spe$lab_chr <- as.character(spe$SingleR_label)
+    spe$flag <- spe$total > 50
+    expect_true(is.factor(.forceCategorical(spe, "lab_chr")$lab_chr))
+    expect_true(is.factor(.forceCategorical(spe, "flag")$flag))
+    expect_true(is.numeric(.forceCategorical(spe, "total")$total))
+    p <- .generateOutput(SpatialPlotPanel(ColorBy = "lab_chr",
+                                            UsePolygons = FALSE), spe)
+    expect_s3_class(p, "ggplot")
+})
+
+test_that("L-function radii scale with the region", {
+    r <- .lRadii(cbind(c(0, 400), c(0, 1000)))
+    expect_equal(max(r), 100)
+    expect_length(r, 100)
+})
+
+test_that("gene statistics keep the cells without a label", {
+    spe <- .makeTestSPE(n_cells = 60)
+    spe$SingleR_label[1:10] <- NA
+    seen <- new.env()
+    local_mocked_bindings(.toSFEWithKNNNeighbors = function(se, k) {
+        seen$n <- ncol(se)
+        stop("stop here")
+    })
+    try(.computeSpatialStat(spe, "graph_plot", group_col = "SingleR_label"),
+        silent = TRUE)
+    expect_identical(seen$n, 60L)
+    try(.computeSpatialStat(spe, "joincount_plot",
+                            group_col = "SingleR_label"), silent = TRUE)
+    expect_identical(seen$n, 50L)
+})
+
+test_that("loaders read the example data of the reader packages", {
+    dir <- system.file("extdata", "CosMx_DBKero_Tiny", package = "SpaceTrooper")
+    skip_if(!nzchar(dir))
+    f <- withr::local_tempfile(fileext = ".rds")
+    saveRDS(SpaceTrooper::readCosmxSPE(dir, sampleName = "DBKero"), f)
+    spe <- suppressMessages(loadCosmx(f))
+    expect_identical(getPlatform(spe), "cosmx")
+    skip_if_not_installed("SpatialExperimentIO")
+    d <- system.file("extdata", "Xenium_small",
+                        package = "SpatialExperimentIO")
+    x <- suppressMessages(loadXenium(d))
+    expect_identical(getPlatform(x), "xenium")
+    expect_true("logcounts" %in% SummarizedExperiment::assayNames(x))
+    skip_if_not_installed("VisiumIO")
+    skip_if_not_installed("BiocIO")
+    v <- suppressMessages(suppressWarnings(loadVisiumHD(
+        system.file("extdata", "segmented_outputs", package = "VisiumIO"))))
+    expect_identical(getPlatform(v), "visiumhd")
 })
