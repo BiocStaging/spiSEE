@@ -16,11 +16,13 @@ Description: Provides reusable iSEE panels for interactive exploration of
     with standard iSEE panels to explore gene expression, spatial statistics,
     cellular neighbourhoods and spatial domains.
 License: MIT + file LICENSE
+URL: https://github.com/RighelliLab/spiSEE
+BugReports: https://github.com/RighelliLab/spiSEE/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Depends:
-    R (>= 4.5.0),
+    R (>= 4.6.0),
     iSEE,
     SpatialExperiment
 Imports:
