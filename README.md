@@ -22,6 +22,12 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install("spiSEE")
 ```
 
+The development version, from GitHub:
+
+```r
+BiocManager::install("RighelliLab/spiSEE")
+```
+
 ## Quick start
 
 ```r
@@ -46,6 +52,6 @@ Any `SpatialExperiment` with spatial coordinates works.
 
 ## Issues
 
-Questions and bug reports: the
-[Bioconductor support site](https://support.bioconductor.org) (tag
-`spiSEE`).
+Questions: the [Bioconductor support site](https://support.bioconductor.org)
+(tag `spiSEE`). Bug reports:
+[GitHub issues](https://github.com/RighelliLab/spiSEE/issues).
